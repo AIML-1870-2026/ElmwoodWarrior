@@ -9,7 +9,9 @@
       "Bash(git push:*)",
       "Bash(gh repo view:*)",
       "Bash(gh repo create:*)",
-      "Bash(git config:*)"
+      "Bash(git config:*)",
+      "Bash(git remote set-url:*)",
+      "Bash(git show-branch:*)"
     ]
   }
 }
