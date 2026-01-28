@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hyperspace Starfield</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      overflow: hidden;
+      background: #000;
+      font-family: 'Rajdhani', sans-serif;
+    }
+
+    canvas {
+      display: block;
+      position: fixed;
+      top: 0;
+      left: 0;
+    }
+
+    .controls {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 100;
+      background: linear-gradient(135deg, rgba(15, 15, 20, 0.9) 0%, rgba(25, 25, 35, 0.85) 100%);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 140, 50, 0.25);
+      border-radius: 12px;
+      min-width: 200px;
+      box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.4),
+        0 0 60px rgba(255, 100, 0, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+      overflow: hidden;
+    }
+
+    .controls-header {
+      padding: 12px 16px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: all 0.25s ease;
+      border-bottom: 1px solid rgba(255, 140, 50, 0);
+    }
+
+    .controls:not(.collapsed) .controls-header {
+      border-bottom: 1px solid rgba(255, 140, 50, 0.15);
+    }
+
+    .controls-header:hover {
+      background: rgba(255, 120, 40, 0.08);
+    }
+
+    .controls-header h3 {
+      color: rgba(255, 180, 100, 0.95);
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin: 0;
+    }
+
+    .toggle-icon {
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(255, 160, 80, 0.6);
+      font-size: 10px;
+      transition: transform 0.3s ease;
+      border-radius: 4px;
+      background: rgba(255, 140, 50, 0.1);
+    }
+
+    .controls.collapsed .toggle-icon {
+      transform: rotate(180deg);
+    }
+
+    .controls-content {
+      padding: 16px;
+      max-height: 200px;
+      overflow: hidden;
+      transition: max-height 0.35s ease, padding 0.35s ease, opacity 0.25s ease;
+      opacity: 1;
+    }
+
+    .controls.collapsed .controls-content {
+      max-height: 0;
+      padding: 0 16px;
+      opacity: 0;
+    }
+
+    .slider-container {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .slider-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: rgba(220, 220, 230, 0.75);
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .slider-value {
+      color: #ffaa55;
+      font-weight: 700;
+      font-size: 13px;
+      min-width: 28px;
+      text-align: right;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      background: linear-gradient(90deg,
+        rgba(60, 40, 20, 0.6) 0%,
+        rgba(120, 70, 30, 0.5) 100%);
+      border-radius: 3px;
+      outline: none;
+      cursor: pointer;
+      margin-top: 2px;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      background: linear-gradient(135deg, #ffcc88 0%, #ff8833 50%, #dd5500 100%);
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow:
+        0 2px 8px rgba(255, 100, 0, 0.5),
+        0 0 20px rgba(255, 120, 40, 0.3),
+        inset 0 1px 2px rgba(255, 255, 255, 0.3);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      border: 2px solid rgba(255, 200, 150, 0.3);
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.1);
+      box-shadow:
+        0 2px 12px rgba(255, 100, 0, 0.7),
+        0 0 30px rgba(255, 120, 40, 0.5),
+        inset 0 1px 2px rgba(255, 255, 255, 0.3);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      background: linear-gradient(135deg, #ffcc88 0%, #ff8833 50%, #dd5500 100%);
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid rgba(255, 200, 150, 0.3);
+      box-shadow:
+        0 2px 8px rgba(255, 100, 0, 0.5),
+        0 0 20px rgba(255, 120, 40, 0.3);
+    }
+
+    .speed-control {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(255, 140, 50, 0.12);
+    }
+  </style>
+</head>
+<body>
+  <canvas id="starfield"></canvas>
+
+  <div class="controls collapsed" id="controls">
+    <div class="controls-header" id="controlsHeader">
+      <h3>Controls</h3>
+      <span class="toggle-icon">▲</span>
+    </div>
+
+    <div class="controls-content">
+      <div class="slider-container">
+        <div class="slider-label">
+          <span>Trail Length</span>
+          <span class="slider-value" id="trailValue">50</span>
+        </div>
+        <input type="range" id="trailSlider" min="5" max="150" value="50">
+      </div>
+
+      <div class="slider-container speed-control">
+        <div class="slider-label">
+          <span>Warp Speed</span>
+          <span class="slider-value" id="speedValue">15</span>
+        </div>
+        <input type="range" id="speedSlider" min="2" max="40" value="15">
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('starfield');
+    const ctx = canvas.getContext('2d');
+
+    let width, height, centerX, centerY;
+    let trailLength = 50;
+    let speed = 15;
+    const numStars = 500;
+    const stars = [];
+
+    // UI Elements
+    const controls = document.getElementById('controls');
+    const controlsHeader = document.getElementById('controlsHeader');
+    const trailSlider = document.getElementById('trailSlider');
+    const trailValue = document.getElementById('trailValue');
+    const speedSlider = document.getElementById('speedSlider');
+    const speedValue = document.getElementById('speedValue');
+
+    // Toggle controls dropdown
+    controlsHeader.addEventListener('click', () => {
+      controls.classList.toggle('collapsed');
+    });
+
+    trailSlider.addEventListener('input', (e) => {
+      trailLength = parseInt(e.target.value);
+      trailValue.textContent = trailLength;
+    });
+
+    speedSlider.addEventListener('input', (e) => {
+      speed = parseInt(e.target.value);
+      speedValue.textContent = speed;
+    });
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+      centerX = width / 2;
+      centerY = height / 2;
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+
+    // Color palettes - fiery, aggressive colors
+    const colorPalettes = [
+      { hue: 25, sat: 100 },   // Deep orange
+      { hue: 15, sat: 95 },    // Red-orange
+      { hue: 35, sat: 90 },    // Amber
+      { hue: 0, sat: 85 },     // Red
+      { hue: 45, sat: 100 },   // Gold
+      { hue: 200, sat: 70 },   // Steel blue accent
+    ];
+
+    class Star {
+      constructor() {
+        this.reset();
+      }
+
+      reset() {
+        // Start further from center for less density in middle
+        const angle = Math.random() * Math.PI * 2;
+        const distance = Math.random() * 100 + 30;
+
+        this.x = Math.cos(angle) * distance;
+        this.y = Math.sin(angle) * distance;
+        this.z = Math.random() * 1000 + 500;
+
+        // Velocity direction from center
+        this.vx = this.x * 0.001;
+        this.vy = this.y * 0.001;
+
+        // Star properties
+        this.brightness = Math.random() * 0.5 + 0.5;
+
+        // Pick from color palette
+        const palette = colorPalettes[Math.floor(Math.random() * colorPalettes.length)];
+        this.hue = palette.hue + (Math.random() * 20 - 10);
+        this.saturation = palette.sat + (Math.random() * 15 - 7);
+      }
+
+      update() {
+        // Move star towards viewer (decrease z)
+        this.z -= speed;
+
+        // Expand outward as it gets closer
+        const expansion = (1000 - this.z) / 1000;
+        this.x += this.vx * speed * expansion * 2;
+        this.y += this.vy * speed * expansion * 2;
+
+        // Reset if too close or off screen
+        if (this.z < 1) {
+          this.reset();
+        }
+
+        const screenX = (this.x / this.z) * 1000 + centerX;
+        const screenY = (this.y / this.z) * 1000 + centerY;
+
+        if (screenX < -100 || screenX > width + 100 ||
+            screenY < -100 || screenY > height + 100) {
+          this.reset();
+        }
+      }
+
+      draw() {
+        // Current position
+        const screenX = (this.x / this.z) * 1000 + centerX;
+        const screenY = (this.y / this.z) * 1000 + centerY;
+
+        // Calculate trail end position (where star was)
+        const trailZ = this.z + trailLength * (speed / 10);
+        const trailExpansion = (1000 - trailZ) / 1000;
+        const pastX = this.x - this.vx * speed * trailExpansion * 2 * (trailLength / 10);
+        const pastY = this.y - this.vy * speed * trailExpansion * 2 * (trailLength / 10);
+
+        const trailX = (pastX / trailZ) * 1000 + centerX;
+        const trailY = (pastY / trailZ) * 1000 + centerY;
+
+        // Size based on distance
+        const size = Math.max(0.5, (1 - this.z / 1500) * 3.5);
+
+        // Opacity based on distance
+        const alpha = Math.min(1, (1 - this.z / 1500) * this.brightness);
+
+        // Draw trail
+        const gradient = ctx.createLinearGradient(trailX, trailY, screenX, screenY);
+        gradient.addColorStop(0, `hsla(${this.hue}, ${this.saturation}%, 50%, 0)`);
+        gradient.addColorStop(0.5, `hsla(${this.hue}, ${this.saturation - 10}%, 60%, ${alpha * 0.5})`);
+        gradient.addColorStop(1, `hsla(${this.hue}, ${this.saturation - 20}%, 85%, ${alpha})`);
+
+        ctx.beginPath();
+        ctx.moveTo(trailX, trailY);
+        ctx.lineTo(screenX, screenY);
+        ctx.strokeStyle = gradient;
+        ctx.lineWidth = size;
+        ctx.lineCap = 'round';
+        ctx.stroke();
+
+        // Draw star head (bright point)
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, size * 1.1, 0, Math.PI * 2);
+        ctx.fillStyle = `hsla(${this.hue + 10}, ${this.saturation - 40}%, 95%, ${alpha})`;
+        ctx.fill();
+
+        // Glow effect
+        const glowGradient = ctx.createRadialGradient(
+          screenX, screenY, 0,
+          screenX, screenY, size * 4
+        );
+        glowGradient.addColorStop(0, `hsla(${this.hue}, ${this.saturation}%, 70%, ${alpha * 0.4})`);
+        glowGradient.addColorStop(1, `hsla(${this.hue}, ${this.saturation}%, 70%, 0)`);
+
+        ctx.beginPath();
+        ctx.arc(screenX, screenY, size * 4, 0, Math.PI * 2);
+        ctx.fillStyle = glowGradient;
+        ctx.fill();
+      }
+    }
+
+    // Initialize stars with bias toward edges
+    for (let i = 0; i < numStars; i++) {
+      const star = new Star();
+      // Bias toward lower z values for more edge density
+      const zBias = Math.pow(Math.random(), 0.5);
+      star.z = zBias * 1500;
+      stars.push(star);
+    }
+
+    // Subtle center glow - dark and minimal
+    function drawCenterGlow() {
+      const gradient = ctx.createRadialGradient(
+        centerX, centerY, 0,
+        centerX, centerY, 120
+      );
+      gradient.addColorStop(0, 'rgba(255, 100, 30, 0.03)');
+      gradient.addColorStop(0.5, 'rgba(255, 50, 0, 0.01)');
+      gradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
+    }
+
+    // Vignette effect - dark edges
+    function drawVignette() {
+      const gradient = ctx.createRadialGradient(
+        centerX, centerY, height * 0.35,
+        centerX, centerY, height * 0.95
+      );
+      gradient.addColorStop(0, 'rgba(0, 0, 0, 0)');
+      gradient.addColorStop(1, 'rgba(0, 0, 0, 0.7)');
+
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, width, height);
+    }
+
+    function animate() {
+      // Motion blur - pure black
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.28)';
+      ctx.fillRect(0, 0, width, height);
+
+      drawCenterGlow();
+
+      // Update and draw stars
+      for (const star of stars) {
+        star.update();
+        star.draw();
+      }
+
+      drawVignette();
+
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+  </script>
+</body>
+</html>

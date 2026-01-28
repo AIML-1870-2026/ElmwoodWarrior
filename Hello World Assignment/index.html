@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dawson Gibbons - Personal Page</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: radial-gradient(circle at center, #1a2332 0%, #0f1419 100%);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Digital grid background */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image:
+                linear-gradient(rgba(79, 172, 254, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(79, 172, 254, 0.05) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: 1;
+        }
+
+        /* Animated floating circles - now with glowing effect */
+        .circle {
+            position: absolute;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(79, 172, 254, 0.12), rgba(67, 233, 123, 0.08));
+            box-shadow: 0 0 20px rgba(79, 172, 254, 0.15);
+            animation: float 20s infinite ease-in-out;
+            z-index: 2;
+        }
+
+        .circle:nth-child(1) {
+            width: 80px;
+            height: 80px;
+            top: 10%;
+            left: 20%;
+            animation-delay: 0s;
+        }
+
+        .circle:nth-child(2) {
+            width: 120px;
+            height: 120px;
+            top: 70%;
+            left: 80%;
+            animation-delay: 2s;
+        }
+
+        .circle:nth-child(3) {
+            width: 60px;
+            height: 60px;
+            top: 50%;
+            left: 10%;
+            animation-delay: 4s;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-30px);
+            }
+        }
+
+        .container {
+            background: linear-gradient(135deg, rgba(44, 62, 80, 0.9) 0%, rgba(52, 73, 94, 0.95) 100%);
+            padding: 60px 80px;
+            border-radius: 15px;
+            border: 5px solid #4facfe;
+            box-shadow:
+                0 0 50px rgba(79, 172, 254, 0.3),
+                0 20px 60px rgba(0, 0, 0, 0.5),
+                inset 0 0 30px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            max-width: 600px;
+            position: relative;
+            z-index: 10;
+            backdrop-filter: blur(10px);
+            animation: borderFlicker 5s infinite;
+        }
+
+        /* Border flicker effect */
+        @keyframes borderFlicker {
+            0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+                border-color: #4facfe;
+                box-shadow:
+                    0 0 50px rgba(79, 172, 254, 0.3),
+                    0 20px 60px rgba(0, 0, 0, 0.5),
+                    inset 0 0 30px rgba(0, 0, 0, 0.3);
+            }
+            20%, 24%, 55% {
+                border-color: rgba(79, 172, 254, 0.6);
+                box-shadow:
+                    0 0 30px rgba(79, 172, 254, 0.2),
+                    0 20px 60px rgba(0, 0, 0, 0.5),
+                    inset 0 0 30px rgba(0, 0, 0, 0.3);
+            }
+        }
+
+        h1 {
+            font-size: 3.5em;
+            color: #4facfe;
+            text-shadow:
+                0 0 10px rgba(79, 172, 254, 0.8),
+                0 0 20px rgba(79, 172, 254, 0.5),
+                0 0 30px rgba(67, 233, 123, 0.3);
+            margin: 0 0 20px 0;
+            font-weight: bold;
+            animation: fadeInDown 1s ease-out, neonFlicker 3s infinite;
+            letter-spacing: 3px;
+        }
+
+        p {
+            font-size: 1.2em;
+            color: #a8dadc;
+            line-height: 1.8;
+            animation: fadeInUp 1s ease-out, neonFlickerSubtle 4s infinite;
+            text-shadow: 0 0 5px rgba(79, 172, 254, 0.3);
+        }
+
+        /* Neon flickering effect */
+        @keyframes neonFlicker {
+            0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+                text-shadow:
+                    0 0 10px rgba(79, 172, 254, 0.8),
+                    0 0 20px rgba(79, 172, 254, 0.5),
+                    0 0 30px rgba(67, 233, 123, 0.3),
+                    0 0 40px rgba(79, 172, 254, 0.4);
+                opacity: 1;
+            }
+            20%, 24%, 55% {
+                text-shadow:
+                    0 0 5px rgba(79, 172, 254, 0.3),
+                    0 0 10px rgba(79, 172, 254, 0.2);
+                opacity: 0.7;
+            }
+            22% {
+                text-shadow: none;
+                opacity: 0.4;
+            }
+        }
+
+        /* Subtle flicker for paragraph text */
+        @keyframes neonFlickerSubtle {
+            0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+                text-shadow:
+                    0 0 5px rgba(79, 172, 254, 0.3),
+                    0 0 10px rgba(79, 172, 254, 0.2);
+                opacity: 1;
+            }
+            20%, 24%, 55% {
+                text-shadow: 0 0 3px rgba(79, 172, 254, 0.2);
+                opacity: 0.8;
+            }
+        }
+
+        /* Vault doors animation */
+        .vault-door {
+            position: fixed;
+            top: 0;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 50%, #2c3e50 100%);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.5);
+        }
+
+        .vault-left {
+            left: 0;
+            animation: openLeft 2s ease-in-out forwards;
+            border-right: 3px solid #4facfe;
+            box-shadow: inset -20px 0 50px rgba(0, 0, 0, 0.3);
+        }
+
+        .vault-right {
+            right: 0;
+            animation: openRight 2s ease-in-out forwards;
+            border-left: 3px solid #4facfe;
+            box-shadow: inset 20px 0 50px rgba(0, 0, 0, 0.3);
+        }
+
+        .vault-handle {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            background: radial-gradient(circle at 30% 30%, #7f8c8d, #2c3e50);
+            border-radius: 50%;
+            border: 8px solid #34495e;
+            box-shadow:
+                0 0 20px rgba(79, 172, 254, 0.5),
+                inset 0 0 20px rgba(0, 0, 0, 0.5);
+            animation: spin 2s ease-in-out forwards;
+        }
+
+        .vault-handle::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 30px;
+            height: 30px;
+            background: #2c3e50;
+            border-radius: 50%;
+            border: 3px solid #4facfe;
+        }
+
+        .vault-handle::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50px;
+            height: 4px;
+            background: #4facfe;
+            box-shadow: 0 0 10px rgba(79, 172, 254, 0.8);
+        }
+
+        .vault-left .vault-handle {
+            right: 30px;
+        }
+
+        .vault-right .vault-handle {
+            left: 30px;
+        }
+
+        @keyframes openLeft {
+            0% {
+                transform: translateX(0);
+            }
+            100% {
+                transform: translateX(-100%);
+            }
+        }
+
+        @keyframes openRight {
+            0% {
+                transform: translateX(0);
+            }
+            100% {
+                transform: translateX(100%);
+            }
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            50% {
+                transform: rotate(360deg);
+            }
+            100% {
+                transform: rotate(720deg);
+            }
+        }
+
+        /* Fade in content after vault opens */
+        .content-wrapper {
+            opacity: 0;
+            animation: fadeInContent 1s ease-in 1.5s forwards;
+        }
+
+        @keyframes fadeInContent {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .container:hover {
+            transform: translateY(-5px);
+            box-shadow:
+                0 0 60px rgba(79, 172, 254, 0.5),
+                0 25px 70px rgba(0, 0, 0, 0.5);
+            border-color: #43e97b;
+            transition: all 0.3s ease;
+        }
+
+        /* Access status indicator */
+        .status-indicator {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            background: #43e97b;
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(67, 233, 123, 0.8);
+            animation: pulse 2s infinite;
+        }
+
+        .status-text {
+            color: #43e97b;
+            font-size: 0.9em;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Vault Doors -->
+    <div class="vault-door vault-left">
+        <div class="vault-handle"></div>
+    </div>
+    <div class="vault-door vault-right">
+        <div class="vault-handle"></div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content-wrapper">
+        <div class="circle"></div>
+        <div class="circle"></div>
+        <div class="circle"></div>
+
+        <div class="container">
+            <h1>Dawson Gibbons</h1>
+            <p>Welcome to my personal webpage!</p>
+            <p>Thanks for stopping by.</p>
+        </div>
+    </div>
+</body>
+</html>

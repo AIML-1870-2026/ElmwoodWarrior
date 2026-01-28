@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stellar Particle System</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      overflow: hidden;
+      background: radial-gradient(ellipse at center, #1a0a2e 0%, #0d0015 50%, #000000 100%);
+      font-family: 'Orbitron', sans-serif;
+    }
+
+    canvas {
+      display: block;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 1;
+      background: #000;
+    }
+
+    .controls-container {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 100;
+    }
+
+    .stats-container {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      z-index: 100;
+    }
+
+    .stats-toggle {
+      background: linear-gradient(135deg, rgba(100, 180, 255, 0.3) 0%, rgba(80, 150, 200, 0.3) 100%);
+      border: 1px solid rgba(150, 200, 255, 0.4);
+      border-radius: 10px;
+      padding: 10px 16px;
+      color: #fff;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 12px;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+      letter-spacing: 1px;
+    }
+
+    .stats-toggle:hover {
+      background: linear-gradient(135deg, rgba(100, 180, 255, 0.5) 0%, rgba(80, 150, 200, 0.5) 100%);
+      box-shadow: 0 0 20px rgba(100, 180, 255, 0.4);
+    }
+
+    .stats-panel {
+      position: absolute;
+      top: 50px;
+      left: 0;
+      background: rgba(15, 5, 25, 0.85);
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(150, 200, 255, 0.25);
+      border-radius: 12px;
+      min-width: 220px;
+      max-height: 0;
+      overflow: hidden;
+      opacity: 0;
+      transition: max-height 0.4s ease, opacity 0.3s ease, padding 0.3s ease;
+    }
+
+    .stats-panel.open {
+      max-height: 300px;
+      opacity: 1;
+      padding: 18px;
+    }
+
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+
+    .stat-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .stat-label {
+      color: rgba(200, 220, 255, 0.8);
+    }
+
+    .stat-value {
+      color: #00ffff;
+      font-weight: 600;
+      font-size: 13px;
+    }
+
+    .controls-toggle {
+      background: linear-gradient(135deg, rgba(255, 100, 180, 0.3) 0%, rgba(150, 80, 200, 0.3) 100%);
+      border: 1px solid rgba(255, 150, 200, 0.4);
+      border-radius: 10px;
+      padding: 10px 16px;
+      color: #fff;
+      font-family: 'Orbitron', sans-serif;
+      font-size: 12px;
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+      letter-spacing: 1px;
+    }
+
+    .controls-toggle:hover {
+      background: linear-gradient(135deg, rgba(255, 100, 180, 0.5) 0%, rgba(150, 80, 200, 0.5) 100%);
+      box-shadow: 0 0 20px rgba(255, 100, 180, 0.4);
+    }
+
+    .controls-panel {
+      position: absolute;
+      top: 50px;
+      right: 0;
+      background: rgba(15, 5, 25, 0.85);
+      backdrop-filter: blur(15px);
+      border: 1px solid rgba(255, 150, 200, 0.25);
+      border-radius: 12px;
+      min-width: 260px;
+      max-height: 0;
+      overflow: hidden;
+      opacity: 0;
+      transition: max-height 0.4s ease, opacity 0.3s ease, padding 0.3s ease;
+    }
+
+    .controls-panel.open {
+      max-height: 450px;
+      opacity: 1;
+      padding: 18px;
+    }
+
+    .control-group {
+      margin-bottom: 16px;
+    }
+
+    .control-group:last-child {
+      margin-bottom: 0;
+    }
+
+    .control-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+      font-size: 10px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: rgba(255, 200, 230, 0.8);
+    }
+
+    .control-value {
+      color: #00ffff;
+      font-weight: 600;
+      font-size: 11px;
+    }
+
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 6px;
+      background: linear-gradient(90deg, rgba(100, 50, 150, 0.5) 0%, rgba(200, 100, 180, 0.5) 100%);
+      border-radius: 3px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      background: linear-gradient(135deg, #ff88cc 0%, #aa55ff 50%, #5588ff 100%);
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid rgba(255, 255, 255, 0.5);
+      box-shadow: 0 0 12px rgba(255, 100, 200, 0.7), 0 0 25px rgba(150, 100, 255, 0.4);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+      box-shadow: 0 0 18px rgba(255, 100, 200, 0.9), 0 0 35px rgba(150, 100, 255, 0.6);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 18px;
+      height: 18px;
+      background: linear-gradient(135deg, #ff88cc 0%, #aa55ff 50%, #5588ff 100%);
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid rgba(255, 255, 255, 0.5);
+      box-shadow: 0 0 12px rgba(255, 100, 200, 0.7), 0 0 25px rgba(150, 100, 255, 0.4);
+    }
+
+    .music-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .music-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      cursor: pointer;
+      backdrop-filter: blur(10px);
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .music-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      color: #fff;
+    }
+
+    .music-btn.playing {
+      background: rgba(150, 100, 255, 0.3);
+      border-color: rgba(150, 100, 255, 0.5);
+    }
+
+    .visualizer-bars {
+      display: flex;
+      gap: 2px;
+      height: 16px;
+      align-items: flex-end;
+    }
+
+    .visualizer-bar {
+      width: 3px;
+      background: linear-gradient(to top, rgba(150, 100, 255, 0.6), rgba(100, 200, 255, 0.8));
+      border-radius: 1px;
+      transition: height 0.05s ease;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="particleCanvas"></canvas>
+
+  <div class="stats-container">
+    <button class="stats-toggle" id="statsToggle">📊 Statistics</button>
+
+    <div class="stats-panel" id="statsPanel">
+      <div class="stat-row">
+        <span class="stat-label">Total Edges</span>
+        <span class="stat-value" id="totalEdges">0</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Avg Connections</span>
+        <span class="stat-value" id="avgConnections">0.0</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Network Density</span>
+        <span class="stat-value" id="networkDensity">0.0%</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">Node Count</span>
+        <span class="stat-value" id="nodeCountStat">0</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls-container">
+    <button class="controls-toggle" id="controlsToggle">⚙ Controls</button>
+
+    <div class="controls-panel" id="controlsPanel">
+      <div class="control-group">
+        <div class="control-label">
+          <span>Node Speed</span>
+          <span class="control-value" id="speedValue">1.0</span>
+        </div>
+        <input type="range" id="speedSlider" min="0.1" max="3" step="0.1" value="1">
+      </div>
+
+      <div class="control-group">
+        <div class="control-label">
+          <span>Connectivity Radius</span>
+          <span class="control-value" id="radiusValue">150</span>
+        </div>
+        <input type="range" id="radiusSlider" min="50" max="300" step="10" value="150">
+      </div>
+
+      <div class="control-group">
+        <div class="control-label">
+          <span>Node Count</span>
+          <span class="control-value" id="countValue">80</span>
+        </div>
+        <input type="range" id="countSlider" min="20" max="200" step="5" value="80">
+      </div>
+
+      <div class="control-group">
+        <div class="control-label">
+          <span>Node Size</span>
+          <span class="control-value" id="sizeValue">1.0</span>
+        </div>
+        <input type="range" id="sizeSlider" min="0.5" max="2.5" step="0.1" value="1">
+      </div>
+
+      <div class="control-group">
+        <div class="control-label">
+          <span>Edge Thickness</span>
+          <span class="control-value" id="edgeValue">1.0</span>
+        </div>
+        <input type="range" id="edgeSlider" min="0.5" max="3" step="0.1" value="1">
+      </div>
+    </div>
+  </div>
+
+  <div class="music-container">
+    <div class="visualizer-bars" id="visualizerBars">
+      <div class="visualizer-bar" style="height: 4px;"></div>
+      <div class="visualizer-bar" style="height: 4px;"></div>
+      <div class="visualizer-bar" style="height: 4px;"></div>
+      <div class="visualizer-bar" style="height: 4px;"></div>
+      <div class="visualizer-bar" style="height: 4px;"></div>
+    </div>
+    <button class="music-btn" id="musicBtn">▶</button>
+  </div>
+
+  <script>
+    // Configuration
+    const config = {
+      nodeSpeed: 1.0,
+      connectivityRadius: 150,
+      nodeCount: 80,
+      nodeSizeMultiplier: 1.0,
+      edgeThickness: 1.0
+    };
+
+    // Canvas setup
+    const canvas = document.getElementById('particleCanvas');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    // Initial canvas clear to black
+    ctx.fillStyle = '#000';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    // Audio reactive values (declared early for particle access)
+    const audioReactive = {
+      bass: 0,
+      mid: 0,
+      high: 0,
+      overall: 0,
+      beat: 0,        // Peaks on beat hits
+      beatDecay: 0    // Smooth decay for visuals
+    };
+
+    // Vibrant silly colors
+    const colors = [
+      '#ff69b4', // Hot pink
+      '#9b59ff', // Electric purple
+      '#00ffff', // Cyan
+      '#ffff00', // Bright yellow
+      '#39ff14', // Lime green
+      '#ff6b6b', // Coral red
+      '#87ceeb', // Sky blue
+      '#ff8c00', // Orange
+      '#ff00ff', // Magenta
+      '#00cec9'  // Teal
+    ];
+
+    // Particle class with z-dimension for depth
+    class Particle {
+      constructor() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.z = Math.random(); // 0 = far, 1 = close
+        this.vx = (Math.random() - 0.5) * 2;
+        this.vy = (Math.random() - 0.5) * 2;
+        this.vz = (Math.random() - 0.5) * 0.01; // Slow z movement
+        this.baseSize = Math.random() * 8 + 4;
+        this.color = colors[Math.floor(Math.random() * colors.length)];
+        this.rotation = Math.random() * Math.PI * 2;
+        this.rotationSpeed = (Math.random() - 0.5) * 0.05;
+        this.twinkleOffset = Math.random() * Math.PI * 2;
+        this.twinkleSpeed = 0.03 + Math.random() * 0.02;
+      }
+
+      // Size affected by depth (closer = bigger) and audio
+      get size() {
+        const depthScale = 0.4 + this.z * 0.8; // Scale from 0.4 to 1.2 based on z
+        const beatScale = 1 + audioReactive.beatDecay * 0.8; // Pulse with beat
+        const bassScale = 1 + audioReactive.bass * 0.4; // Pulse with bass
+        return this.baseSize * config.nodeSizeMultiplier * depthScale * beatScale * bassScale;
+      }
+
+      // Opacity affected by depth (closer = more opaque)
+      get depthAlpha() {
+        return 0.3 + this.z * 0.7; // 0.3 to 1.0
+      }
+
+      update() {
+        // Speed affected by depth (parallax - closer moves faster)
+        const depthSpeed = 0.5 + this.z * 0.8;
+        this.x += this.vx * config.nodeSpeed * depthSpeed;
+        this.y += this.vy * config.nodeSpeed * depthSpeed;
+        this.z += this.vz * config.nodeSpeed;
+        this.rotation += this.rotationSpeed * depthSpeed;
+        this.twinkleOffset += this.twinkleSpeed;
+
+        // Edge wrapping
+        if (this.x < -this.size) this.x = canvas.width + this.size;
+        if (this.x > canvas.width + this.size) this.x = -this.size;
+        if (this.y < -this.size) this.y = canvas.height + this.size;
+        if (this.y > canvas.height + this.size) this.y = -this.size;
+
+        // Z wrapping
+        if (this.z < 0) this.z = 1;
+        if (this.z > 1) this.z = 0;
+      }
+
+      draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.rotation);
+
+        // Twinkle effect combined with depth alpha and audio reactivity
+        const twinkle = 0.6 + 0.4 * Math.sin(this.twinkleOffset);
+        const audioBoost = 1 + audioReactive.overall * 0.4;
+        ctx.globalAlpha = Math.min(1, twinkle * this.depthAlpha * audioBoost);
+
+        const outerRadius = this.size;
+        const innerRadius = outerRadius * 0.4;
+
+        // Draw star shape
+        ctx.beginPath();
+        for (let i = 0; i < 10; i++) {
+          const radius = i % 2 === 0 ? outerRadius : innerRadius;
+          const angle = (i * 0.628318) - 1.5708; // Pre-calculated: Math.PI/5 and -Math.PI/2
+          const x = Math.cos(angle) * radius;
+          const y = Math.sin(angle) * radius;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+
+        // Simplified glow - use solid color with shadow for glow effect
+        const glowExpand = 1 + audioReactive.beatDecay * 0.5;
+        ctx.shadowBlur = outerRadius * glowExpand;
+        ctx.shadowColor = this.color;
+        ctx.fillStyle = this.color;
+        ctx.fill();
+
+        // Reset shadow for center dot
+        ctx.shadowBlur = 0;
+
+        // Bright center - pulses with mid frequencies
+        const midPulse = 1 + audioReactive.mid * 0.4;
+        const centerSize = outerRadius * 0.12 * (0.5 + this.z * 0.5) * midPulse;
+        ctx.beginPath();
+        ctx.arc(0, 0, centerSize, 0, 6.2832); // Pre-calculated: Math.PI * 2
+        ctx.fillStyle = '#fff';
+        ctx.fill();
+
+        ctx.restore();
+      }
+    }
+
+    // Particle management
+    let particles = [];
+
+    function initParticles() {
+      particles = [];
+      for (let i = 0; i < config.nodeCount; i++) {
+        particles.push(new Particle());
+      }
+    }
+
+    initParticles();
+
+    // Helper to convert opacity to hex
+    function opacityToHex(opacity) {
+      const hex = Math.round(opacity * 255).toString(16);
+      return hex.length === 1 ? '0' + hex : hex;
+    }
+
+    // Statistics tracking
+    const stats = {
+      totalEdges: 0,
+      connectionCounts: [],
+      update(edgeCount, connCounts) {
+        this.totalEdges = edgeCount;
+        this.connectionCounts = connCounts;
+      },
+      get avgConnections() {
+        if (this.connectionCounts.length === 0) return 0;
+        const sum = this.connectionCounts.reduce((a, b) => a + b, 0);
+        return sum / this.connectionCounts.length;
+      },
+      get networkDensity() {
+        const n = this.connectionCounts.length;
+        if (n < 2) return 0;
+        const maxEdges = (n * (n - 1)) / 2;
+        return (this.totalEdges / maxEdges) * 100;
+      }
+    };
+
+    // Draw connections between particles with depth consideration (optimized)
+    function drawConnections() {
+      let edgeCount = 0;
+      const connectionCounts = new Array(particles.length).fill(0);
+      const radiusSq = config.connectivityRadius * config.connectivityRadius;
+
+      // Batch similar strokes together
+      ctx.lineCap = 'round';
+
+      for (let i = 0; i < particles.length; i++) {
+        const p1 = particles[i];
+        for (let j = i + 1; j < particles.length; j++) {
+          const p2 = particles[j];
+          const dx = p1.x - p2.x;
+          const dy = p1.y - p2.y;
+
+          // Quick squared distance check first (avoid sqrt when possible)
+          const distSq = dx * dx + dy * dy;
+          if (distSq > radiusSq) continue;
+
+          const dz = p1.z - p2.z;
+          const zFactor = 1 - Math.abs(dz) * 0.5;
+          const effectiveRadiusSq = radiusSq * zFactor * zFactor;
+
+          if (distSq < effectiveRadiusSq) {
+            edgeCount++;
+            connectionCounts[i]++;
+            connectionCounts[j]++;
+
+            const distance2D = Math.sqrt(distSq);
+            const effectiveRadius = config.connectivityRadius * zFactor;
+            const opacity = (1 - (distance2D / effectiveRadius)) * zFactor;
+            const avgZ = (p1.z + p2.z) * 0.5;
+            const finalOpacity = opacity * (0.3 + avgZ * 0.7);
+
+            // Use solid color instead of gradient for performance
+            ctx.beginPath();
+            ctx.moveTo(p1.x, p1.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.strokeStyle = p1.color + opacityToHex(finalOpacity);
+            ctx.lineWidth = config.edgeThickness * opacity * (0.5 + avgZ * 0.5);
+            ctx.stroke();
+          }
+        }
+      }
+
+      stats.update(edgeCount, connectionCounts);
+    }
+
+    // Animation loop
+    let frameCount = 0;
+
+    function animate() {
+      // Update audio reactivity (functions defined later, so check both)
+      if (typeof updateAudioReactive === 'function') {
+        updateAudioReactive();
+      }
+
+      // Clear with slight fade for subtle trails
+      const trailFade = 0.18 + audioReactive.overall * 0.07;
+      ctx.fillStyle = `rgba(0, 0, 0, ${trailFade})`;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Sort particles by z-depth only every 5 frames (optimization)
+      if (frameCount % 5 === 0) {
+        particles.sort((a, b) => a.z - b.z);
+      }
+
+      // Beat affects connectivity radius
+      const beatRadiusBoost = 1 + audioReactive.beatDecay * 0.3;
+      const originalRadius = config.connectivityRadius;
+      config.connectivityRadius *= beatRadiusBoost;
+
+      drawConnections();
+
+      config.connectivityRadius = originalRadius;
+
+      for (const particle of particles) {
+        particle.update();
+        particle.draw();
+      }
+
+      // Update stats and visualizer less frequently for performance
+      frameCount++;
+      if (frameCount % 15 === 0) {
+        updateStatsDisplay();
+        if (typeof updateVisualizerBars === 'function') {
+          updateVisualizerBars();
+        }
+      }
+
+      requestAnimationFrame(animate);
+    }
+
+    // Statistics panel toggle
+    const statsToggle = document.getElementById('statsToggle');
+    const statsPanel = document.getElementById('statsPanel');
+    const totalEdgesEl = document.getElementById('totalEdges');
+    const avgConnectionsEl = document.getElementById('avgConnections');
+    const networkDensityEl = document.getElementById('networkDensity');
+    const nodeCountStatEl = document.getElementById('nodeCountStat');
+
+    statsToggle.addEventListener('click', () => {
+      statsPanel.classList.toggle('open');
+      statsToggle.textContent = statsPanel.classList.contains('open') ? '✕ Close' : '📊 Statistics';
+    });
+
+    function updateStatsDisplay() {
+      totalEdgesEl.textContent = stats.totalEdges;
+      avgConnectionsEl.textContent = stats.avgConnections.toFixed(1);
+      networkDensityEl.textContent = stats.networkDensity.toFixed(1) + '%';
+      nodeCountStatEl.textContent = particles.length;
+    }
+
+    // Control panel toggle
+    const controlsToggle = document.getElementById('controlsToggle');
+    const controlsPanel = document.getElementById('controlsPanel');
+
+    controlsToggle.addEventListener('click', () => {
+      controlsPanel.classList.toggle('open');
+      controlsToggle.textContent = controlsPanel.classList.contains('open') ? '✕ Close' : '⚙ Controls';
+    });
+
+    // Slider controls
+    const speedSlider = document.getElementById('speedSlider');
+    const speedValue = document.getElementById('speedValue');
+    speedSlider.addEventListener('input', () => {
+      config.nodeSpeed = parseFloat(speedSlider.value);
+      speedValue.textContent = config.nodeSpeed.toFixed(1);
+    });
+
+    const radiusSlider = document.getElementById('radiusSlider');
+    const radiusValue = document.getElementById('radiusValue');
+    radiusSlider.addEventListener('input', () => {
+      config.connectivityRadius = parseInt(radiusSlider.value);
+      radiusValue.textContent = config.connectivityRadius;
+    });
+
+    const countSlider = document.getElementById('countSlider');
+    const countValue = document.getElementById('countValue');
+    countSlider.addEventListener('input', () => {
+      config.nodeCount = parseInt(countSlider.value);
+      countValue.textContent = config.nodeCount;
+      initParticles();
+    });
+
+    const sizeSlider = document.getElementById('sizeSlider');
+    const sizeValue = document.getElementById('sizeValue');
+    sizeSlider.addEventListener('input', () => {
+      config.nodeSizeMultiplier = parseFloat(sizeSlider.value);
+      sizeValue.textContent = config.nodeSizeMultiplier.toFixed(1);
+    });
+
+    const edgeSlider = document.getElementById('edgeSlider');
+    const edgeValue = document.getElementById('edgeValue');
+    edgeSlider.addEventListener('input', () => {
+      config.edgeThickness = parseFloat(edgeSlider.value);
+      edgeValue.textContent = config.edgeThickness.toFixed(1);
+    });
+
+    // ========== AUDIO FILE PLAYER ==========
+    let audioCtx = null;
+    let isPlaying = false;
+    let analyser = null;
+    let audioData = new Uint8Array(256);
+    let audioElement = null;
+    let sourceNode = null;
+    let lastBassLevel = 0;
+    let beatThreshold = 0.15;
+
+    function initAudio() {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+      // Create audio element for the MP3 file
+      audioElement = new Audio();
+      audioElement.src = './Free Background Music for Videos [No Copyright] 2min.mp3';
+      audioElement.crossOrigin = 'anonymous';
+      audioElement.loop = true;
+
+      // Create analyser for visualizations
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 512;
+      analyser.smoothingTimeConstant = 0.8;
+      audioData = new Uint8Array(analyser.frequencyBinCount);
+
+      // Connect audio element to analyser and output
+      sourceNode = audioCtx.createMediaElementSource(audioElement);
+      sourceNode.connect(analyser);
+      analyser.connect(audioCtx.destination);
+    }
+
+    function startMusic() {
+      if (!audioCtx) initAudio();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+
+      audioElement.play().catch(e => {
+        console.log('Audio play failed:', e);
+        // Try with user interaction
+        alert('Click OK to start music (browser requires user interaction)');
+        audioElement.play();
+      });
+      isPlaying = true;
+    }
+
+    function stopMusic() {
+      if (audioElement) {
+        audioElement.pause();
+      }
+      isPlaying = false;
+      audioReactive.beat = 0;
+      audioReactive.beatDecay = 0;
+    }
+
+    // Update audio reactive values from the audio file
+    function updateAudioReactive() {
+      // Decay beat pulse
+      audioReactive.beatDecay = audioReactive.beatDecay * 0.9;
+
+      if (!analyser || !isPlaying) {
+        audioReactive.bass = audioReactive.bass * 0.95;
+        audioReactive.mid = audioReactive.mid * 0.95;
+        audioReactive.high = audioReactive.high * 0.95;
+        audioReactive.overall = audioReactive.overall * 0.95;
+        audioReactive.beat = audioReactive.beat * 0.9;
+        return;
+      }
+
+      analyser.getByteFrequencyData(audioData);
+
+      // Split into frequency bands
+      const bassEnd = Math.floor(audioData.length * 0.1);      // Low frequencies (bass/kick)
+      const midEnd = Math.floor(audioData.length * 0.5);       // Mid frequencies
+
+      let bassSum = 0, midSum = 0, highSum = 0;
+
+      for (let i = 0; i < audioData.length; i++) {
+        if (i < bassEnd) bassSum += audioData[i];
+        else if (i < midEnd) midSum += audioData[i];
+        else highSum += audioData[i];
+      }
+
+      // Normalize
+      const targetBass = (bassSum / (bassEnd * 255));
+      const targetMid = (midSum / ((midEnd - bassEnd) * 255));
+      const targetHigh = (highSum / ((audioData.length - midEnd) * 255));
+
+      // Smooth the values
+      audioReactive.bass = audioReactive.bass * 0.7 + targetBass * 0.3;
+      audioReactive.mid = audioReactive.mid * 0.7 + targetMid * 0.3;
+      audioReactive.high = audioReactive.high * 0.7 + targetHigh * 0.3;
+      audioReactive.overall = (audioReactive.bass * 2 + audioReactive.mid + audioReactive.high) / 4;
+
+      // Beat detection based on bass spikes
+      const bassJump = targetBass - lastBassLevel;
+      if (bassJump > beatThreshold && targetBass > 0.3) {
+        audioReactive.beat = 1;
+        audioReactive.beatDecay = 1;
+      }
+      lastBassLevel = targetBass;
+
+      // Transfer beat to decay for smooth visuals
+      if (audioReactive.beat > 0.5) {
+        audioReactive.beatDecay = Math.max(audioReactive.beatDecay, audioReactive.beat);
+        audioReactive.beat = 0;
+      }
+    }
+
+    // Update visualizer bars
+    function updateVisualizerBars() {
+      const bars = document.querySelectorAll('.visualizer-bar');
+      if (!isPlaying) {
+        bars.forEach(bar => bar.style.height = '5px');
+        return;
+      }
+
+      bars.forEach((bar, i) => {
+        const idx = Math.floor(i * audioData.length / bars.length);
+        const height = Math.max(5, (audioData[idx] / 255) * 25);
+        bar.style.height = height + 'px';
+      });
+    }
+
+    // Music button
+    const musicBtn = document.getElementById('musicBtn');
+    musicBtn.addEventListener('click', () => {
+      if (isPlaying) {
+        stopMusic();
+        musicBtn.textContent = '▶';
+        musicBtn.classList.remove('playing');
+      } else {
+        startMusic();
+        musicBtn.textContent = '⏸';
+        musicBtn.classList.add('playing');
+      }
+    });
+
+    // Autostart music on first user interaction (required by browsers)
+    function autoStartMusic() {
+      if (!isPlaying) {
+        startMusic();
+        musicBtn.textContent = '⏸';
+        musicBtn.classList.add('playing');
+      }
+      // Remove listeners after first interaction
+      document.removeEventListener('click', autoStartMusic);
+      document.removeEventListener('keydown', autoStartMusic);
+      document.removeEventListener('touchstart', autoStartMusic);
+    }
+
+    // Listen for any user interaction to start music
+    document.addEventListener('click', autoStartMusic);
+    document.addEventListener('keydown', autoStartMusic);
+    document.addEventListener('touchstart', autoStartMusic);
+
+    // Start animation (must be at end after all elements and functions are defined)
+    animate();
+  </script>
+</body>
+</html>
