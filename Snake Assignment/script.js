@@ -48,16 +48,137 @@ class AudioSystem {
         this.ctx = null;
         this.enabled = true;
         this.initialized = false;
+        this.musicPlaying = false;
+        this.musicNodes = [];
+        this.masterGain = null;
+        this.musicVolume = 0.12; // Keep music subtle
     }
 
     init() {
         if (this.initialized) return;
         try {
             this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            this.masterGain = this.ctx.createGain();
+            this.masterGain.gain.value = this.musicVolume;
+            this.masterGain.connect(this.ctx.destination);
             this.initialized = true;
         } catch (e) {
             console.log('Audio not available');
         }
+    }
+
+    startMusic() {
+        if (!this.ctx || this.musicPlaying) return;
+        this.musicPlaying = true;
+
+        // Create ambient space pad with multiple detuned oscillators
+        const baseFreqs = [55, 82.5, 110]; // A1, E2, A2 - creates a spacey Am drone
+
+        baseFreqs.forEach((freq, i) => {
+            // Main pad oscillator
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            const filter = this.ctx.createBiquadFilter();
+
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+
+            // Subtle detuning for richness
+            osc.detune.value = (i - 1) * 5;
+
+            filter.type = 'lowpass';
+            filter.frequency.value = 400;
+            filter.Q.value = 1;
+
+            gain.gain.value = 0.3;
+
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(this.masterGain);
+
+            osc.start();
+            this.musicNodes.push({ osc, gain, filter });
+
+            // Add a subtle triangle wave layer
+            const osc2 = this.ctx.createOscillator();
+            const gain2 = this.ctx.createGain();
+
+            osc2.type = 'triangle';
+            osc2.frequency.value = freq * 2;
+            osc2.detune.value = (i - 1) * 3;
+            gain2.gain.value = 0.1;
+
+            osc2.connect(gain2);
+            gain2.connect(this.masterGain);
+
+            osc2.start();
+            this.musicNodes.push({ osc: osc2, gain: gain2 });
+        });
+
+        // Slow arpeggio pattern
+        this.startArpeggio();
+    }
+
+    startArpeggio() {
+        if (!this.ctx || !this.musicPlaying) return;
+
+        const notes = [220, 330, 440, 330, 262, 330, 220, 165]; // Ambient pattern
+        let noteIndex = 0;
+
+        const playNote = () => {
+            if (!this.musicPlaying) return;
+
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            const filter = this.ctx.createBiquadFilter();
+
+            osc.type = 'sine';
+            osc.frequency.value = notes[noteIndex];
+
+            filter.type = 'lowpass';
+            filter.frequency.value = 800;
+
+            const now = this.ctx.currentTime;
+            gain.gain.setValueAtTime(0, now);
+            gain.gain.linearRampToValueAtTime(0.08, now + 0.1);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 2);
+
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(this.masterGain);
+
+            osc.start(now);
+            osc.stop(now + 2);
+
+            noteIndex = (noteIndex + 1) % notes.length;
+
+            // Schedule next note
+            this.arpTimeout = setTimeout(playNote, 800 + Math.random() * 400);
+        };
+
+        // Start after a short delay
+        this.arpTimeout = setTimeout(playNote, 500);
+    }
+
+    stopMusic() {
+        this.musicPlaying = false;
+
+        if (this.arpTimeout) {
+            clearTimeout(this.arpTimeout);
+        }
+
+        this.musicNodes.forEach(node => {
+            try {
+                if (node.gain) {
+                    node.gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.5);
+                }
+                if (node.osc) {
+                    node.osc.stop(this.ctx.currentTime + 0.6);
+                }
+            } catch (e) {}
+        });
+
+        this.musicNodes = [];
     }
 
     play(type, params = {}) {
@@ -1278,10 +1399,14 @@ class Game {
         }
 
         this.updateHUD();
+
+        // Start ambient music
+        this.audio.startMusic();
     }
 
     showMenu() {
         this.state = 'menu';
+        this.audio.stopMusic();
         document.getElementById('menu').classList.remove('hidden');
         document.getElementById('gameOver').classList.add('hidden');
         document.getElementById('pauseOverlay').classList.add('hidden');
@@ -1299,6 +1424,7 @@ class Game {
 
     gameOver() {
         this.state = 'gameOver';
+        this.audio.stopMusic();
         this.audio.play('death');
 
         document.getElementById('gameOver').classList.remove('hidden');
