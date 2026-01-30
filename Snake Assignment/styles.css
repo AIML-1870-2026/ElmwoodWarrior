@@ -173,6 +173,7 @@ body {
     z-index: 1;
     max-width: 900px;
     width: 100%;
+    padding-top: 40px;
 }
 
 .menu-header {
