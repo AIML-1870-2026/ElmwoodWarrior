@@ -1089,10 +1089,10 @@ class Game {
     }
 
     setupUI() {
-        // Menu buttons
-        document.querySelectorAll('.menu-button[data-mode]').forEach(btn => {
+        // Mode buttons
+        document.querySelectorAll('.mode-button[data-mode]').forEach(btn => {
             btn.addEventListener('click', () => {
-                document.querySelectorAll('.menu-button[data-mode]').forEach(b => b.classList.remove('selected'));
+                document.querySelectorAll('.mode-button[data-mode]').forEach(b => b.classList.remove('selected'));
                 btn.classList.add('selected');
                 this.gameMode = btn.dataset.mode;
             });
