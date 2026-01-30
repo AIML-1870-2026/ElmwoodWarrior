@@ -61,45 +61,72 @@
                         </div>
 
                         <div class="menu-section">
-                            <div class="menu-section-title">AI Opponent</div>
+                            <div class="menu-section-title">Players</div>
                             <div class="difficulty-buttons">
-                                <button class="difficulty-button active" data-ai="none">None</button>
-                                <button class="difficulty-button" data-ai="learner">Learner</button>
-                                <button class="difficulty-button" data-ai="strategist">Strategist</button>
-                                <button class="difficulty-button" data-ai="master">Master</button>
+                                <button class="difficulty-button active" data-players="1">Solo</button>
+                                <button class="difficulty-button" data-players="2">2 Player</button>
+                                <button class="difficulty-button" data-players="ai">vs AI</button>
+                            </div>
+                        </div>
+
+                        <div class="menu-section">
+                            <div class="menu-section-title">Theme</div>
+                            <div class="theme-buttons">
+                                <button class="theme-button active" data-theme="neon" style="background: linear-gradient(135deg, #00ffff, #ff00ff);">Neon</button>
+                                <button class="theme-button" data-theme="retro" style="background: linear-gradient(135deg, #ff6b35, #f7c59f);">Retro</button>
+                                <button class="theme-button" data-theme="ocean" style="background: linear-gradient(135deg, #0077b6, #00b4d8);">Ocean</button>
+                                <button class="theme-button" data-theme="void" style="background: linear-gradient(135deg, #2d1b69, #6b2d5b);">Void</button>
+                            </div>
+                        </div>
+
+                        <div class="menu-section">
+                            <div class="menu-section-title">Snake Skin</div>
+                            <div class="skin-buttons">
+                                <button class="skin-button active" data-skin="cyber">Cyber</button>
+                                <button class="skin-button" data-skin="fire">Fire</button>
+                                <button class="skin-button" data-skin="ice">Ice</button>
+                                <button class="skin-button" data-skin="toxic">Toxic</button>
                             </div>
                         </div>
 
                         <button class="start-button" id="startButton">
                             <span>START GAME</span>
                         </button>
-                        <button class="help-button" id="helpButton">
-                            <span>HOW TO PLAY</span>
-                        </button>
+                        <div class="menu-button-row">
+                            <button class="secondary-button" id="helpButton">HOW TO PLAY</button>
+                            <button class="secondary-button" id="editorButton">LEVEL EDITOR</button>
+                        </div>
                     </div>
 
                     <div class="menu-right">
                         <div class="controls-panel">
-                            <div class="controls-title">Controls</div>
+                            <div class="controls-title">Player 1 (WASD)</div>
                             <div class="control-item">
                                 <span class="control-key">WASD</span>
                                 <span class="control-desc">Move</span>
                             </div>
                             <div class="control-item">
                                 <span class="control-key">SPACE</span>
-                                <span class="control-desc">Save Timeline</span>
+                                <span class="control-desc">Timeline</span>
                             </div>
                             <div class="control-item">
                                 <span class="control-key">SHIFT</span>
-                                <span class="control-desc">Chrono Boost</span>
+                                <span class="control-desc">Boost</span>
+                            </div>
+                        </div>
+                        <div class="controls-panel" id="p2Controls">
+                            <div class="controls-title">Player 2 (Arrows)</div>
+                            <div class="control-item">
+                                <span class="control-key">Arrows</span>
+                                <span class="control-desc">Move</span>
                             </div>
                             <div class="control-item">
-                                <span class="control-key">E</span>
-                                <span class="control-desc">Phase Mode</span>
+                                <span class="control-key">ENTER</span>
+                                <span class="control-desc">Timeline</span>
                             </div>
                             <div class="control-item">
-                                <span class="control-key">P</span>
-                                <span class="control-desc">Pause</span>
+                                <span class="control-key">RSHIFT</span>
+                                <span class="control-desc">Boost</span>
                             </div>
                         </div>
                     </div>
@@ -261,6 +288,49 @@
                 <div class="help-section">
                     <h3>PARADOX MODE</h3>
                     <p class="help-paradox">When you collide with an echo of yourself, <strong>Paradox Mode</strong> activates! The game speeds up, visuals go wild, and your score multiplier jumps to 5x. Survive the chaos to rack up massive points!</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="editorModal" class="hidden">
+            <div class="editor-content">
+                <button class="help-close" id="editorCloseButton">&times;</button>
+                <h2 class="help-title">LEVEL EDITOR</h2>
+
+                <div class="editor-toolbar">
+                    <div class="tool-group">
+                        <span class="tool-label">Tool:</span>
+                        <button class="tool-button active" data-tool="wall">Wall</button>
+                        <button class="tool-button" data-tool="laser">Laser</button>
+                        <button class="tool-button" data-tool="portal">Portal</button>
+                        <button class="tool-button" data-tool="spawn">Spawn</button>
+                        <button class="tool-button" data-tool="erase">Erase</button>
+                    </div>
+                </div>
+
+                <div class="editor-grid-container">
+                    <canvas id="editorCanvas"></canvas>
+                </div>
+
+                <div class="editor-actions">
+                    <button class="editor-action-btn" id="clearLevel">Clear All</button>
+                    <button class="editor-action-btn" id="saveLevel">Save Level</button>
+                    <button class="editor-action-btn" id="loadLevel">Load Level</button>
+                    <button class="editor-action-btn primary" id="playLevel">Play Level</button>
+                </div>
+
+                <div class="editor-saved-levels">
+                    <div class="tool-label">Saved Levels:</div>
+                    <div id="savedLevelsList" class="saved-levels-list">
+                        <span class="no-levels">No saved levels yet</span>
+                    </div>
+                </div>
+
+                <div class="editor-share">
+                    <div class="tool-label">Share Code:</div>
+                    <input type="text" id="levelCode" class="level-code-input" readonly placeholder="Save a level to get share code">
+                    <button class="editor-action-btn" id="copyCode">Copy</button>
+                    <button class="editor-action-btn" id="importCode">Import</button>
                 </div>
             </div>
         </div>

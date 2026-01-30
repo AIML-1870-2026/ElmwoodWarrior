@@ -20,11 +20,12 @@ const ECHO_RECORD_TIME = 30000; // 30 seconds
 const PARADOX_DURATION = 5000; // 5 seconds
 const GROWTH_PER_FOOD = 3;
 
-// Colors
-const COLORS = {
+// Colors (default - neon theme)
+let COLORS = {
     background: '#0a0e27',
     grid: 'rgba(0, 255, 255, 0.1)',
     snake: ['#00ffff', '#ff00ff', '#ffff00'],
+    snake2: ['#ff6666', '#ff9944', '#ffcc00'], // Player 2 colors
     echo: 'rgba(0, 255, 255, 0.4)',
     food: '#ff6b6b',
     chronoFruit: '#00aaff',
@@ -39,6 +40,66 @@ const COLORS = {
         multiplier: '#00ffff',
         invincibility: '#ffffff',
         foodFrenzy: '#88ff00'
+    }
+};
+
+// Themes
+const THEMES = {
+    neon: {
+        background: '#0a0e27',
+        grid: 'rgba(0, 255, 255, 0.1)',
+        echo: 'rgba(0, 255, 255, 0.4)',
+        food: '#ff6b6b',
+        chronoFruit: '#00aaff',
+        portal: '#9933ff',
+        laser: '#ff0000'
+    },
+    retro: {
+        background: '#1a0a00',
+        grid: 'rgba(255, 107, 53, 0.1)',
+        echo: 'rgba(255, 200, 150, 0.4)',
+        food: '#ff6b35',
+        chronoFruit: '#f7c59f',
+        portal: '#ff8c42',
+        laser: '#ff4500'
+    },
+    ocean: {
+        background: '#001220',
+        grid: 'rgba(0, 180, 216, 0.1)',
+        echo: 'rgba(0, 180, 216, 0.4)',
+        food: '#48cae4',
+        chronoFruit: '#90e0ef',
+        portal: '#0096c7',
+        laser: '#ff6b6b'
+    },
+    void: {
+        background: '#0d0015',
+        grid: 'rgba(107, 45, 91, 0.15)',
+        echo: 'rgba(150, 50, 120, 0.4)',
+        food: '#9b2335',
+        chronoFruit: '#c154c1',
+        portal: '#6b2d5b',
+        laser: '#ff1493'
+    }
+};
+
+// Snake Skins
+const SKINS = {
+    cyber: {
+        colors: ['#00ffff', '#ff00ff', '#ffff00'],
+        colors2: ['#ff6666', '#ff9944', '#ffcc00']
+    },
+    fire: {
+        colors: ['#ff4500', '#ff6600', '#ffcc00'],
+        colors2: ['#00bfff', '#0080ff', '#0040ff']
+    },
+    ice: {
+        colors: ['#87ceeb', '#00bfff', '#ffffff'],
+        colors2: ['#ff6b6b', '#ff4444', '#cc0000']
+    },
+    toxic: {
+        colors: ['#39ff14', '#00ff00', '#7fff00'],
+        colors2: ['#ff00ff', '#cc00cc', '#990099']
     }
 };
 
@@ -478,13 +539,16 @@ class Snake {
     }
 
     draw(ctx, time) {
+        // Get colors based on player
+        const snakeColors = this.isPlayer2 ? COLORS.snake2 : COLORS.snake;
+
         // Draw trail
         if (!this.isEcho) {
             ctx.globalAlpha = 0.3;
             this.trail.forEach((t, i) => {
                 const alpha = 1 - (i / this.trail.length);
                 ctx.globalAlpha = alpha * 0.3;
-                ctx.fillStyle = COLORS.snake[0];
+                ctx.fillStyle = snakeColors[0];
                 ctx.beginPath();
                 ctx.arc(t.x, t.y, 4, 0, Math.PI * 2);
                 ctx.fill();
@@ -510,9 +574,9 @@ class Snake {
                         x + TILE_SIZE/2, y + TILE_SIZE/2, 0,
                         x + TILE_SIZE/2, y + TILE_SIZE/2, TILE_SIZE
                     );
-                    gradient.addColorStop(0, COLORS.snake[0]);
-                    gradient.addColorStop(0.5, COLORS.snake[1]);
-                    gradient.addColorStop(1, COLORS.snake[2]);
+                    gradient.addColorStop(0, snakeColors[0]);
+                    gradient.addColorStop(0.5, snakeColors[1]);
+                    gradient.addColorStop(1, snakeColors[2]);
                     ctx.fillStyle = gradient;
                 }
 
@@ -522,7 +586,7 @@ class Snake {
 
                 // Glow effect for head
                 if (!this.isEcho) {
-                    ctx.shadowColor = COLORS.snake[0];
+                    ctx.shadowColor = snakeColors[0];
                     ctx.shadowBlur = 10;
                     ctx.fill();
                     ctx.shadowBlur = 0;
@@ -542,13 +606,13 @@ class Snake {
                 ctx.fill();
             } else {
                 // Body segments
-                const colorIndex = Math.floor(i / 3) % COLORS.snake.length;
+                const colorIndex = Math.floor(i / 3) % snakeColors.length;
                 if (this.isEcho) {
                     ctx.fillStyle = COLORS.echo;
                 } else if (this.isAI) {
                     ctx.fillStyle = `rgba(255, 68, 68, ${0.8 - i * 0.02})`;
                 } else {
-                    ctx.fillStyle = COLORS.snake[colorIndex];
+                    ctx.fillStyle = snakeColors[colorIndex];
                 }
 
                 const size = TILE_SIZE - 4 - Math.min(i * 0.5, 6);
@@ -1141,11 +1205,17 @@ class Game {
         this.particles = new ParticleSystem();
         this.starField = new StarField();
 
-        this.state = 'menu'; // menu, playing, paused, gameOver
+        this.state = 'menu'; // menu, playing, paused, gameOver, editor
         this.gameMode = 'classic';
-        this.aiDifficulty = 'none';
+        this.playerMode = '1'; // '1', '2', or 'ai'
+        this.aiDifficulty = 'learner';
+
+        // Theme and skin
+        this.currentTheme = 'neon';
+        this.currentSkin = 'cyber';
 
         this.snake = null;
+        this.snake2 = null; // Player 2
         this.aiSnake = null;
         this.food = [];
         this.powerups = [];
@@ -1153,11 +1223,15 @@ class Game {
         this.lasers = [];
         this.blocks = [];
         this.echoes = [];
+        this.walls = []; // Custom walls from level editor
 
         this.recorder = new TimelineRecorder();
+        this.recorder2 = null; // Player 2 recorder
         this.savedTimelines = [];
+        this.savedTimelines2 = [];
 
         this.score = 0;
+        this.score2 = 0; // Player 2 score
         this.multiplier = 1;
         this.combo = 0;
         this.comboTimer = 0;
@@ -1184,6 +1258,12 @@ class Game {
 
         this.screenShake = 0;
         this.chromaticAberration = 0;
+
+        // Level editor
+        this.editorTool = 'wall';
+        this.customLevel = null;
+        this.savedLevels = this.loadSavedLevels();
+        this.portalPair = null; // For placing portal pairs
 
         this.init();
     }
@@ -1219,11 +1299,37 @@ class Game {
             });
         });
 
-        document.querySelectorAll('.difficulty-button').forEach(btn => {
+        // Player mode buttons
+        document.querySelectorAll('.difficulty-button[data-players]').forEach(btn => {
             btn.addEventListener('click', () => {
-                document.querySelectorAll('.difficulty-button').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.difficulty-button[data-players]').forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
-                this.aiDifficulty = btn.dataset.ai;
+                this.playerMode = btn.dataset.players;
+                // Show/hide P2 controls
+                const p2Controls = document.getElementById('p2Controls');
+                if (p2Controls) {
+                    p2Controls.classList.toggle('active', this.playerMode === '2');
+                }
+            });
+        });
+
+        // Theme buttons
+        document.querySelectorAll('.theme-button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.theme-button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                this.currentTheme = btn.dataset.theme;
+                this.applyTheme();
+            });
+        });
+
+        // Skin buttons
+        document.querySelectorAll('.skin-button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.skin-button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                this.currentSkin = btn.dataset.skin;
+                this.applySkin();
             });
         });
 
@@ -1257,11 +1363,341 @@ class Game {
             document.getElementById('helpModal').classList.add('hidden');
         });
 
-        // Close help modal when clicking outside
         document.getElementById('helpModal').addEventListener('click', (e) => {
             if (e.target.id === 'helpModal') {
                 document.getElementById('helpModal').classList.add('hidden');
             }
+        });
+
+        // Level Editor
+        this.setupLevelEditor();
+    }
+
+    applyTheme() {
+        const theme = THEMES[this.currentTheme];
+        if (theme) {
+            COLORS.background = theme.background;
+            COLORS.grid = theme.grid;
+            COLORS.echo = theme.echo;
+            COLORS.food = theme.food;
+            COLORS.chronoFruit = theme.chronoFruit;
+            COLORS.portal = theme.portal;
+            COLORS.laser = theme.laser;
+        }
+    }
+
+    applySkin() {
+        const skin = SKINS[this.currentSkin];
+        if (skin) {
+            COLORS.snake = skin.colors;
+            COLORS.snake2 = skin.colors2;
+        }
+    }
+
+    loadSavedLevels() {
+        try {
+            const saved = localStorage.getItem('chronoserpent_levels');
+            return saved ? JSON.parse(saved) : [];
+        } catch (e) {
+            return [];
+        }
+    }
+
+    saveLevelsToStorage() {
+        try {
+            localStorage.setItem('chronoserpent_levels', JSON.stringify(this.savedLevels));
+        } catch (e) {
+            console.log('Could not save levels');
+        }
+    }
+
+    setupLevelEditor() {
+        const editorBtn = document.getElementById('editorButton');
+        const editorModal = document.getElementById('editorModal');
+        const editorCanvas = document.getElementById('editorCanvas');
+        const closeBtn = document.getElementById('editorCloseButton');
+
+        if (!editorBtn || !editorModal || !editorCanvas) return;
+
+        // Set up editor canvas
+        editorCanvas.width = GRID_WIDTH * 20;
+        editorCanvas.height = GRID_HEIGHT * 20;
+        this.editorCtx = editorCanvas.getContext('2d');
+        this.editorLevel = this.createEmptyLevel();
+
+        editorBtn.addEventListener('click', () => {
+            editorModal.classList.remove('hidden');
+            this.drawEditorGrid();
+            this.updateSavedLevelsList();
+        });
+
+        closeBtn.addEventListener('click', () => {
+            editorModal.classList.add('hidden');
+        });
+
+        editorModal.addEventListener('click', (e) => {
+            if (e.target.id === 'editorModal') {
+                editorModal.classList.add('hidden');
+            }
+        });
+
+        // Tool buttons
+        document.querySelectorAll('.tool-button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.tool-button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                this.editorTool = btn.dataset.tool;
+            });
+        });
+
+        // Canvas click for placing/removing
+        editorCanvas.addEventListener('click', (e) => this.handleEditorClick(e));
+        editorCanvas.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            this.handleEditorClick(e, true);
+        });
+
+        // Action buttons
+        document.getElementById('clearLevel')?.addEventListener('click', () => {
+            this.editorLevel = this.createEmptyLevel();
+            this.drawEditorGrid();
+        });
+
+        document.getElementById('saveLevel')?.addEventListener('click', () => {
+            this.saveCurrentLevel();
+        });
+
+        document.getElementById('loadLevel')?.addEventListener('click', () => {
+            const code = document.getElementById('levelCode')?.value;
+            if (code) this.importLevelFromCode(code);
+        });
+
+        document.getElementById('playLevel')?.addEventListener('click', () => {
+            this.customLevel = { ...this.editorLevel };
+            editorModal.classList.add('hidden');
+            this.audio.init();
+            this.startGame();
+        });
+
+        document.getElementById('copyCode')?.addEventListener('click', () => {
+            const input = document.getElementById('levelCode');
+            if (input) {
+                input.select();
+                navigator.clipboard.writeText(input.value);
+            }
+        });
+
+        document.getElementById('importCode')?.addEventListener('click', () => {
+            const code = prompt('Paste level code:');
+            if (code) {
+                this.importLevelFromCode(code);
+            }
+        });
+    }
+
+    createEmptyLevel() {
+        return {
+            walls: [],
+            lasers: [],
+            portals: [],
+            spawn1: { x: 4, y: Math.floor(GRID_HEIGHT / 2) },
+            spawn2: { x: GRID_WIDTH - 5, y: Math.floor(GRID_HEIGHT / 2) }
+        };
+    }
+
+    handleEditorClick(e, isErase = false) {
+        const canvas = document.getElementById('editorCanvas');
+        const rect = canvas.getBoundingClientRect();
+        const tileSize = 20;
+        const x = Math.floor((e.clientX - rect.left) / tileSize);
+        const y = Math.floor((e.clientY - rect.top) / tileSize);
+
+        if (x < 0 || x >= GRID_WIDTH || y < 0 || y >= GRID_HEIGHT) return;
+
+        const tool = isErase ? 'erase' : this.editorTool;
+
+        switch (tool) {
+            case 'wall':
+                if (!this.editorLevel.walls.find(w => w.x === x && w.y === y)) {
+                    this.editorLevel.walls.push({ x, y });
+                }
+                break;
+            case 'laser':
+                if (!this.editorLevel.lasers.find(l => l.x === x && l.y === y)) {
+                    this.editorLevel.lasers.push({ x, y, direction: 'horizontal', length: 3 });
+                }
+                break;
+            case 'portal':
+                if (!this.portalPair) {
+                    this.portalPair = { x, y };
+                } else {
+                    this.editorLevel.portals.push({
+                        x1: this.portalPair.x, y1: this.portalPair.y,
+                        x2: x, y2: y
+                    });
+                    this.portalPair = null;
+                }
+                break;
+            case 'spawn':
+                if (e.shiftKey) {
+                    this.editorLevel.spawn2 = { x, y };
+                } else {
+                    this.editorLevel.spawn1 = { x, y };
+                }
+                break;
+            case 'erase':
+                this.editorLevel.walls = this.editorLevel.walls.filter(w => w.x !== x || w.y !== y);
+                this.editorLevel.lasers = this.editorLevel.lasers.filter(l => l.x !== x || l.y !== y);
+                this.editorLevel.portals = this.editorLevel.portals.filter(p =>
+                    !((p.x1 === x && p.y1 === y) || (p.x2 === x && p.y2 === y))
+                );
+                break;
+        }
+
+        this.drawEditorGrid();
+    }
+
+    drawEditorGrid() {
+        const ctx = this.editorCtx;
+        const tileSize = 20;
+
+        // Background
+        ctx.fillStyle = COLORS.background;
+        ctx.fillRect(0, 0, GRID_WIDTH * tileSize, GRID_HEIGHT * tileSize);
+
+        // Grid
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+        for (let x = 0; x <= GRID_WIDTH; x++) {
+            ctx.beginPath();
+            ctx.moveTo(x * tileSize, 0);
+            ctx.lineTo(x * tileSize, GRID_HEIGHT * tileSize);
+            ctx.stroke();
+        }
+        for (let y = 0; y <= GRID_HEIGHT; y++) {
+            ctx.beginPath();
+            ctx.moveTo(0, y * tileSize);
+            ctx.lineTo(GRID_WIDTH * tileSize, y * tileSize);
+            ctx.stroke();
+        }
+
+        // Draw walls
+        ctx.fillStyle = '#666688';
+        this.editorLevel.walls.forEach(w => {
+            ctx.fillRect(w.x * tileSize + 1, w.y * tileSize + 1, tileSize - 2, tileSize - 2);
+        });
+
+        // Draw lasers
+        ctx.fillStyle = COLORS.laser;
+        this.editorLevel.lasers.forEach(l => {
+            ctx.fillRect(l.x * tileSize + 2, l.y * tileSize + 8, tileSize * l.length - 4, 4);
+        });
+
+        // Draw portals
+        ctx.fillStyle = COLORS.portal;
+        this.editorLevel.portals.forEach(p => {
+            ctx.beginPath();
+            ctx.arc(p.x1 * tileSize + tileSize/2, p.y1 * tileSize + tileSize/2, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(p.x2 * tileSize + tileSize/2, p.y2 * tileSize + tileSize/2, 6, 0, Math.PI * 2);
+            ctx.fill();
+            // Connection line
+            ctx.strokeStyle = 'rgba(153, 51, 255, 0.3)';
+            ctx.beginPath();
+            ctx.moveTo(p.x1 * tileSize + tileSize/2, p.y1 * tileSize + tileSize/2);
+            ctx.lineTo(p.x2 * tileSize + tileSize/2, p.y2 * tileSize + tileSize/2);
+            ctx.stroke();
+        });
+
+        // Pending portal
+        if (this.portalPair) {
+            ctx.fillStyle = 'rgba(153, 51, 255, 0.5)';
+            ctx.beginPath();
+            ctx.arc(this.portalPair.x * tileSize + tileSize/2, this.portalPair.y * tileSize + tileSize/2, 6, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Spawn points
+        ctx.fillStyle = '#00ffff';
+        ctx.beginPath();
+        ctx.arc(this.editorLevel.spawn1.x * tileSize + tileSize/2, this.editorLevel.spawn1.y * tileSize + tileSize/2, 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#000';
+        ctx.font = '10px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('1', this.editorLevel.spawn1.x * tileSize + tileSize/2, this.editorLevel.spawn1.y * tileSize + tileSize/2 + 3);
+
+        ctx.fillStyle = '#ff6666';
+        ctx.beginPath();
+        ctx.arc(this.editorLevel.spawn2.x * tileSize + tileSize/2, this.editorLevel.spawn2.y * tileSize + tileSize/2, 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#000';
+        ctx.fillText('2', this.editorLevel.spawn2.x * tileSize + tileSize/2, this.editorLevel.spawn2.y * tileSize + tileSize/2 + 3);
+    }
+
+    saveCurrentLevel() {
+        const name = prompt('Level name:', `Level ${this.savedLevels.length + 1}`);
+        if (!name) return;
+
+        const level = {
+            name,
+            data: { ...this.editorLevel },
+            created: Date.now()
+        };
+
+        this.savedLevels.push(level);
+        this.saveLevelsToStorage();
+        this.updateSavedLevelsList();
+
+        // Generate share code
+        const code = btoa(JSON.stringify(this.editorLevel));
+        const codeInput = document.getElementById('levelCode');
+        if (codeInput) codeInput.value = code;
+    }
+
+    importLevelFromCode(code) {
+        try {
+            const data = JSON.parse(atob(code));
+            this.editorLevel = data;
+            this.drawEditorGrid();
+        } catch (e) {
+            alert('Invalid level code');
+        }
+    }
+
+    updateSavedLevelsList() {
+        const list = document.getElementById('savedLevelsList');
+        if (!list) return;
+
+        if (this.savedLevels.length === 0) {
+            list.innerHTML = '<span class="no-levels">No saved levels yet</span>';
+            return;
+        }
+
+        list.innerHTML = this.savedLevels.map((level, i) => `
+            <button class="saved-level-btn" data-index="${i}">
+                ${level.name}
+                <span class="delete-level" data-index="${i}">&times;</span>
+            </button>
+        `).join('');
+
+        // Add click handlers
+        list.querySelectorAll('.saved-level-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                if (e.target.classList.contains('delete-level')) {
+                    const idx = parseInt(e.target.dataset.index);
+                    this.savedLevels.splice(idx, 1);
+                    this.saveLevelsToStorage();
+                    this.updateSavedLevelsList();
+                } else {
+                    const idx = parseInt(btn.dataset.index);
+                    this.editorLevel = { ...this.savedLevels[idx].data };
+                    this.drawEditorGrid();
+                    const code = btoa(JSON.stringify(this.editorLevel));
+                    const codeInput = document.getElementById('levelCode');
+                    if (codeInput) codeInput.value = code;
+                }
+            });
         });
     }
 
@@ -1288,39 +1724,56 @@ class Game {
 
         if (this.state !== 'playing') return;
 
-        if (e.code === 'KeyR') {
-            this.startGame();
-            return;
-        }
-
-        // Movement
+        // Player 1 controls (WASD)
         switch(e.code) {
-            case 'ArrowUp':
             case 'KeyW':
                 this.snake.setDirection(0, -1);
                 break;
-            case 'ArrowDown':
             case 'KeyS':
                 this.snake.setDirection(0, 1);
                 break;
-            case 'ArrowLeft':
             case 'KeyA':
                 this.snake.setDirection(-1, 0);
                 break;
-            case 'ArrowRight':
             case 'KeyD':
                 this.snake.setDirection(1, 0);
                 break;
             case 'Space':
-                this.saveTimeline();
+                this.saveTimeline(1);
                 break;
             case 'ShiftLeft':
-            case 'ShiftRight':
-                this.activateChronoBoost();
+                this.activateChronoBoost(1);
                 break;
             case 'KeyE':
-                this.activatePhaseMode();
+                this.activatePhaseMode(1);
                 break;
+        }
+
+        // Player 2 controls (Arrow keys) - only in 2-player mode
+        if (this.snake2 && this.playerMode === '2') {
+            switch(e.code) {
+                case 'ArrowUp':
+                    this.snake2.setDirection(0, -1);
+                    break;
+                case 'ArrowDown':
+                    this.snake2.setDirection(0, 1);
+                    break;
+                case 'ArrowLeft':
+                    this.snake2.setDirection(-1, 0);
+                    break;
+                case 'ArrowRight':
+                    this.snake2.setDirection(1, 0);
+                    break;
+                case 'Enter':
+                    this.saveTimeline(2);
+                    break;
+                case 'ShiftRight':
+                    this.activateChronoBoost(2);
+                    break;
+                case 'Slash':
+                    this.activatePhaseMode(2);
+                    break;
+            }
         }
     }
 
@@ -1330,18 +1783,35 @@ class Game {
         document.getElementById('gameOver').classList.add('hidden');
         document.getElementById('pauseOverlay').classList.add('hidden');
 
+        // Apply current theme and skin
+        this.applyTheme();
+        this.applySkin();
+
+        // Determine spawn positions
+        let spawn1 = { x: Math.floor(GRID_WIDTH / 4), y: Math.floor(GRID_HEIGHT / 2) };
+        let spawn2 = { x: Math.floor(GRID_WIDTH * 3/4), y: Math.floor(GRID_HEIGHT / 2) };
+
+        if (this.customLevel) {
+            spawn1 = this.customLevel.spawn1;
+            spawn2 = this.customLevel.spawn2;
+        }
+
         // Reset game state
-        this.snake = new Snake(Math.floor(GRID_WIDTH / 4), Math.floor(GRID_HEIGHT / 2));
+        this.snake = new Snake(spawn1.x, spawn1.y);
+        this.snake.isPlayer2 = false;
         this.food = [];
         this.powerups = [];
         this.portals = [];
         this.lasers = [];
         this.blocks = [];
+        this.walls = [];
         this.echoes = [];
         this.savedTimelines = [];
+        this.savedTimelines2 = [];
         this.activePowerups = [];
 
         this.score = 0;
+        this.score2 = 0;
         this.multiplier = 1;
         this.combo = 0;
         this.comboTimer = 0;
@@ -1365,17 +1835,23 @@ class Game {
         this.recorder = new TimelineRecorder();
         this.recorder.startRecording();
 
-        // Setup AI if enabled
-        if (this.aiDifficulty !== 'none') {
-            this.aiSnake = new Snake(
-                Math.floor(GRID_WIDTH * 3/4),
-                Math.floor(GRID_HEIGHT / 2),
-                false, true
-            );
+        // Setup Player 2 in 2-player mode
+        this.snake2 = null;
+        if (this.playerMode === '2') {
+            this.snake2 = new Snake(spawn2.x, spawn2.y);
+            this.snake2.isPlayer2 = true;
+            this.snake2.setDirection(-1, 0);
+            this.recorder2 = new TimelineRecorder();
+            this.recorder2.startRecording();
+        }
+
+        // Setup AI in AI mode
+        this.aiSnake = null;
+        if (this.playerMode === 'ai') {
+            this.aiSnake = new Snake(spawn2.x, spawn2.y, false, true);
             this.aiSnake.aiDifficulty = this.aiDifficulty;
             this.aiSnake.setDirection(-1, 0);
 
-            // Adjust AI speed based on difficulty
             switch(this.aiDifficulty) {
                 case 'learner':
                     this.aiSnake.moveInterval = 200;
@@ -1387,8 +1863,17 @@ class Game {
                     this.aiSnake.moveInterval = 100;
                     break;
             }
-        } else {
-            this.aiSnake = null;
+        }
+
+        // Load custom level elements
+        if (this.customLevel) {
+            this.walls = [...this.customLevel.walls];
+            this.customLevel.lasers.forEach(l => {
+                this.lasers.push(new LaserGrid(l.x, l.y, l.direction || 'horizontal', l.length || 3));
+            });
+            this.customLevel.portals.forEach(p => {
+                this.portals.push(new Portal(p.x1, p.y1, p.x2, p.y2));
+            });
         }
 
         // Spawn initial food
@@ -1442,44 +1927,62 @@ class Game {
     }
 
     // Timeline mechanics
-    saveTimeline() {
-        if (this.savedTimelines.length >= MAX_ECHOES) {
+    saveTimeline(player = 1) {
+        const timelines = player === 1 ? this.savedTimelines : this.savedTimelines2;
+        const recorder = player === 1 ? this.recorder : this.recorder2;
+
+        if (!recorder) return;
+
+        if (timelines.length >= MAX_ECHOES) {
             this.showAlert('MAX ECHOES!', '#ff6666');
             return;
         }
 
-        const recording = this.recorder.stopRecording();
-        if (recording.length > 30) { // Minimum recording length
+        const recording = recorder.stopRecording();
+        if (recording.length > 30) {
             const echo = new EchoPlayback(recording);
             this.echoes.push(echo);
-            this.savedTimelines.push(recording);
+            timelines.push(recording);
             this.echoesCreated++;
 
-            this.showAlert('TIMELINE SAVED!', '#00ffff');
+            this.showAlert(`P${player} TIMELINE SAVED!`, player === 1 ? '#00ffff' : '#ff6666');
             this.audio.play('echo');
         }
 
         // Start new recording
-        this.recorder = new TimelineRecorder();
-        this.recorder.startRecording();
+        if (player === 1) {
+            this.recorder = new TimelineRecorder();
+            this.recorder.startRecording();
+        } else {
+            this.recorder2 = new TimelineRecorder();
+            this.recorder2.startRecording();
+        }
 
         this.updateTimelineSlots();
     }
 
-    activateChronoBoost() {
-        if (this.savedTimelines.length > 0) {
-            this.snake.speedBoost = 1.5;
+    activateChronoBoost(player = 1) {
+        const snake = player === 1 ? this.snake : this.snake2;
+        const timelines = player === 1 ? this.savedTimelines : this.savedTimelines2;
+
+        if (!snake) return;
+
+        if (timelines.length > 0) {
+            snake.speedBoost = 1.5;
             setTimeout(() => {
-                this.snake.speedBoost = 1;
+                if (snake) snake.speedBoost = 1;
             }, 2000);
             this.showAlert('CHRONO BOOST!', '#ffff00');
         }
     }
 
-    activatePhaseMode() {
-        if (!this.snake.phaseMode) {
-            this.snake.phaseMode = true;
-            this.snake.phaseModeTimer = 2000;
+    activatePhaseMode(player = 1) {
+        const snake = player === 1 ? this.snake : this.snake2;
+        if (!snake) return;
+
+        if (!snake.phaseMode) {
+            snake.phaseMode = true;
+            snake.phaseModeTimer = 2000;
             this.showAlert('PHASE MODE!', '#aa00ff');
         }
     }
@@ -1555,8 +2058,16 @@ class Game {
         if (this.snake) {
             this.snake.segments.forEach(s => occupied.add(`${s.x},${s.y}`));
         }
+        if (this.snake2) {
+            this.snake2.segments.forEach(s => occupied.add(`${s.x},${s.y}`));
+        }
         if (this.aiSnake) {
             this.aiSnake.segments.forEach(s => occupied.add(`${s.x},${s.y}`));
+        }
+
+        // Add wall positions from custom levels
+        if (this.walls) {
+            this.walls.forEach(w => occupied.add(`${w.x},${w.y}`));
         }
 
         // Add food positions
@@ -1753,17 +2264,25 @@ class Game {
         const effectiveSpeed = this.paradoxMode ? this.gameSpeed * 2 :
                               (this.timeDilation ? this.gameSpeed * 0.5 : this.gameSpeed);
 
-        // Update snake
+        // Update player 1 snake
         this.snake.update(dt, effectiveSpeed);
 
-        // Record timeline
-        if (this.recorder.isRecording) {
+        // Record timeline for player 1
+        if (this.recorder && this.recorder.isRecording) {
             this.recorder.recordFrame(this.snake);
+        }
+
+        // Update player 2 snake
+        if (this.snake2) {
+            this.snake2.update(dt, effectiveSpeed);
+            if (this.recorder2 && this.recorder2.isRecording) {
+                this.recorder2.recordFrame(this.snake2);
+            }
         }
 
         // Update AI snake
         if (this.aiSnake) {
-            this.aiSnake.updateAI(this.food, [...this.lasers, ...this.blocks], this.portals, this.snake, this.echoes);
+            this.aiSnake.updateAI(this.food, [...this.lasers, ...this.blocks, ...this.walls], this.portals, this.snake, this.echoes);
             this.aiSnake.update(dt, effectiveSpeed);
         }
 
@@ -1814,8 +2333,79 @@ class Game {
         // Check collisions
         this.checkCollisions();
 
+        // Check player 2 collisions
+        if (this.snake2) {
+            this.checkPlayer2Collisions();
+        }
+
         // Update timeline UI
         this.updateTimelineSlots();
+    }
+
+    checkPlayer2Collisions() {
+        if (!this.snake2) return;
+        const head = this.snake2.head;
+
+        // Wall collision
+        if (head.x < 0 || head.x >= this.gridWidth ||
+            head.y < 0 || head.y >= this.gridHeight) {
+            if (!this.snake2.invincible) {
+                this.snake2Dead();
+                return;
+            }
+        }
+
+        // Self collision
+        if (this.snake2.checkSelfCollision() && !this.snake2.invincible) {
+            this.snake2Dead();
+            return;
+        }
+
+        // Custom wall collision
+        for (const wall of this.walls) {
+            if (head.x === wall.x && head.y === wall.y && !this.snake2.invincible) {
+                this.snake2Dead();
+                return;
+            }
+        }
+
+        // Collision with player 1
+        for (const seg of this.snake.segments) {
+            if (head.x === seg.x && head.y === seg.y && !this.snake2.invincible) {
+                this.snake2Dead();
+                return;
+            }
+        }
+
+        // Food collision for player 2
+        for (let i = this.food.length - 1; i >= 0; i--) {
+            const f = this.food[i];
+            if (head.x === f.x && head.y === f.y) {
+                this.collectFood(f, i, 2);
+            }
+        }
+
+        // Portal collision
+        for (const portal of this.portals) {
+            if (portal.teleport(this.snake2)) {
+                this.audio.play('portal');
+            }
+        }
+
+        // Laser collision
+        for (const laser of this.lasers) {
+            if (laser.checkCollision(this.snake2) && !this.snake2.invincible) {
+                this.snake2Dead();
+                return;
+            }
+        }
+    }
+
+    snake2Dead() {
+        this.showAlert('P2 DOWN!', '#ff6666');
+        this.audio.play('death');
+        this.snake2 = null;
+        this.recorder2 = null;
     }
 
     checkCollisions() {
@@ -1841,6 +2431,24 @@ class Game {
         if (this.snake.checkSelfCollision() && !this.snake.invincible) {
             this.gameOver();
             return;
+        }
+
+        // Custom wall collision
+        for (const wall of this.walls) {
+            if (head.x === wall.x && head.y === wall.y && !this.snake.invincible) {
+                this.gameOver();
+                return;
+            }
+        }
+
+        // Player 2 collision
+        if (this.snake2) {
+            for (const seg of this.snake2.segments) {
+                if (head.x === seg.x && head.y === seg.y && !this.snake.invincible) {
+                    this.gameOver();
+                    return;
+                }
+            }
         }
 
         // Echo collision (paradox)
@@ -1924,8 +2532,11 @@ class Game {
         }
     }
 
-    collectFood(food, index) {
-        this.snake.grow();
+    collectFood(food, index, player = 1) {
+        const snake = player === 1 ? this.snake : this.snake2;
+        if (!snake) return;
+
+        snake.grow();
         this.food.splice(index, 1);
         this.foodCollected++;
 
@@ -1940,7 +2551,11 @@ class Game {
         const basePoints = food.type === 'chrono' ? 50 : 10;
         const comboBonus = this.combo;
         const points = basePoints * this.multiplier * (1 + comboBonus * 0.1);
-        this.score += Math.floor(points);
+        if (player === 1) {
+            this.score += Math.floor(points);
+        } else {
+            this.score2 += Math.floor(points);
+        }
 
         // Effects
         this.particles.emit(
@@ -2023,6 +2638,23 @@ class Game {
         ctx.globalAlpha = 1;
 
         if (this.state === 'playing' || this.state === 'paused') {
+            // Draw custom walls
+            ctx.fillStyle = '#444466';
+            ctx.strokeStyle = '#666688';
+            ctx.lineWidth = 2;
+            this.walls.forEach(w => {
+                ctx.beginPath();
+                ctx.roundRect(
+                    w.x * TILE_SIZE + 2,
+                    w.y * TILE_SIZE + 2,
+                    TILE_SIZE - 4,
+                    TILE_SIZE - 4,
+                    4
+                );
+                ctx.fill();
+                ctx.stroke();
+            });
+
             // Draw portals
             this.portals.forEach(p => p.draw(ctx, time));
 
@@ -2044,7 +2676,12 @@ class Game {
                 this.aiSnake.draw(ctx, time);
             }
 
-            // Draw player snake
+            // Draw player 2 snake
+            if (this.snake2) {
+                this.snake2.draw(ctx, time);
+            }
+
+            // Draw player 1 snake
             this.snake.draw(ctx, time);
 
             // Draw particles

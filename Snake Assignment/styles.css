@@ -778,3 +778,313 @@ body {
 .help-content::-webkit-scrollbar-thumb:hover {
     background: rgba(0, 255, 255, 0.5);
 }
+
+/* ==================== THEME & SKIN BUTTONS ==================== */
+.theme-buttons, .skin-buttons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.theme-button {
+    flex: 1;
+    min-width: 60px;
+    height: 32px;
+    border: 2px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 10px;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+    transition: all 0.3s ease;
+}
+
+.theme-button:hover {
+    transform: scale(1.05);
+}
+
+.theme-button.active {
+    border-color: #fff;
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+}
+
+.skin-button {
+    flex: 1;
+    min-width: 60px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #888;
+    padding: 8px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+}
+
+.skin-button:hover {
+    border-color: rgba(0, 255, 255, 0.5);
+    color: #00ffff;
+}
+
+.skin-button.active {
+    background: rgba(0, 255, 255, 0.15);
+    border-color: #00ffff;
+    color: #00ffff;
+}
+
+/* Menu button row */
+.menu-button-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.secondary-button {
+    flex: 1;
+    background: transparent;
+    border: 1px solid rgba(0, 255, 255, 0.4);
+    border-radius: 6px;
+    padding: 10px;
+    font-size: 11px;
+    font-weight: bold;
+    color: #00ffff;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.secondary-button:hover {
+    background: rgba(0, 255, 255, 0.1);
+    border-color: #00ffff;
+}
+
+/* Player 2 controls panel */
+#p2Controls {
+    margin-top: 15px;
+    opacity: 0.5;
+    transition: opacity 0.3s;
+}
+
+#p2Controls.active {
+    opacity: 1;
+}
+
+/* ==================== LEVEL EDITOR ==================== */
+#editorModal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(10, 14, 39, 0.98);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 200;
+    padding: 20px;
+}
+
+#editorModal.hidden {
+    display: none;
+}
+
+.editor-content {
+    position: relative;
+    background: linear-gradient(135deg, rgba(20, 30, 60, 0.95) 0%, rgba(10, 14, 39, 0.98) 100%);
+    border: 1px solid rgba(0, 255, 255, 0.3);
+    border-radius: 16px;
+    padding: 25px;
+    max-width: 800px;
+    width: 100%;
+    max-height: 95vh;
+    overflow-y: auto;
+}
+
+.editor-toolbar {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.tool-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.tool-label {
+    font-size: 12px;
+    color: #00ffff;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.tool-button {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #aaa;
+    padding: 8px 15px;
+    font-size: 11px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.tool-button:hover {
+    border-color: #00ffff;
+    color: #00ffff;
+}
+
+.tool-button.active {
+    background: rgba(255, 0, 255, 0.2);
+    border-color: #ff00ff;
+    color: #ff00ff;
+}
+
+.editor-grid-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 15px;
+}
+
+#editorCanvas {
+    border: 2px solid rgba(0, 255, 255, 0.5);
+    border-radius: 4px;
+    cursor: crosshair;
+}
+
+.editor-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 15px;
+    flex-wrap: wrap;
+}
+
+.editor-action-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(0, 255, 255, 0.3);
+    color: #00ffff;
+    padding: 10px 20px;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.2s;
+}
+
+.editor-action-btn:hover {
+    background: rgba(0, 255, 255, 0.1);
+    border-color: #00ffff;
+}
+
+.editor-action-btn.primary {
+    background: linear-gradient(135deg, #ff00ff 0%, #00ffff 100%);
+    border: none;
+    color: #fff;
+}
+
+.editor-action-btn.primary:hover {
+    box-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
+}
+
+.editor-saved-levels {
+    margin-bottom: 15px;
+}
+
+.saved-levels-list {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+    min-height: 40px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+}
+
+.no-levels {
+    color: #666;
+    font-size: 12px;
+    font-style: italic;
+}
+
+.saved-level-btn {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #aaa;
+    padding: 6px 12px;
+    font-size: 11px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.saved-level-btn:hover {
+    border-color: #00ffff;
+    color: #00ffff;
+}
+
+.saved-level-btn .delete-level {
+    color: #ff4444;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.editor-share {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.level-code-input {
+    flex: 1;
+    min-width: 200px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    padding: 10px;
+    font-size: 11px;
+    font-family: monospace;
+    border-radius: 4px;
+}
+
+.level-code-input:focus {
+    outline: none;
+    border-color: #00ffff;
+}
+
+/* ==================== MULTIPLAYER INDICATORS ==================== */
+.player-indicator {
+    position: absolute;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: bold;
+    text-transform: uppercase;
+    pointer-events: none;
+}
+
+.player-1-indicator {
+    background: rgba(0, 255, 255, 0.8);
+    color: #000;
+}
+
+.player-2-indicator {
+    background: rgba(255, 100, 100, 0.8);
+    color: #000;
+}
