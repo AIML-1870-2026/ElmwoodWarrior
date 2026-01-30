@@ -251,7 +251,7 @@ class Snake {
         this.isAI = isAI;
         this.echoOpacity = isEcho ? 0.4 : 1;
         this.moveTimer = 0;
-        this.moveInterval = 100; // ms between moves
+        this.moveInterval = 150; // ms between moves
         this.trail = [];
         this.maxTrailLength = 10;
 
