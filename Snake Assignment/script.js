@@ -1126,6 +1126,22 @@ class Game {
         document.getElementById('pauseMenuButton').addEventListener('click', () => {
             this.showMenu();
         });
+
+        // Help modal
+        document.getElementById('helpButton').addEventListener('click', () => {
+            document.getElementById('helpModal').classList.remove('hidden');
+        });
+
+        document.getElementById('helpCloseButton').addEventListener('click', () => {
+            document.getElementById('helpModal').classList.add('hidden');
+        });
+
+        // Close help modal when clicking outside
+        document.getElementById('helpModal').addEventListener('click', (e) => {
+            if (e.target.id === 'helpModal') {
+                document.getElementById('helpModal').classList.add('hidden');
+            }
+        });
     }
 
     handleKeyDown(e) {
@@ -1257,16 +1273,8 @@ class Game {
         // Spawn initial food
         this.spawnFood();
         this.spawnFood();
-        if (this.gameMode !== 'classic') {
+        if (this.gameMode === 'temporal') {
             this.spawnChronoFruit();
-        }
-
-        // Chaos mode: spawn everything
-        if (this.gameMode === 'chaos') {
-            this.spawnPortal();
-            this.spawnPowerup();
-            this.spawnLaser();
-            this.spawnMovingBlock();
         }
 
         this.updateHUD();
@@ -1677,22 +1685,6 @@ class Game {
             this.chromaticAberration *= 0.95;
         }
 
-        // Time trial mode
-        if (this.gameMode === 'timeTrial') {
-            this.timeTrialTimer -= dt * 1000;
-            if (this.timeTrialTimer <= 0) {
-                this.gameOver();
-                return;
-            }
-        }
-
-        // Chaos mode random events
-        if (this.gameMode === 'chaos' && Math.random() < 0.001) {
-            const events = ['spawnPowerup', 'spawnPortal', 'spawnLaser'];
-            const event = events[Math.floor(Math.random() * events.length)];
-            this[event]();
-        }
-
         // Check collisions
         this.checkCollisions();
 
@@ -1947,18 +1939,6 @@ class Game {
 
                 ctx.globalCompositeOperation = 'source-over';
                 ctx.globalAlpha = 1;
-            }
-
-            // Time trial timer
-            if (this.gameMode === 'timeTrial') {
-                ctx.fillStyle = '#fff';
-                ctx.font = 'bold 24px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(
-                    `Time: ${Math.ceil(this.timeTrialTimer / 1000)}s`,
-                    CANVAS_WIDTH / 2,
-                    50
-                );
             }
 
             // Combo display

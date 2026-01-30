@@ -53,13 +53,9 @@
                                     <span class="mode-icon">🎮</span>
                                     <span class="mode-name">Classic</span>
                                 </button>
-                                <button class="mode-button" data-mode="timeTrial">
-                                    <span class="mode-icon">⏱️</span>
-                                    <span class="mode-name">Time Trial</span>
-                                </button>
-                                <button class="mode-button" data-mode="chaos">
-                                    <span class="mode-icon">🌀</span>
-                                    <span class="mode-name">Chaos</span>
+                                <button class="mode-button" data-mode="temporal">
+                                    <span class="mode-icon">⏳</span>
+                                    <span class="mode-name">Temporal</span>
                                 </button>
                             </div>
                         </div>
@@ -76,6 +72,9 @@
 
                         <button class="start-button" id="startButton">
                             <span>START GAME</span>
+                        </button>
+                        <button class="help-button" id="helpButton">
+                            <span>HOW TO PLAY</span>
                         </button>
                     </div>
 
@@ -139,6 +138,131 @@
             <div class="pause-title">PAUSED</div>
             <button class="menu-button" id="resumeButton">Resume</button>
             <button class="menu-button" id="pauseMenuButton">Main Menu</button>
+        </div>
+
+        <div id="helpModal" class="hidden">
+            <div class="help-content">
+                <button class="help-close" id="helpCloseButton">&times;</button>
+                <h2 class="help-title">HOW TO PLAY</h2>
+
+                <div class="help-section">
+                    <h3>BASIC CONTROLS</h3>
+                    <div class="help-grid">
+                        <div class="help-item">
+                            <span class="help-key">WASD / Arrows</span>
+                            <span class="help-desc">Move the snake</span>
+                        </div>
+                        <div class="help-item">
+                            <span class="help-key">P / ESC</span>
+                            <span class="help-desc">Pause the game</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="help-section">
+                    <h3>TEMPORAL ABILITIES</h3>
+                    <div class="help-grid">
+                        <div class="help-item">
+                            <span class="help-key">SPACE</span>
+                            <span class="help-desc"><strong>Save Timeline</strong> - Records your path and creates an "echo" of your snake that replays your movements. Colliding with echoes triggers Paradox Mode!</span>
+                        </div>
+                        <div class="help-item">
+                            <span class="help-key">SHIFT</span>
+                            <span class="help-desc"><strong>Chrono Boost</strong> - Temporarily speeds up your snake (requires at least one saved timeline)</span>
+                        </div>
+                        <div class="help-item">
+                            <span class="help-key">E</span>
+                            <span class="help-desc"><strong>Phase Mode</strong> - Pass through your own body and echoes for 2 seconds</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="help-section">
+                    <h3>SPECIAL ITEMS</h3>
+                    <div class="help-grid-items">
+                        <div class="help-item-box">
+                            <span class="help-icon food-icon"></span>
+                            <span class="help-label">Food</span>
+                            <span class="help-text">Eat to grow and score points</span>
+                        </div>
+                        <div class="help-item-box">
+                            <span class="help-icon chrono-icon"></span>
+                            <span class="help-label">Chrono Fruit</span>
+                            <span class="help-text">Worth 5x more points</span>
+                        </div>
+                        <div class="help-item-box">
+                            <span class="help-icon portal-icon"></span>
+                            <span class="help-label">Portals</span>
+                            <span class="help-text">Teleport between linked portals (5 uses each)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="help-section">
+                    <h3>POWER-UPS</h3>
+                    <div class="help-grid-items">
+                        <div class="help-item-box">
+                            <span class="help-powerup" style="color: #00ff88;">⏱</span>
+                            <span class="help-label">Time Dilation</span>
+                            <span class="help-text">Slows down game speed</span>
+                        </div>
+                        <div class="help-item-box">
+                            <span class="help-powerup" style="color: #ff8800;">🧲</span>
+                            <span class="help-label">Echo Magnet</span>
+                            <span class="help-text">Restarts all echo playbacks</span>
+                        </div>
+                        <div class="help-item-box">
+                            <span class="help-powerup" style="color: #aa00ff;">🌀</span>
+                            <span class="help-label">Quantum Tunnel</span>
+                            <span class="help-text">Pass through walls once + brief invincibility</span>
+                        </div>
+                        <div class="help-item-box">
+                            <span class="help-powerup" style="color: #ffff00;">⏪</span>
+                            <span class="help-label">Rewind</span>
+                            <span class="help-text">Removes tail segments</span>
+                        </div>
+                        <div class="help-item-box">
+                            <span class="help-powerup" style="color: #ff0066;">⚡</span>
+                            <span class="help-label">Speed Boost</span>
+                            <span class="help-text">Increases snake speed</span>
+                        </div>
+                        <div class="help-item-box">
+                            <span class="help-powerup" style="color: #00ffff;">✖</span>
+                            <span class="help-label">Multiplier</span>
+                            <span class="help-text">Doubles your score multiplier</span>
+                        </div>
+                        <div class="help-item-box">
+                            <span class="help-powerup" style="color: #ffffff;">🛡</span>
+                            <span class="help-label">Invincibility</span>
+                            <span class="help-text">Immune to all damage</span>
+                        </div>
+                        <div class="help-item-box">
+                            <span class="help-powerup" style="color: #88ff00;">🍎</span>
+                            <span class="help-label">Food Frenzy</span>
+                            <span class="help-text">Spawns extra food items</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="help-section">
+                    <h3>GAME MODES</h3>
+                    <div class="help-grid">
+                        <div class="help-item">
+                            <span class="help-mode">🎮 Classic</span>
+                            <span class="help-desc">Standard gameplay - eat, grow, survive. Power-ups and portals appear as you progress.</span>
+                        </div>
+                        <div class="help-item">
+                            <span class="help-mode">⏳ Temporal</span>
+                            <span class="help-desc">Enhanced mode with Chrono Fruits from the start. More focus on timeline mechanics.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="help-section">
+                    <h3>PARADOX MODE</h3>
+                    <p class="help-paradox">When you collide with an echo of yourself, <strong>Paradox Mode</strong> activates! The game speeds up, visuals go wild, and your score multiplier jumps to 5x. Survive the chaos to rack up massive points!</p>
+                </div>
+            </div>
         </div>
     </div>
 
