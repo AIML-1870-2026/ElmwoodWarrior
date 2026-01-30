@@ -430,13 +430,23 @@
                 START GAME
             </button>
 
+            <div class="menu-section" style="margin-top: 20px; text-align: left; max-width: 400px;">
+                <div class="menu-section-title">How to Play</div>
+                <p style="font-size: 12px; color: #aaa; margin: 8px 0;">
+                    Guide your snake to eat food and grow longer. Avoid hitting walls or yourself!
+                </p>
+                <p style="font-size: 12px; color: #aaa; margin: 8px 0;">
+                    <strong style="color: #00ffff;">Special Abilities:</strong> Save your path as a "timeline echo"
+                    that replays your movements. Trigger paradoxes for bonus points!
+                </p>
+            </div>
+
             <div class="controls-info">
-                <span>WASD/Arrows</span> Move |
-                <span>SPACE</span> Save Timeline |
-                <span>SHIFT</span> Chrono Boost |
-                <span>E</span> Phase Mode |
-                <span>P</span> Pause |
-                <span>R</span> Restart
+                <div style="margin-bottom: 5px;"><span>WASD / Arrow Keys</span> - Move</div>
+                <div style="margin-bottom: 5px;"><span>SPACE</span> - Save Timeline Echo</div>
+                <div style="margin-bottom: 5px;"><span>SHIFT</span> - Chrono Boost (Speed Up)</div>
+                <div style="margin-bottom: 5px;"><span>E</span> - Phase Mode (Pass Through)</div>
+                <div style="margin-bottom: 5px;"><span>P</span> - Pause | <span>R</span> - Restart</div>
             </div>
         </div>
 
@@ -476,9 +486,9 @@
 
     <script>
         // ==================== GAME CONSTANTS ====================
-        const TILE_SIZE = 20;
-        const GRID_WIDTH = 40;
-        const GRID_HEIGHT = 30;
+        const TILE_SIZE = 15;
+        const GRID_WIDTH = 20;
+        const GRID_HEIGHT = 20;
         const CANVAS_WIDTH = GRID_WIDTH * TILE_SIZE;
         const CANVAS_HEIGHT = GRID_HEIGHT * TILE_SIZE;
         const MAX_ECHOES = 5;
@@ -2017,11 +2027,6 @@
 
             // Progressive difficulty
             updateDifficulty() {
-                // Shrink grid every 50 points
-                const shrinkLevel = Math.floor(this.score / 50);
-                this.gridWidth = Math.max(20, GRID_WIDTH - shrinkLevel * 2);
-                this.gridHeight = Math.max(15, GRID_HEIGHT - shrinkLevel * 2);
-
                 // Speed increase every 100 points
                 const speedLevel = Math.floor(this.score / 100);
                 this.gameSpeed = 1 + speedLevel * 0.05;
@@ -2357,13 +2362,6 @@
                     ctx.stroke();
                 }
                 ctx.globalAlpha = 1;
-
-                // Draw boundary for shrunk grid
-                if (this.gridWidth < GRID_WIDTH || this.gridHeight < GRID_HEIGHT) {
-                    ctx.strokeStyle = '#ff0066';
-                    ctx.lineWidth = 2;
-                    ctx.strokeRect(0, 0, this.gridWidth * TILE_SIZE, this.gridHeight * TILE_SIZE);
-                }
 
                 if (this.state === 'playing' || this.state === 'paused') {
                     // Draw portals
