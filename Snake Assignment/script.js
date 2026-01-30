@@ -1,9 +1,20 @@
 // ==================== GAME CONSTANTS ====================
-const TILE_SIZE = 15;
-const GRID_WIDTH = 20;
-const GRID_HEIGHT = 20;
-const CANVAS_WIDTH = GRID_WIDTH * TILE_SIZE;
-const CANVAS_HEIGHT = GRID_HEIGHT * TILE_SIZE;
+const GRID_WIDTH = 16;
+const GRID_HEIGHT = 16;
+
+// Calculate tile size to fill the screen (with padding for HUD)
+function calculateTileSize() {
+    const padding = 200; // Space for HUD elements
+    const maxWidth = window.innerWidth - 40;
+    const maxHeight = window.innerHeight - padding;
+    const tileByWidth = Math.floor(maxWidth / GRID_WIDTH);
+    const tileByHeight = Math.floor(maxHeight / GRID_HEIGHT);
+    return Math.min(tileByWidth, tileByHeight);
+}
+
+let TILE_SIZE = calculateTileSize();
+let CANVAS_WIDTH = GRID_WIDTH * TILE_SIZE;
+let CANVAS_HEIGHT = GRID_HEIGHT * TILE_SIZE;
 const MAX_ECHOES = 5;
 const ECHO_RECORD_TIME = 30000; // 30 seconds
 const PARADOX_DURATION = 5000; // 5 seconds
@@ -192,8 +203,14 @@ class ParticleSystem {
 // ==================== STAR FIELD ====================
 class StarField {
     constructor(count = 200) {
+        this.count = count;
         this.stars = [];
-        for (let i = 0; i < count; i++) {
+        this.regenerate();
+    }
+
+    regenerate() {
+        this.stars = [];
+        for (let i = 0; i < this.count; i++) {
             this.stars.push({
                 x: Math.random() * CANVAS_WIDTH,
                 y: Math.random() * CANVAS_HEIGHT,
@@ -1053,11 +1070,22 @@ class Game {
     init() {
         this.setupEventListeners();
         this.setupUI();
+        this.handleResize();
         this.gameLoop(0);
+    }
+
+    handleResize() {
+        TILE_SIZE = calculateTileSize();
+        CANVAS_WIDTH = GRID_WIDTH * TILE_SIZE;
+        CANVAS_HEIGHT = GRID_HEIGHT * TILE_SIZE;
+        this.canvas.width = CANVAS_WIDTH;
+        this.canvas.height = CANVAS_HEIGHT;
+        this.starField.regenerate();
     }
 
     setupEventListeners() {
         document.addEventListener('keydown', (e) => this.handleKeyDown(e));
+        window.addEventListener('resize', () => this.handleResize());
     }
 
     setupUI() {

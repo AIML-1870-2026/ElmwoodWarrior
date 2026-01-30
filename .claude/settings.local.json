@@ -11,7 +11,8 @@
       "Bash(gh repo create:*)",
       "Bash(git config:*)",
       "Bash(git remote set-url:*)",
-      "Bash(git show-branch:*)"
+      "Bash(git show-branch:*)",
+      "Bash(cmd.exe /c \"del \"\"\\\\?\\\\c:\\\\Users\\\\dagib\\\\OneDrive - University of Nebraska\\\\Documents\\\\ElmwoodWarrior\\\\nul\"\"\")"
     ]
   }
 }
