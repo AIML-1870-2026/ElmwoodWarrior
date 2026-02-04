@@ -142,36 +142,48 @@ class Renderer {
         const ctx = this.ctx;
 
         for (const boid of boids) {
-            // Draw trail - but skip if trail would cross screen edge
-            if (boid.trail.length > 2) {
-                let validTrail = true;
+            // Draw trail - with strict validation to prevent screen-crossing lines
+            if (boid.trail.length >= 2) {
+                // Build array of valid consecutive points
+                const validPoints = [boid.trail[0]];
+                const maxJump = 50; // Max pixels between consecutive points
+
                 for (let i = 1; i < boid.trail.length; i++) {
-                    const dx = Math.abs(boid.trail[i].x - boid.trail[i-1].x);
-                    const dy = Math.abs(boid.trail[i].y - boid.trail[i-1].y);
-                    if (dx > 100 || dy > 100) {
-                        validTrail = false;
-                        break;
-                    }
-                }
-                // Also check trail to current position
-                if (validTrail && boid.trail.length > 0) {
-                    const last = boid.trail[boid.trail.length - 1];
-                    if (Math.abs(boid.x - last.x) > 100 || Math.abs(boid.y - last.y) > 100) {
-                        validTrail = false;
+                    const prev = validPoints[validPoints.length - 1];
+                    const curr = boid.trail[i];
+                    const dx = Math.abs(curr.x - prev.x);
+                    const dy = Math.abs(curr.y - prev.y);
+
+                    if (dx < maxJump && dy < maxJump) {
+                        validPoints.push(curr);
+                    } else {
+                        // Gap detected - restart trail from this point
+                        validPoints.length = 0;
+                        validPoints.push(curr);
                     }
                 }
 
-                if (validTrail) {
-                    // Draw taillight trail
+                // Check current position against last valid point
+                if (validPoints.length > 0) {
+                    const last = validPoints[validPoints.length - 1];
+                    const dx = Math.abs(boid.x - last.x);
+                    const dy = Math.abs(boid.y - last.y);
+                    if (dx >= maxJump || dy >= maxJump) {
+                        validPoints.length = 0; // Invalid - don't draw trail
+                    }
+                }
+
+                // Only draw if we have enough valid points
+                if (validPoints.length >= 2) {
                     ctx.beginPath();
-                    ctx.moveTo(boid.trail[0].x, boid.trail[0].y);
-                    for (let i = 1; i < boid.trail.length; i++) {
-                        ctx.lineTo(boid.trail[i].x, boid.trail[i].y);
+                    ctx.moveTo(validPoints[0].x, validPoints[0].y);
+                    for (let i = 1; i < validPoints.length; i++) {
+                        ctx.lineTo(validPoints[i].x, validPoints[i].y);
                     }
                     ctx.lineTo(boid.x, boid.y);
 
                     const gradient = ctx.createLinearGradient(
-                        boid.trail[0].x, boid.trail[0].y,
+                        validPoints[0].x, validPoints[0].y,
                         boid.x, boid.y
                     );
                     gradient.addColorStop(0, 'rgba(255, 50, 50, 0)');
