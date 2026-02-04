@@ -1,0 +1,311 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0a0a0f;
+}
+
+#canvas {
+    display: block;
+    position: fixed;
+    top: 0;
+    left: 0;
+}
+
+/* Stats Overlay */
+#stats {
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    background: rgba(0, 0, 0, 0.5);
+    color: #00ff88;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    z-index: 100;
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(0, 255, 136, 0.2);
+}
+
+#stats div {
+    white-space: nowrap;
+}
+
+#stats span {
+    font-weight: bold;
+}
+
+/* Control Panel */
+#control-panel {
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    width: 300px;
+    background: rgba(20, 20, 25, 0.95);
+    border-radius: 12px;
+    overflow: hidden;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    transition: max-height 0.3s ease;
+}
+
+#panel-header {
+    padding: 14px 18px;
+    background: rgba(40, 40, 50, 0.8);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    color: #fff;
+    font-size: 14px;
+    user-select: none;
+}
+
+#panel-header:hover {
+    background: rgba(50, 50, 60, 0.8);
+}
+
+#toggle-icon {
+    font-size: 18px;
+    font-weight: bold;
+    transition: transform 0.3s ease;
+}
+
+#control-panel.collapsed #panel-content {
+    display: none;
+}
+
+#control-panel:not(.collapsed) #toggle-icon {
+    transform: rotate(45deg);
+}
+
+#panel-content {
+    padding: 15px 18px;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+
+.control-group {
+    margin-bottom: 16px;
+}
+
+.control-group:last-child {
+    margin-bottom: 0;
+}
+
+.control-group label {
+    display: block;
+    color: #aaa;
+    font-size: 12px;
+    margin-bottom: 6px;
+    cursor: help;
+}
+
+.control-group label span {
+    color: #00ff88;
+    font-weight: bold;
+}
+
+/* Sliders */
+input[type="range"] {
+    width: 100%;
+    height: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    outline: none;
+    cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #00ff88;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+}
+
+input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: #00ff88;
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+}
+
+/* Preset Buttons */
+.preset-buttons {
+    display: flex;
+    gap: 6px;
+}
+
+.preset-btn {
+    flex: 1;
+    padding: 8px 4px;
+    font-size: 11px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #ddd;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.preset-btn:hover {
+    background: rgba(0, 255, 136, 0.2);
+    border-color: #00ff88;
+    color: #fff;
+}
+
+.preset-btn.active {
+    background: rgba(0, 255, 136, 0.3);
+    border-color: #00ff88;
+    color: #00ff88;
+}
+
+/* Toggle Buttons */
+.toggle-group {
+    display: flex;
+    gap: 6px;
+}
+
+.toggle-btn {
+    flex: 1;
+    padding: 8px 12px;
+    font-size: 12px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #ddd;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.toggle-btn.active {
+    background: rgba(0, 255, 136, 0.3);
+    border-color: #00ff88;
+    color: #00ff88;
+}
+
+/* Select Dropdown */
+select {
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 12px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #ddd;
+    border-radius: 6px;
+    cursor: pointer;
+    outline: none;
+}
+
+select:hover {
+    background: rgba(255, 255, 255, 0.12);
+}
+
+select option {
+    background: #1a1a1f;
+    color: #ddd;
+}
+
+/* Action Buttons */
+.button-group {
+    display: flex;
+    gap: 8px;
+}
+
+.button-group button {
+    flex: 1;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    background: rgba(0, 255, 136, 0.2);
+    border: 1px solid rgba(0, 255, 136, 0.4);
+    color: #00ff88;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.button-group button:hover {
+    background: rgba(0, 255, 136, 0.35);
+    transform: translateY(-1px);
+}
+
+.button-group button:active {
+    transform: translateY(0);
+}
+
+#pause-btn.paused {
+    background: rgba(255, 100, 100, 0.3);
+    border-color: rgba(255, 100, 100, 0.5);
+    color: #ff6464;
+}
+
+/* Scrollbar Styling */
+#panel-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+#panel-content::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+#panel-content::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+#panel-content::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Tooltip styling via title attribute - browser default */
+[title] {
+    position: relative;
+}
+
+/* Theme-specific stats styling */
+body.theme-rush #stats {
+    background: rgba(255, 255, 255, 0.9);
+    color: #333;
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+body.theme-rush #stats span {
+    color: #0066cc;
+}
+
+body.theme-f1 #stats {
+    background: rgba(20, 20, 20, 0.85);
+    color: #ff3333;
+    border-color: rgba(255, 51, 51, 0.3);
+}
+
+body.theme-f1 #stats span {
+    color: #ffcc00;
+}

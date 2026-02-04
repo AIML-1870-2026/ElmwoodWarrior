@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traffic Boids Simulation</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+
+    <!-- Instrumentation Overlay -->
+    <div id="stats">
+        <div>FPS: <span id="fps">0</span></div>
+        <div>Agents: <span id="agent-count">0</span></div>
+        <div>Avg Speed: <span id="avg-speed">0</span></div>
+        <div>Avg Neighbors: <span id="avg-neighbors">0</span></div>
+    </div>
+
+    <!-- Control Panel -->
+    <div id="control-panel" class="collapsed">
+        <div id="panel-header">
+            <span>Settings</span>
+            <span id="toggle-icon">+</span>
+        </div>
+        <div id="panel-content">
+            <!-- Presets -->
+            <div class="control-group">
+                <label>Presets</label>
+                <div class="preset-buttons">
+                    <button class="preset-btn" data-preset="schooling" title="Synchronized formations moving as a coordinated unit; fish-school behavior">Schooling</button>
+                    <button class="preset-btn" data-preset="chaotic" title="Erratic, unpredictable motion; agents barely influence each other">Chaotic Swarm</button>
+                    <button class="preset-btn" data-preset="cluster" title="Dense blob that moves together; agents constantly pulled toward center mass">Tight Cluster</button>
+                </div>
+            </div>
+
+            <!-- Flocking Parameters -->
+            <div class="control-group">
+                <label title="How strongly cars avoid each other. Higher values = more personal space, lower density.">
+                    Separation: <span id="separation-value">1.5</span>
+                </label>
+                <input type="range" id="separation" min="0" max="5" step="0.1" value="1.5">
+            </div>
+
+            <div class="control-group">
+                <label title="How much cars try to match the direction and speed of their neighbors.">
+                    Alignment: <span id="alignment-value">1.0</span>
+                </label>
+                <input type="range" id="alignment" min="0" max="5" step="0.1" value="1.0">
+            </div>
+
+            <div class="control-group">
+                <label title="How strongly cars are attracted to the center of their local group.">
+                    Cohesion: <span id="cohesion-value">1.0</span>
+                </label>
+                <input type="range" id="cohesion" min="0" max="5" step="0.1" value="1.0">
+            </div>
+
+            <div class="control-group">
+                <label title="How far each car can 'see' to detect neighbors. Larger radius = more neighbors considered.">
+                    Neighbor Radius: <span id="radius-value">75</span>px
+                </label>
+                <input type="range" id="radius" min="20" max="200" step="5" value="75">
+            </div>
+
+            <div class="control-group">
+                <label title="Maximum speed limit for all cars.">
+                    Max Speed: <span id="max-speed-value">4</span>
+                </label>
+                <input type="range" id="max-speed" min="1" max="10" step="0.5" value="4">
+            </div>
+
+            <div class="control-group">
+                <label title="How sharply cars can turn. Lower values = wider turns, higher values = tighter maneuvers.">
+                    Max Force: <span id="max-force-value">0.1</span>
+                </label>
+                <input type="range" id="max-force" min="0.01" max="1" step="0.01" value="0.1">
+            </div>
+
+            <div class="control-group">
+                <label title="Number of cars in the simulation. More agents = more complex patterns.">
+                    Agent Count: <span id="count-value">300</span>
+                </label>
+                <input type="range" id="agent-count-slider" min="50" max="2000" step="50" value="300">
+            </div>
+
+            <!-- Global Controls -->
+            <div class="control-group">
+                <label title="Wrap: cars exiting one edge reappear on the opposite side. Bounce: cars reflect off edges.">Boundary Mode</label>
+                <div class="toggle-group">
+                    <button id="wrap-btn" class="toggle-btn active" title="Agents exiting one edge reappear on opposite side">Wrap</button>
+                    <button id="bounce-btn" class="toggle-btn" title="Agents reflect off edges like billiard balls">Bounce</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label title="Change the visual appearance of the simulation.">Theme</label>
+                <select id="theme-select">
+                    <option value="night" title="Cinematic long-exposure traffic photography look">Night City</option>
+                    <option value="rush" title="Clean GPS/navigation app style">Rush Hour</option>
+                    <option value="f1" title="Technical racing telemetry aesthetic">Formula 1</option>
+                </select>
+            </div>
+
+            <div class="control-group button-group">
+                <button id="pause-btn" title="Freeze simulation logic while keeping the display visible">Pause</button>
+                <button id="reset-btn" title="Randomize all agent positions and velocities">Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/spatial-grid.js"></script>
+    <script src="js/boid.js"></script>
+    <script src="js/flock.js"></script>
+    <script src="js/renderer.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
