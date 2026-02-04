@@ -27,7 +27,8 @@ class UI {
             radius: document.getElementById('radius'),
             maxSpeed: document.getElementById('max-speed'),
             maxForce: document.getElementById('max-force'),
-            agentCount: document.getElementById('agent-count-slider')
+            agentCount: document.getElementById('agent-count-slider'),
+            trailLength: document.getElementById('trail-length')
         };
 
         // Value displays
@@ -38,10 +39,12 @@ class UI {
             radius: document.getElementById('radius-value'),
             maxSpeed: document.getElementById('max-speed-value'),
             maxForce: document.getElementById('max-force-value'),
-            agentCount: document.getElementById('count-value')
+            agentCount: document.getElementById('count-value'),
+            trailLength: document.getElementById('trail-value')
         };
 
         this.setupEventListeners();
+        this.setupKeyboardShortcuts();
     }
 
     setupEventListeners() {
@@ -95,6 +98,12 @@ class UI {
             this.flock.setCount(count);
         });
 
+        // Trail length slider
+        this.sliders.trailLength.addEventListener('input', (e) => {
+            CONFIG.trailLength = parseInt(e.target.value);
+            this.valueDisplays.trailLength.textContent = CONFIG.trailLength;
+        });
+
         // Preset buttons
         document.querySelectorAll('.preset-btn').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -105,15 +114,11 @@ class UI {
 
         // Boundary mode
         this.wrapBtn.addEventListener('click', () => {
-            CONFIG.boundaryMode = 'wrap';
-            this.wrapBtn.classList.add('active');
-            this.bounceBtn.classList.remove('active');
+            this.setBoundaryMode('wrap');
         });
 
         this.bounceBtn.addEventListener('click', () => {
-            CONFIG.boundaryMode = 'bounce';
-            this.bounceBtn.classList.add('active');
-            this.wrapBtn.classList.remove('active');
+            this.setBoundaryMode('bounce');
         });
 
         // Theme selector
@@ -123,15 +128,83 @@ class UI {
 
         // Pause/Resume
         this.pauseBtn.addEventListener('click', () => {
-            CONFIG.paused = !CONFIG.paused;
-            this.pauseBtn.textContent = CONFIG.paused ? 'Resume' : 'Pause';
-            this.pauseBtn.classList.toggle('paused', CONFIG.paused);
+            this.togglePause();
         });
 
         // Reset
         this.resetBtn.addEventListener('click', () => {
             this.flock.reset();
         });
+    }
+
+    setupKeyboardShortcuts() {
+        document.addEventListener('keydown', (e) => {
+            // Ignore if user is typing in an input
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+
+            switch (e.key.toLowerCase()) {
+                case ' ':
+                    e.preventDefault();
+                    this.togglePause();
+                    break;
+                case 'r':
+                    this.flock.reset();
+                    break;
+                case 't':
+                    this.cycleTheme();
+                    break;
+                case 'b':
+                    this.toggleBoundaryMode();
+                    break;
+                case 's':
+                    this.panel.classList.toggle('collapsed');
+                    break;
+                case '1':
+                    this.applyPresetByIndex(0);
+                    break;
+                case '2':
+                    this.applyPresetByIndex(1);
+                    break;
+                case '3':
+                    this.applyPresetByIndex(2);
+                    break;
+            }
+        });
+    }
+
+    togglePause() {
+        CONFIG.paused = !CONFIG.paused;
+        this.pauseBtn.textContent = CONFIG.paused ? 'Resume' : 'Pause';
+        this.pauseBtn.classList.toggle('paused', CONFIG.paused);
+    }
+
+    setBoundaryMode(mode) {
+        CONFIG.boundaryMode = mode;
+        this.wrapBtn.classList.toggle('active', mode === 'wrap');
+        this.bounceBtn.classList.toggle('active', mode === 'bounce');
+    }
+
+    toggleBoundaryMode() {
+        const newMode = CONFIG.boundaryMode === 'wrap' ? 'bounce' : 'wrap';
+        this.setBoundaryMode(newMode);
+    }
+
+    cycleTheme() {
+        const currentIndex = THEME_ORDER.indexOf(CONFIG.theme);
+        const nextIndex = (currentIndex + 1) % THEME_ORDER.length;
+        const nextTheme = THEME_ORDER[nextIndex];
+        this.setTheme(nextTheme);
+        this.themeSelect.value = nextTheme;
+    }
+
+    applyPresetByIndex(index) {
+        const presetNames = Object.keys(PRESETS);
+        if (index < presetNames.length) {
+            const presetName = presetNames[index];
+            this.applyPreset(presetName);
+            const btn = document.querySelector(`[data-preset="${presetName}"]`);
+            if (btn) this.setActivePreset(btn);
+        }
     }
 
     applyPreset(presetName) {

@@ -6,13 +6,25 @@ class Renderer {
         this.ctx = canvas.getContext('2d');
         this.resize();
 
-        // Rush Hour theme car colors
+        // Rush Hour theme car colors (more varied)
         this.carColors = [
-            '#4a6fa5', // Blue
-            '#6b7b8c', // Gray
-            '#8b9a6b', // Olive
-            '#a55a4a', // Rust
-            '#7a6b8c'  // Purple-gray
+            '#3d5a80', // Blue
+            '#5c677d', // Slate
+            '#7a8b6e', // Sage
+            '#b8860b', // Dark gold
+            '#8b4513', // Saddle brown
+            '#cd5c5c', // Indian red
+            '#4a4a4a', // Dark gray
+            '#2f4f4f'  // Dark slate
+        ];
+
+        // F1 team colors for variety
+        this.f1Colors = [
+            { primary: '#ff0000', accent: '#fff' },   // Ferrari red
+            { primary: '#00d2be', accent: '#000' },   // Mercedes teal
+            { primary: '#0600ef', accent: '#fff' },   // Red Bull blue
+            { primary: '#ff8700', accent: '#000' },   // McLaren orange
+            { primary: '#006f62', accent: '#fff' },   // Aston Martin green
         ];
     }
 
@@ -24,12 +36,24 @@ class Renderer {
 
     clear() {
         const theme = THEMES[CONFIG.theme];
-        this.ctx.fillStyle = theme.background;
-        this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+        if (CONFIG.theme === 'night') {
+            // Slight fade effect for trail persistence
+            this.ctx.fillStyle = 'rgba(10, 10, 15, 0.15)';
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        } else {
+            this.ctx.fillStyle = theme.background;
+            this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+        }
 
         // Draw grid for F1 theme
         if (CONFIG.theme === 'f1') {
             this.drawGrid();
+        }
+
+        // Draw road markings for Rush Hour theme
+        if (CONFIG.theme === 'rush') {
+            this.drawRoadMarkings();
         }
 
         // Draw boundary for bounce mode
@@ -39,51 +63,127 @@ class Renderer {
     }
 
     drawGrid() {
-        this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
-        this.ctx.lineWidth = 1;
+        const ctx = this.ctx;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+        ctx.lineWidth = 1;
 
-        const gridSize = 50;
+        const gridSize = 40;
         for (let x = 0; x < this.canvas.width; x += gridSize) {
-            this.ctx.beginPath();
-            this.ctx.moveTo(x, 0);
-            this.ctx.lineTo(x, this.canvas.height);
-            this.ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, this.canvas.height);
+            ctx.stroke();
         }
         for (let y = 0; y < this.canvas.height; y += gridSize) {
-            this.ctx.beginPath();
-            this.ctx.moveTo(0, y);
-            this.ctx.lineTo(this.canvas.width, y);
-            this.ctx.stroke();
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(this.canvas.width, y);
+            ctx.stroke();
+        }
+
+        // Draw coordinate markers
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+        ctx.font = '10px monospace';
+        for (let x = 100; x < this.canvas.width; x += 200) {
+            ctx.fillText(x, x + 2, 12);
         }
     }
 
+    drawRoadMarkings() {
+        const ctx = this.ctx;
+        ctx.strokeStyle = 'rgba(200, 200, 200, 0.3)';
+        ctx.setLineDash([20, 30]);
+        ctx.lineWidth = 2;
+
+        // Horizontal lanes
+        for (let y = 100; y < this.canvas.height; y += 200) {
+            ctx.beginPath();
+            ctx.moveTo(0, y);
+            ctx.lineTo(this.canvas.width, y);
+            ctx.stroke();
+        }
+
+        // Vertical lanes
+        for (let x = 100; x < this.canvas.width; x += 200) {
+            ctx.beginPath();
+            ctx.moveTo(x, 0);
+            ctx.lineTo(x, this.canvas.height);
+            ctx.stroke();
+        }
+
+        ctx.setLineDash([]);
+    }
+
     drawBoundary() {
-        this.ctx.strokeStyle = CONFIG.theme === 'rush' ? '#666' : '#444';
-        this.ctx.lineWidth = 3;
-        this.ctx.strokeRect(5, 5, this.canvas.width - 10, this.canvas.height - 10);
+        const ctx = this.ctx;
+        if (CONFIG.theme === 'rush') {
+            ctx.strokeStyle = '#999';
+            ctx.lineWidth = 4;
+        } else if (CONFIG.theme === 'f1') {
+            // Racing track boundary
+            ctx.strokeStyle = '#ff3333';
+            ctx.lineWidth = 5;
+        } else {
+            ctx.strokeStyle = 'rgba(100, 100, 120, 0.5)';
+            ctx.lineWidth = 3;
+        }
+        ctx.strokeRect(5, 5, this.canvas.width - 10, this.canvas.height - 10);
+
+        // Corner markers for F1
+        if (CONFIG.theme === 'f1') {
+            ctx.fillStyle = '#ffcc00';
+            const cornerSize = 20;
+            ctx.fillRect(5, 5, cornerSize, cornerSize);
+            ctx.fillRect(this.canvas.width - 25, 5, cornerSize, cornerSize);
+            ctx.fillRect(5, this.canvas.height - 25, cornerSize, cornerSize);
+            ctx.fillRect(this.canvas.width - 25, this.canvas.height - 25, cornerSize, cornerSize);
+        }
     }
 
     // Draw mouse influence radius
     drawMouse(x, y) {
         if (x < 0 || y < 0) return;
 
-        this.ctx.beginPath();
-        this.ctx.arc(x, y, CONFIG.mouseRadius, 0, Math.PI * 2);
+        const ctx = this.ctx;
+
+        // Animated pulse effect
+        const pulse = Math.sin(Date.now() / 200) * 0.1 + 0.9;
+        const radius = CONFIG.mouseRadius * pulse;
+
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
 
         if (CONFIG.theme === 'night') {
-            this.ctx.strokeStyle = 'rgba(255, 100, 100, 0.3)';
-            this.ctx.fillStyle = 'rgba(255, 50, 50, 0.1)';
+            const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+            gradient.addColorStop(0, 'rgba(255, 80, 80, 0.3)');
+            gradient.addColorStop(0.7, 'rgba(255, 50, 50, 0.1)');
+            gradient.addColorStop(1, 'rgba(255, 50, 50, 0)');
+            ctx.fillStyle = gradient;
+            ctx.strokeStyle = 'rgba(255, 100, 100, 0.4)';
         } else if (CONFIG.theme === 'rush') {
-            this.ctx.strokeStyle = 'rgba(200, 50, 50, 0.4)';
-            this.ctx.fillStyle = 'rgba(200, 50, 50, 0.1)';
+            ctx.strokeStyle = 'rgba(200, 50, 50, 0.5)';
+            ctx.fillStyle = 'rgba(200, 50, 50, 0.1)';
         } else {
-            this.ctx.strokeStyle = 'rgba(255, 50, 50, 0.5)';
-            this.ctx.fillStyle = 'rgba(255, 50, 50, 0.15)';
+            const gradient = ctx.createRadialGradient(x, y, 0, x, y, radius);
+            gradient.addColorStop(0, 'rgba(255, 50, 50, 0.4)');
+            gradient.addColorStop(1, 'rgba(255, 50, 50, 0)');
+            ctx.fillStyle = gradient;
+            ctx.strokeStyle = 'rgba(255, 100, 50, 0.6)';
         }
 
-        this.ctx.lineWidth = 2;
-        this.ctx.fill();
-        this.ctx.stroke();
+        ctx.lineWidth = 2;
+        ctx.fill();
+        ctx.stroke();
+
+        // Center crosshair
+        ctx.beginPath();
+        ctx.moveTo(x - 8, y);
+        ctx.lineTo(x + 8, y);
+        ctx.moveTo(x, y - 8);
+        ctx.lineTo(x, y + 8);
+        ctx.strokeStyle = CONFIG.theme === 'rush' ? 'rgba(150, 50, 50, 0.5)' : 'rgba(255, 100, 100, 0.5)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
     }
 
     // Main render function
@@ -109,158 +209,242 @@ class Renderer {
 
     // Night City theme - long exposure photography style
     renderNightCity(boids) {
+        const ctx = this.ctx;
+
         for (const boid of boids) {
-            // Draw trail (taillights)
-            if (boid.trail.length > 1) {
-                this.ctx.beginPath();
-                this.ctx.moveTo(boid.trail[0].x, boid.trail[0].y);
-
+            // Draw trail (taillights) with glow
+            if (boid.trail.length > 2) {
+                // Outer glow trail
+                ctx.beginPath();
+                ctx.moveTo(boid.trail[0].x, boid.trail[0].y);
                 for (let i = 1; i < boid.trail.length; i++) {
-                    this.ctx.lineTo(boid.trail[i].x, boid.trail[i].y);
+                    ctx.lineTo(boid.trail[i].x, boid.trail[i].y);
                 }
+                ctx.lineTo(boid.x, boid.y);
+                ctx.strokeStyle = 'rgba(255, 30, 30, 0.15)';
+                ctx.lineWidth = 8;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.stroke();
 
-                const gradient = this.ctx.createLinearGradient(
+                // Main trail
+                ctx.beginPath();
+                ctx.moveTo(boid.trail[0].x, boid.trail[0].y);
+                for (let i = 1; i < boid.trail.length; i++) {
+                    const alpha = i / boid.trail.length;
+                    ctx.lineTo(boid.trail[i].x, boid.trail[i].y);
+                }
+                ctx.lineTo(boid.x, boid.y);
+
+                const gradient = ctx.createLinearGradient(
                     boid.trail[0].x, boid.trail[0].y,
                     boid.x, boid.y
                 );
                 gradient.addColorStop(0, 'rgba(255, 50, 50, 0)');
-                gradient.addColorStop(1, 'rgba(255, 80, 80, 0.8)');
+                gradient.addColorStop(0.5, 'rgba(255, 60, 40, 0.6)');
+                gradient.addColorStop(1, 'rgba(255, 80, 60, 1)');
 
-                this.ctx.strokeStyle = gradient;
-                this.ctx.lineWidth = 3;
-                this.ctx.lineCap = 'round';
-                this.ctx.stroke();
+                ctx.strokeStyle = gradient;
+                ctx.lineWidth = 3;
+                ctx.stroke();
             }
 
-            // Draw headlights (white glow in front)
-            this.ctx.save();
-            this.ctx.translate(boid.x, boid.y);
-            this.ctx.rotate(boid.heading);
+            // Draw car with lights
+            ctx.save();
+            ctx.translate(boid.x, boid.y);
+            ctx.rotate(boid.heading);
 
-            // Headlight beam
-            const beamGradient = this.ctx.createRadialGradient(8, 0, 0, 8, 0, 25);
-            beamGradient.addColorStop(0, 'rgba(255, 255, 230, 0.9)');
-            beamGradient.addColorStop(0.5, 'rgba(255, 255, 200, 0.3)');
+            // Headlight beams (cone of light)
+            const beamGradient = ctx.createRadialGradient(10, 0, 0, 10, 0, 35);
+            beamGradient.addColorStop(0, 'rgba(255, 255, 220, 0.8)');
+            beamGradient.addColorStop(0.3, 'rgba(255, 255, 200, 0.3)');
             beamGradient.addColorStop(1, 'rgba(255, 255, 200, 0)');
 
-            this.ctx.beginPath();
-            this.ctx.arc(8, 0, 25, -0.5, 0.5);
-            this.ctx.lineTo(8, 0);
-            this.ctx.closePath();
-            this.ctx.fillStyle = beamGradient;
-            this.ctx.fill();
+            ctx.beginPath();
+            ctx.moveTo(6, -3);
+            ctx.lineTo(40, -12);
+            ctx.lineTo(40, 12);
+            ctx.lineTo(6, 3);
+            ctx.closePath();
+            ctx.fillStyle = beamGradient;
+            ctx.fill();
 
-            // Main headlight
-            this.ctx.beginPath();
-            this.ctx.arc(6, -2, 2, 0, Math.PI * 2);
-            this.ctx.arc(6, 2, 2, 0, Math.PI * 2);
-            this.ctx.fillStyle = '#ffffee';
-            this.ctx.fill();
+            // Car body silhouette
+            ctx.fillStyle = 'rgba(20, 20, 30, 0.8)';
+            ctx.fillRect(-8, -3, 14, 6);
 
-            // Taillights
-            this.ctx.beginPath();
-            this.ctx.arc(-6, -2, 2, 0, Math.PI * 2);
-            this.ctx.arc(-6, 2, 2, 0, Math.PI * 2);
-            this.ctx.fillStyle = '#ff4444';
-            this.ctx.fill();
+            // Headlights (bright)
+            ctx.shadowColor = '#ffffcc';
+            ctx.shadowBlur = 10;
+            ctx.beginPath();
+            ctx.arc(5, -2, 2, 0, Math.PI * 2);
+            ctx.arc(5, 2, 2, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffffee';
+            ctx.fill();
 
-            this.ctx.restore();
+            // Taillights (red glow)
+            ctx.shadowColor = '#ff3333';
+            ctx.shadowBlur = 12;
+            ctx.beginPath();
+            ctx.arc(-6, -2, 2.5, 0, Math.PI * 2);
+            ctx.arc(-6, 2, 2.5, 0, Math.PI * 2);
+            ctx.fillStyle = '#ff4444';
+            ctx.fill();
+
+            ctx.restore();
         }
     }
 
     // Rush Hour theme - GPS/map view style
     renderRushHour(boids) {
-        for (const boid of boids) {
-            this.ctx.save();
-            this.ctx.translate(boid.x, boid.y);
-            this.ctx.rotate(boid.heading);
+        const ctx = this.ctx;
 
-            // Car body (rectangle)
-            const width = 18 * boid.size;
-            const height = 8 * boid.size;
+        for (const boid of boids) {
+            ctx.save();
+            ctx.translate(boid.x, boid.y);
+            ctx.rotate(boid.heading);
+
+            const width = 16 * boid.size;
+            const height = 7 * boid.size;
+            const color = this.carColors[boid.colorIndex % this.carColors.length];
 
             // Shadow
-            this.ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-            this.ctx.fillRect(-width / 2 + 2, -height / 2 + 2, width, height);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+            this.roundRect(ctx, -width / 2 + 2, -height / 2 + 2, width, height, 2);
+            ctx.fill();
 
             // Car body
-            this.ctx.fillStyle = this.carColors[boid.colorIndex];
-            this.ctx.fillRect(-width / 2, -height / 2, width, height);
+            ctx.fillStyle = color;
+            this.roundRect(ctx, -width / 2, -height / 2, width, height, 2);
+            ctx.fill();
+
+            // Roof/cabin (darker)
+            ctx.fillStyle = this.darkenColor(color, 0.2);
+            this.roundRect(ctx, -width / 4, -height / 2.5, width / 2.2, height / 1.25, 1);
+            ctx.fill();
 
             // Windshield
-            this.ctx.fillStyle = 'rgba(200, 220, 240, 0.8)';
-            this.ctx.fillRect(width / 6, -height / 3, width / 4, height / 1.5);
+            ctx.fillStyle = 'rgba(180, 210, 230, 0.9)';
+            ctx.fillRect(width / 8, -height / 3, width / 5, height / 1.5);
 
-            // Outline
-            this.ctx.strokeStyle = 'rgba(0, 0, 0, 0.3)';
-            this.ctx.lineWidth = 1;
-            this.ctx.strokeRect(-width / 2, -height / 2, width, height);
+            // Rear window
+            ctx.fillStyle = 'rgba(160, 190, 210, 0.7)';
+            ctx.fillRect(-width / 3.5, -height / 3, width / 6, height / 1.5);
 
-            this.ctx.restore();
+            ctx.restore();
         }
     }
 
     // Formula 1 theme - telemetry/racing style
     renderF1(boids) {
+        const ctx = this.ctx;
+
         for (const boid of boids) {
             const speed = boid.getSpeed();
-            const speedRatio = speed / CONFIG.maxSpeed;
+            const speedRatio = Math.min(speed / CONFIG.maxSpeed, 1);
 
             // Speed-based color (green -> yellow -> red)
             let r, g, b;
             if (speedRatio < 0.5) {
-                // Green to yellow
                 r = Math.floor(speedRatio * 2 * 255);
                 g = 255;
-                b = 0;
+                b = 50;
             } else {
-                // Yellow to red
                 r = 255;
                 g = Math.floor((1 - (speedRatio - 0.5) * 2) * 255);
-                b = 0;
+                b = 50;
             }
-            const color = `rgb(${r}, ${g}, ${b})`;
+            const speedColor = `rgb(${r}, ${g}, ${b})`;
 
-            this.ctx.save();
-            this.ctx.translate(boid.x, boid.y);
-            this.ctx.rotate(boid.heading);
+            // Team color based on boid ID
+            const teamIndex = boid.id % this.f1Colors.length;
+            const teamColor = this.f1Colors[teamIndex];
 
-            // Draw velocity vector line
-            this.ctx.beginPath();
-            this.ctx.moveTo(0, 0);
-            this.ctx.lineTo(-speed * 4, 0);
-            this.ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.4)`;
-            this.ctx.lineWidth = 2;
-            this.ctx.stroke();
+            ctx.save();
+            ctx.translate(boid.x, boid.y);
+            ctx.rotate(boid.heading);
 
-            // Sleek wedge/arrow shape
-            this.ctx.beginPath();
-            this.ctx.moveTo(12, 0);        // Front point
-            this.ctx.lineTo(-8, -5);       // Back left
-            this.ctx.lineTo(-5, 0);        // Back indent
-            this.ctx.lineTo(-8, 5);        // Back right
-            this.ctx.closePath();
+            // Velocity vector trail
+            ctx.beginPath();
+            ctx.moveTo(-5, 0);
+            ctx.lineTo(-5 - speed * 5, 0);
+            ctx.strokeStyle = `rgba(${r}, ${g}, ${b}, 0.3)`;
+            ctx.lineWidth = 3;
+            ctx.lineCap = 'round';
+            ctx.stroke();
 
             // Glow effect
-            this.ctx.shadowColor = color;
-            this.ctx.shadowBlur = 8;
+            ctx.shadowColor = speedColor;
+            ctx.shadowBlur = 12;
 
-            this.ctx.fillStyle = color;
-            this.ctx.fill();
+            // F1 car body shape
+            ctx.beginPath();
+            ctx.moveTo(14, 0);          // Nose
+            ctx.lineTo(8, -2);          // Front wing connection
+            ctx.lineTo(10, -4);         // Front wing outer
+            ctx.lineTo(6, -4);          // Front wing inner
+            ctx.lineTo(4, -2.5);        // Chassis front
+            ctx.lineTo(-6, -3);         // Sidepod
+            ctx.lineTo(-10, -5);        // Rear wing outer
+            ctx.lineTo(-8, -2);         // Rear wing inner
+            ctx.lineTo(-10, 0);         // Rear
+            ctx.lineTo(-8, 2);
+            ctx.lineTo(-10, 5);
+            ctx.lineTo(-6, 3);
+            ctx.lineTo(4, 2.5);
+            ctx.lineTo(6, 4);
+            ctx.lineTo(10, 4);
+            ctx.lineTo(8, 2);
+            ctx.closePath();
 
-            // White cockpit
-            this.ctx.shadowBlur = 0;
-            this.ctx.beginPath();
-            this.ctx.ellipse(2, 0, 3, 2, 0, 0, Math.PI * 2);
-            this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-            this.ctx.fill();
+            ctx.fillStyle = teamColor.primary;
+            ctx.fill();
 
-            // Number/ID indicator
-            this.ctx.fillStyle = '#fff';
-            this.ctx.font = '6px monospace';
-            this.ctx.fillText(Math.floor(speedRatio * 100), -4, 2);
+            // Cockpit
+            ctx.shadowBlur = 0;
+            ctx.beginPath();
+            ctx.ellipse(1, 0, 4, 2, 0, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            ctx.fill();
 
-            this.ctx.restore();
+            // Driver helmet
+            ctx.beginPath();
+            ctx.arc(2, 0, 1.5, 0, Math.PI * 2);
+            ctx.fillStyle = teamColor.accent;
+            ctx.fill();
+
+            // Speed indicator bar
+            ctx.fillStyle = speedColor;
+            ctx.fillRect(-8, -7, speedRatio * 16, 2);
+            ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+            ctx.lineWidth = 0.5;
+            ctx.strokeRect(-8, -7, 16, 2);
+
+            ctx.restore();
         }
+    }
+
+    // Helper: Draw rounded rectangle
+    roundRect(ctx, x, y, width, height, radius) {
+        ctx.beginPath();
+        ctx.moveTo(x + radius, y);
+        ctx.lineTo(x + width - radius, y);
+        ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+        ctx.lineTo(x + width, y + height - radius);
+        ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+        ctx.lineTo(x + radius, y + height);
+        ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+        ctx.lineTo(x, y + radius);
+        ctx.quadraticCurveTo(x, y, x + radius, y);
+        ctx.closePath();
+    }
+
+    // Helper: Darken a hex color
+    darkenColor(hex, amount) {
+        const num = parseInt(hex.slice(1), 16);
+        const r = Math.max(0, (num >> 16) - Math.floor(255 * amount));
+        const g = Math.max(0, ((num >> 8) & 0x00FF) - Math.floor(255 * amount));
+        const b = Math.max(0, (num & 0x0000FF) - Math.floor(255 * amount));
+        return `rgb(${r}, ${g}, ${b})`;
     }
 }

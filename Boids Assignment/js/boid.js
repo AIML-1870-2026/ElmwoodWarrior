@@ -13,8 +13,9 @@ class Boid {
         this.vx = Math.cos(angle) * speed;
         this.vy = Math.sin(angle) * speed;
 
-        // Heading (rotation angle)
+        // Heading (rotation angle) with smoothing
         this.heading = angle;
+        this.targetHeading = angle;
 
         // Acceleration
         this.ax = 0;
@@ -24,44 +25,79 @@ class Boid {
         this.trail = [];
         this.maxTrailLength = CONFIG.trailLength;
 
-        // Individual variation for Rush Hour theme
-        this.size = 0.8 + Math.random() * 0.4; // 0.8 to 1.2
+        // Individual variation
+        this.size = 0.8 + Math.random() * 0.4;
         this.colorIndex = Math.floor(Math.random() * 5);
+        this.maxSpeedVariation = 0.85 + Math.random() * 0.3; // 85% to 115% of max speed
+
+        // Unique ID for visual variety
+        this.id = Math.floor(Math.random() * 100);
 
         // Neighbor count for stats
         this.neighborCount = 0;
+
+        // Wander angle for more natural movement when alone
+        this.wanderAngle = Math.random() * Math.PI * 2;
     }
 
     // Update position and physics
-    update() {
+    update(dt = 1) {
+        // Update trail length from config
+        this.maxTrailLength = CONFIG.trailLength;
+
         // Store position for trail
         if (THEMES[CONFIG.theme].showTrails) {
-            this.trail.push({ x: this.x, y: this.y });
-            if (this.trail.length > this.maxTrailLength) {
+            this.trail.push({ x: this.x, y: this.y, vx: this.vx, vy: this.vy });
+            while (this.trail.length > this.maxTrailLength) {
                 this.trail.shift();
             }
-        } else {
+        } else if (this.trail.length > 0) {
             this.trail = [];
         }
 
-        // Apply acceleration to velocity
-        this.vx += this.ax;
-        this.vy += this.ay;
+        // Apply soft boundary avoidance for bounce mode
+        if (CONFIG.boundaryMode === 'bounce') {
+            this.applySoftBoundary();
+        }
 
-        // Limit speed
+        // Apply acceleration to velocity
+        this.vx += this.ax * dt;
+        this.vy += this.ay * dt;
+
+        // Apply subtle wander when no neighbors (more natural movement)
+        if (this.neighborCount === 0) {
+            this.wanderAngle += (Math.random() - 0.5) * 0.3;
+            this.vx += Math.cos(this.wanderAngle) * 0.02;
+            this.vy += Math.sin(this.wanderAngle) * 0.02;
+        }
+
+        // Limit speed (with individual variation)
+        const personalMaxSpeed = CONFIG.maxSpeed * this.maxSpeedVariation;
         const speed = Math.sqrt(this.vx * this.vx + this.vy * this.vy);
-        if (speed > CONFIG.maxSpeed) {
-            this.vx = (this.vx / speed) * CONFIG.maxSpeed;
-            this.vy = (this.vy / speed) * CONFIG.maxSpeed;
+        if (speed > personalMaxSpeed) {
+            this.vx = (this.vx / speed) * personalMaxSpeed;
+            this.vy = (this.vy / speed) * personalMaxSpeed;
+        }
+
+        // Minimum speed to keep things moving
+        if (speed < 0.5) {
+            const boost = 0.5 / (speed || 0.1);
+            this.vx *= boost;
+            this.vy *= boost;
         }
 
         // Update position
-        this.x += this.vx;
-        this.y += this.vy;
+        this.x += this.vx * dt;
+        this.y += this.vy * dt;
 
-        // Update heading
+        // Smooth heading interpolation for more natural rotation
         if (speed > 0.1) {
-            this.heading = Math.atan2(this.vy, this.vx);
+            this.targetHeading = Math.atan2(this.vy, this.vx);
+            // Smoothly interpolate heading
+            let diff = this.targetHeading - this.heading;
+            while (diff > Math.PI) diff -= Math.PI * 2;
+            while (diff < -Math.PI) diff += Math.PI * 2;
+            this.heading += diff * 0.15;
         }
 
         // Reset acceleration
@@ -72,7 +108,34 @@ class Boid {
         this.handleBoundary();
     }
 
-    // Apply a force (limited by maxForce)
+    // Soft boundary avoidance - gradual steering away from edges
+    applySoftBoundary() {
+        const margin = 100;
+        const strength = 0.5;
+
+        // Left edge
+        if (this.x < margin) {
+            const force = (margin - this.x) / margin;
+            this.ax += force * strength;
+        }
+        // Right edge
+        if (this.x > this.width - margin) {
+            const force = (this.x - (this.width - margin)) / margin;
+            this.ax -= force * strength;
+        }
+        // Top edge
+        if (this.y < margin) {
+            const force = (margin - this.y) / margin;
+            this.ay += force * strength;
+        }
+        // Bottom edge
+        if (this.y > this.height - margin) {
+            const force = (this.y - (this.height - margin)) / margin;
+            this.ay -= force * strength;
+        }
+    }
+
+    // Apply a force
     applyForce(fx, fy) {
         this.ax += fx;
         this.ay += fy;
@@ -87,23 +150,23 @@ class Boid {
             if (this.y < 0) this.y += this.height;
             if (this.y > this.height) this.y -= this.height;
         } else {
-            // Bounce off edges
-            const margin = 10;
+            // Hard boundary fallback (soft boundary handles most cases)
+            const margin = 5;
             if (this.x < margin) {
                 this.x = margin;
-                this.vx *= -1;
+                this.vx = Math.abs(this.vx) * 0.8;
             }
             if (this.x > this.width - margin) {
                 this.x = this.width - margin;
-                this.vx *= -1;
+                this.vx = -Math.abs(this.vx) * 0.8;
             }
             if (this.y < margin) {
                 this.y = margin;
-                this.vy *= -1;
+                this.vy = Math.abs(this.vy) * 0.8;
             }
             if (this.y > this.height - margin) {
                 this.y = this.height - margin;
-                this.vy *= -1;
+                this.vy = -Math.abs(this.vy) * 0.8;
             }
         }
     }
@@ -117,7 +180,6 @@ class Boid {
         while (relativeAngle > Math.PI) relativeAngle -= Math.PI * 2;
         while (relativeAngle < -Math.PI) relativeAngle += Math.PI * 2;
 
-        // Check if within FOV (270 degrees = ±135 degrees from heading)
         return Math.abs(relativeAngle) < CONFIG.fovHalfAngle;
     }
 
@@ -156,8 +218,8 @@ class Boid {
         for (const n of neighbors) {
             const dist = Math.sqrt(n.distSq);
             if (dist > 0) {
-                // Weight by inverse distance (closer = stronger repulsion)
-                const weight = 1 / dist;
+                // Quadratic falloff for smoother separation
+                const weight = 1 / (dist * dist) * 50;
                 steerX -= (n.dx / dist) * weight;
                 steerY -= (n.dy / dist) * weight;
             }
@@ -199,11 +261,15 @@ class Boid {
         centerX /= neighbors.length;
         centerY /= neighbors.length;
 
-        // Direction to center
         const dx = centerX - this.x;
         const dy = centerY - this.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
 
-        return this.limitForce(dx, dy);
+        // Scale cohesion by distance
+        if (dist > 0) {
+            return this.limitForce(dx / dist, dy / dist);
+        }
+        return { x: 0, y: 0 };
     }
 
     // Flee from mouse cursor
@@ -215,10 +281,12 @@ class Boid {
 
         if (distSq < radiusSq && distSq > 0) {
             const dist = Math.sqrt(distSq);
-            // Stronger force when closer
-            const strength = (1 - dist / CONFIG.mouseRadius) * CONFIG.mouseForce;
-            const force = this.limitForce(dx / dist * strength, dy / dist * strength);
-            this.applyForce(force.x * 3, force.y * 3);
+            // Exponential falloff for smoother flee response
+            const strength = Math.pow(1 - dist / CONFIG.mouseRadius, 2) * CONFIG.mouseForce;
+            this.applyForce(
+                (dx / dist) * strength * 3,
+                (dy / dist) * strength * 3
+            );
         }
     }
 

@@ -17,6 +17,14 @@
         <div>Avg Neighbors: <span id="avg-neighbors">0</span></div>
     </div>
 
+    <!-- Keyboard Hints -->
+    <div id="keyboard-hints">
+        <span><kbd>Space</kbd> Pause</span>
+        <span><kbd>R</kbd> Reset</span>
+        <span><kbd>T</kbd> Theme</span>
+        <span><kbd>B</kbd> Boundary</span>
+    </div>
+
     <!-- Control Panel -->
     <div id="control-panel" class="collapsed">
         <div id="panel-header">
@@ -84,6 +92,13 @@
                 <input type="range" id="agent-count-slider" min="50" max="2000" step="50" value="300">
             </div>
 
+            <div class="control-group" id="trail-control">
+                <label title="Length of light trails in Night City theme. Longer trails create more dramatic streaks.">
+                    Trail Length: <span id="trail-value">25</span>
+                </label>
+                <input type="range" id="trail-length" min="5" max="60" step="5" value="25">
+            </div>
+
             <!-- Global Controls -->
             <div class="control-group">
                 <label title="Wrap: cars exiting one edge reappear on the opposite side. Bounce: cars reflect off edges.">Boundary Mode</label>
@@ -103,8 +118,8 @@
             </div>
 
             <div class="control-group button-group">
-                <button id="pause-btn" title="Freeze simulation logic while keeping the display visible">Pause</button>
-                <button id="reset-btn" title="Randomize all agent positions and velocities">Reset</button>
+                <button id="pause-btn" title="Freeze simulation logic while keeping the display visible (Space)">Pause</button>
+                <button id="reset-btn" title="Randomize all agent positions and velocities (R)">Reset</button>
             </div>
         </div>
     </div>

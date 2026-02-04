@@ -13,8 +13,8 @@ const CONFIG = {
     agentCount: 300,
 
     // Perception cone (270 degrees = 3/4 of a circle)
-    fovAngle: Math.PI * 1.5, // 270 degrees in radians
-    fovHalfAngle: Math.PI * 0.75, // Half of FOV for angle checking
+    fovAngle: Math.PI * 1.5,
+    fovHalfAngle: Math.PI * 0.75,
 
     // Mouse predator settings
     mouseRadius: 120,
@@ -30,7 +30,7 @@ const CONFIG = {
     paused: false,
 
     // Trail settings for Night City theme
-    trailLength: 20,
+    trailLength: 25,
     trailFade: 0.92
 };
 
@@ -50,8 +50,8 @@ const PRESETS = {
         alignment: 0.3,
         cohesion: 0.3,
         neighborRadius: 30,
-        maxSpeed: 6,
-        maxForce: 0.2,
+        maxSpeed: 7,
+        maxForce: 0.25,
         description: 'Erratic, unpredictable motion; panicked crowd behavior'
     },
     cluster: {
@@ -86,3 +86,6 @@ const THEMES = {
         showTrails: false
     }
 };
+
+// Theme order for cycling
+const THEME_ORDER = ['night', 'rush', 'f1'];
