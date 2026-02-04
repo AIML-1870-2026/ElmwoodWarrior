@@ -402,3 +402,173 @@ body.theme-f1 #keyboard-hints span:hover {
     color: #ffcc00;
     border-color: rgba(255, 204, 0, 0.3);
 }
+
+/* Instructions Panel */
+#instructions-panel {
+    position: fixed;
+    top: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 400px;
+    max-width: calc(100vw - 350px);
+    background: rgba(20, 20, 25, 0.95);
+    border-radius: 12px;
+    overflow: hidden;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+    transition: max-height 0.3s ease;
+}
+
+#instructions-header {
+    padding: 12px 16px;
+    background: rgba(40, 40, 50, 0.8);
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: 600;
+    color: #fff;
+    font-size: 14px;
+    user-select: none;
+}
+
+#instructions-header:hover {
+    background: rgba(50, 50, 60, 0.8);
+}
+
+#instructions-toggle-icon {
+    font-size: 18px;
+    font-weight: bold;
+    transition: transform 0.3s ease;
+}
+
+#instructions-panel.collapsed #instructions-content {
+    display: none;
+}
+
+#instructions-panel:not(.collapsed) #instructions-toggle-icon {
+    transform: rotate(45deg);
+}
+
+#instructions-content {
+    padding: 16px 18px;
+    max-height: 60vh;
+    overflow-y: auto;
+    color: #ccc;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+#instructions-content h3 {
+    color: #00ff88;
+    font-size: 16px;
+    margin-bottom: 8px;
+}
+
+#instructions-content h4 {
+    color: #fff;
+    font-size: 13px;
+    margin-top: 16px;
+    margin-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 4px;
+}
+
+#instructions-content p {
+    margin-bottom: 12px;
+    color: #aaa;
+}
+
+#instructions-content ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+#instructions-content li {
+    padding: 4px 0;
+    padding-left: 12px;
+    position: relative;
+}
+
+#instructions-content li::before {
+    content: ">";
+    position: absolute;
+    left: 0;
+    color: #00ff88;
+    font-size: 11px;
+}
+
+#instructions-content li strong {
+    color: #fff;
+}
+
+#instructions-content kbd {
+    display: inline-block;
+    background: rgba(0, 255, 136, 0.15);
+    color: #00ff88;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'Consolas', 'Monaco', monospace;
+    font-size: 11px;
+    margin-right: 6px;
+    border: 1px solid rgba(0, 255, 136, 0.3);
+}
+
+/* Theme-specific instructions styling */
+body.theme-rush #instructions-panel {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+body.theme-rush #instructions-header {
+    background: rgba(240, 240, 240, 0.9);
+    color: #333;
+}
+
+body.theme-rush #instructions-content {
+    color: #555;
+}
+
+body.theme-rush #instructions-content h3 {
+    color: #0066cc;
+}
+
+body.theme-rush #instructions-content h4 {
+    color: #333;
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
+body.theme-rush #instructions-content p {
+    color: #666;
+}
+
+body.theme-rush #instructions-content li::before {
+    color: #0066cc;
+}
+
+body.theme-rush #instructions-content li strong {
+    color: #333;
+}
+
+body.theme-rush #instructions-content kbd {
+    background: rgba(0, 102, 204, 0.1);
+    color: #0066cc;
+    border-color: rgba(0, 102, 204, 0.3);
+}
+
+body.theme-f1 #instructions-content h3 {
+    color: #ff3333;
+}
+
+body.theme-f1 #instructions-content kbd {
+    background: rgba(255, 204, 0, 0.15);
+    color: #ffcc00;
+    border-color: rgba(255, 204, 0, 0.3);
+}
+
+body.theme-f1 #instructions-content li::before {
+    color: #ff3333;
+}

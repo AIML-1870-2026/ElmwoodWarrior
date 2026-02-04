@@ -16,9 +16,10 @@ const CONFIG = {
     fovAngle: Math.PI * 1.5,
     fovHalfAngle: Math.PI * 0.75,
 
-    // Mouse predator settings
+    // Mouse interaction settings
     mouseRadius: 120,
     mouseForce: 2.5,
+    mouseAttract: false, // false = flee from mouse, true = follow mouse
 
     // Boundary mode: 'wrap' or 'bounce'
     boundaryMode: 'wrap',

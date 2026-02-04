@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Traffic Boids Simulation</title>
-    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/styles.css?v=3">
 </head>
 <body>
     <canvas id="canvas"></canvas>
@@ -17,12 +17,50 @@
         <div>Avg Neighbors: <span id="avg-neighbors">0</span></div>
     </div>
 
+    <!-- Instructions Dropdown -->
+    <div id="instructions-panel" class="collapsed">
+        <div id="instructions-header">
+            <span>Instructions</span>
+            <span id="instructions-toggle-icon">+</span>
+        </div>
+        <div id="instructions-content">
+            <h3>Traffic Boids Simulation</h3>
+            <p>Watch autonomous agents exhibit emergent flocking behavior, mimicking traffic flow patterns.</p>
+
+            <h4>Mouse Interaction</h4>
+            <ul>
+                <li><strong>Flee Mode:</strong> Cars scatter away from your cursor</li>
+                <li><strong>Follow Mode:</strong> Cars are attracted to your cursor</li>
+            </ul>
+
+            <h4>Keyboard Shortcuts</h4>
+            <ul>
+                <li><kbd>Space</kbd> Pause/Resume simulation</li>
+                <li><kbd>R</kbd> Reset all agents</li>
+                <li><kbd>T</kbd> Cycle through themes</li>
+                <li><kbd>B</kbd> Toggle boundary mode</li>
+                <li><kbd>M</kbd> Toggle mouse follow mode</li>
+                <li><kbd>S</kbd> Toggle settings panel</li>
+                <li><kbd>I</kbd> Toggle this help panel</li>
+                <li><kbd>1-3</kbd> Apply presets</li>
+            </ul>
+
+            <h4>Flocking Rules</h4>
+            <ul>
+                <li><strong>Separation:</strong> Avoid crowding neighbors</li>
+                <li><strong>Alignment:</strong> Match direction of neighbors</li>
+                <li><strong>Cohesion:</strong> Move toward center of group</li>
+            </ul>
+        </div>
+    </div>
+
     <!-- Keyboard Hints -->
     <div id="keyboard-hints">
         <span><kbd>Space</kbd> Pause</span>
         <span><kbd>R</kbd> Reset</span>
         <span><kbd>T</kbd> Theme</span>
-        <span><kbd>B</kbd> Boundary</span>
+        <span><kbd>M</kbd> Mouse</span>
+        <span><kbd>I</kbd> Help</span>
     </div>
 
     <!-- Control Panel -->
@@ -109,6 +147,14 @@
             </div>
 
             <div class="control-group">
+                <label title="Control how cars react to your mouse cursor.">Mouse Interaction</label>
+                <div class="toggle-group">
+                    <button id="flee-btn" class="toggle-btn active" title="Cars scatter away from cursor">Flee</button>
+                    <button id="follow-btn" class="toggle-btn" title="Cars are attracted to cursor">Follow</button>
+                </div>
+            </div>
+
+            <div class="control-group">
                 <label title="Change the visual appearance of the simulation.">Theme</label>
                 <select id="theme-select">
                     <option value="night" title="Cinematic long-exposure traffic photography look">Night City</option>
@@ -124,12 +170,12 @@
         </div>
     </div>
 
-    <script src="js/config.js?v=2"></script>
-    <script src="js/spatial-grid.js?v=2"></script>
-    <script src="js/boid.js?v=2"></script>
-    <script src="js/flock.js?v=2"></script>
-    <script src="js/renderer.js?v=2"></script>
-    <script src="js/ui.js?v=2"></script>
-    <script src="js/main.js?v=2"></script>
+    <script src="js/config.js?v=3"></script>
+    <script src="js/spatial-grid.js?v=3"></script>
+    <script src="js/boid.js?v=3"></script>
+    <script src="js/flock.js?v=3"></script>
+    <script src="js/renderer.js?v=3"></script>
+    <script src="js/ui.js?v=3"></script>
+    <script src="js/main.js?v=3"></script>
 </body>
 </html>

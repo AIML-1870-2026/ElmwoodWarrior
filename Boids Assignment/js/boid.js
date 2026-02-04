@@ -292,6 +292,25 @@ class Boid {
         }
     }
 
+    // Seek toward mouse cursor (attract mode)
+    seek(mouseX, mouseY) {
+        const dx = mouseX - this.x;
+        const dy = mouseY - this.y;
+        const distSq = dx * dx + dy * dy;
+        const attractRadius = CONFIG.mouseRadius * 3; // Larger radius for attraction
+        const radiusSq = attractRadius * attractRadius;
+
+        if (distSq < radiusSq && distSq > 0) {
+            const dist = Math.sqrt(distSq);
+            // Stronger force when further away (inverse of flee)
+            const strength = (dist / attractRadius) * CONFIG.mouseForce * 0.8;
+            this.applyForce(
+                (dx / dist) * strength,
+                (dy / dist) * strength
+            );
+        }
+    }
+
     // Limit force magnitude
     limitForce(fx, fy) {
         const mag = Math.sqrt(fx * fx + fy * fy);

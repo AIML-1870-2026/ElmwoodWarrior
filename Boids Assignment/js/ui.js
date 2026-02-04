@@ -11,7 +11,13 @@ class UI {
         this.resetBtn = document.getElementById('reset-btn');
         this.wrapBtn = document.getElementById('wrap-btn');
         this.bounceBtn = document.getElementById('bounce-btn');
+        this.fleeBtn = document.getElementById('flee-btn');
+        this.followBtn = document.getElementById('follow-btn');
         this.themeSelect = document.getElementById('theme-select');
+
+        // Instructions panel
+        this.instructionsPanel = document.getElementById('instructions-panel');
+        this.instructionsHeader = document.getElementById('instructions-header');
 
         // Stats elements
         this.fpsDisplay = document.getElementById('fps');
@@ -121,6 +127,20 @@ class UI {
             this.setBoundaryMode('bounce');
         });
 
+        // Mouse interaction mode
+        this.fleeBtn.addEventListener('click', () => {
+            this.setMouseMode(false);
+        });
+
+        this.followBtn.addEventListener('click', () => {
+            this.setMouseMode(true);
+        });
+
+        // Instructions panel toggle
+        this.instructionsHeader.addEventListener('click', () => {
+            this.instructionsPanel.classList.toggle('collapsed');
+        });
+
         // Theme selector
         this.themeSelect.addEventListener('change', (e) => {
             this.setTheme(e.target.value);
@@ -156,8 +176,14 @@ class UI {
                 case 'b':
                     this.toggleBoundaryMode();
                     break;
+                case 'm':
+                    this.toggleMouseMode();
+                    break;
                 case 's':
                     this.panel.classList.toggle('collapsed');
+                    break;
+                case 'i':
+                    this.instructionsPanel.classList.toggle('collapsed');
                     break;
                 case '1':
                     this.applyPresetByIndex(0);
@@ -187,6 +213,16 @@ class UI {
     toggleBoundaryMode() {
         const newMode = CONFIG.boundaryMode === 'wrap' ? 'bounce' : 'wrap';
         this.setBoundaryMode(newMode);
+    }
+
+    setMouseMode(attract) {
+        CONFIG.mouseAttract = attract;
+        this.fleeBtn.classList.toggle('active', !attract);
+        this.followBtn.classList.toggle('active', attract);
+    }
+
+    toggleMouseMode() {
+        this.setMouseMode(!CONFIG.mouseAttract);
     }
 
     cycleTheme() {

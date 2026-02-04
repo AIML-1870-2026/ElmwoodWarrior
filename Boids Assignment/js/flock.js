@@ -100,8 +100,12 @@ class Flock {
             // Apply flocking behavior
             boid.flock(neighbors);
 
-            // Apply flee force from mouse
-            boid.flee(this.mouseX, this.mouseY);
+            // Apply mouse interaction (flee or seek based on config)
+            if (CONFIG.mouseAttract) {
+                boid.seek(this.mouseX, this.mouseY);
+            } else {
+                boid.flee(this.mouseX, this.mouseY);
+            }
 
             // Update position
             boid.update();
