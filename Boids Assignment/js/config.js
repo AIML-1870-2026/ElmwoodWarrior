@@ -25,7 +25,7 @@ const CONFIG = {
     boundaryMode: 'wrap',
 
     // Visual theme: 'night', 'rush', or 'f1'
-    theme: 'night',
+    theme: 'rush',
 
     // Simulation state
     paused: false,
