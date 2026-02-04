@@ -144,11 +144,13 @@ class Boid {
     // Handle screen boundaries
     handleBoundary() {
         if (CONFIG.boundaryMode === 'wrap') {
-            // Toroidal wrapping
-            if (this.x < 0) this.x += this.width;
-            if (this.x > this.width) this.x -= this.width;
-            if (this.y < 0) this.y += this.height;
-            if (this.y > this.height) this.y -= this.height;
+            // Toroidal wrapping - clear trail when wrapping to prevent lines across screen
+            let wrapped = false;
+            if (this.x < 0) { this.x += this.width; wrapped = true; }
+            if (this.x > this.width) { this.x -= this.width; wrapped = true; }
+            if (this.y < 0) { this.y += this.height; wrapped = true; }
+            if (this.y > this.height) { this.y -= this.height; wrapped = true; }
+            if (wrapped) this.trail = [];
         } else {
             // Hard boundary fallback (soft boundary handles most cases)
             const margin = 5;
