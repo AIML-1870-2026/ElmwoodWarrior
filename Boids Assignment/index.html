@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Traffic Boids Simulation</title>
-    <link rel="stylesheet" href="css/styles.css?v=3">
+    <link rel="stylesheet" href="css/styles.css?v=4">
 </head>
 <body>
     <canvas id="canvas"></canvas>
@@ -83,44 +83,44 @@
             <!-- Flocking Parameters -->
             <div class="control-group">
                 <label title="How strongly cars avoid each other. Higher values = more personal space, lower density.">
-                    Separation: <span id="separation-value">1.5</span>
+                    Separation: <span id="separation-value">1.0</span>
                 </label>
-                <input type="range" id="separation" min="0" max="5" step="0.1" value="1.5">
+                <input type="range" id="separation" min="0" max="5" step="0.1" value="1.0">
             </div>
 
             <div class="control-group">
                 <label title="How much cars try to match the direction and speed of their neighbors.">
-                    Alignment: <span id="alignment-value">1.0</span>
+                    Alignment: <span id="alignment-value">2.0</span>
                 </label>
-                <input type="range" id="alignment" min="0" max="5" step="0.1" value="1.0">
+                <input type="range" id="alignment" min="0" max="5" step="0.1" value="2.0">
             </div>
 
             <div class="control-group">
                 <label title="How strongly cars are attracted to the center of their local group.">
-                    Cohesion: <span id="cohesion-value">1.0</span>
+                    Cohesion: <span id="cohesion-value">1.2</span>
                 </label>
-                <input type="range" id="cohesion" min="0" max="5" step="0.1" value="1.0">
+                <input type="range" id="cohesion" min="0" max="5" step="0.1" value="1.2">
             </div>
 
             <div class="control-group">
                 <label title="How far each car can 'see' to detect neighbors. Larger radius = more neighbors considered.">
-                    Neighbor Radius: <span id="radius-value">75</span>px
+                    Neighbor Radius: <span id="radius-value">100</span>px
                 </label>
-                <input type="range" id="radius" min="20" max="200" step="5" value="75">
+                <input type="range" id="radius" min="20" max="200" step="5" value="100">
             </div>
 
             <div class="control-group">
                 <label title="Maximum speed limit for all cars.">
-                    Max Speed: <span id="max-speed-value">4</span>
+                    Max Speed: <span id="max-speed-value">3.5</span>
                 </label>
-                <input type="range" id="max-speed" min="1" max="10" step="0.5" value="4">
+                <input type="range" id="max-speed" min="1" max="10" step="0.5" value="3.5">
             </div>
 
             <div class="control-group">
                 <label title="How sharply cars can turn. Lower values = wider turns, higher values = tighter maneuvers.">
-                    Max Force: <span id="max-force-value">0.1</span>
+                    Max Force: <span id="max-force-value">0.05</span>
                 </label>
-                <input type="range" id="max-force" min="0.01" max="1" step="0.01" value="0.1">
+                <input type="range" id="max-force" min="0.01" max="0.3" step="0.01" value="0.05">
             </div>
 
             <div class="control-group">
@@ -170,12 +170,12 @@
         </div>
     </div>
 
-    <script src="js/config.js?v=3"></script>
-    <script src="js/spatial-grid.js?v=3"></script>
-    <script src="js/boid.js?v=3"></script>
-    <script src="js/flock.js?v=3"></script>
-    <script src="js/renderer.js?v=3"></script>
-    <script src="js/ui.js?v=3"></script>
-    <script src="js/main.js?v=3"></script>
+    <script src="js/config.js?v=4"></script>
+    <script src="js/spatial-grid.js?v=4"></script>
+    <script src="js/boid.js?v=4"></script>
+    <script src="js/flock.js?v=4"></script>
+    <script src="js/renderer.js?v=4"></script>
+    <script src="js/ui.js?v=4"></script>
+    <script src="js/main.js?v=4"></script>
 </body>
 </html>

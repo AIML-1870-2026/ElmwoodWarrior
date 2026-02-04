@@ -1,13 +1,13 @@
 // Configuration and Presets for Traffic Boids Simulation
 
 const CONFIG = {
-    // Default flocking parameters
-    separation: 1.5,
-    alignment: 1.0,
-    cohesion: 1.0,
-    neighborRadius: 75,
-    maxSpeed: 4,
-    maxForce: 0.1,
+    // Default flocking parameters - tuned for organic schooling behavior
+    separation: 1.0,
+    alignment: 2.0,
+    cohesion: 1.2,
+    neighborRadius: 100,
+    maxSpeed: 3.5,
+    maxForce: 0.05,
 
     // Agent settings
     agentCount: 300,
@@ -38,31 +38,31 @@ const CONFIG = {
 // Preset configurations that produce visibly distinct behaviors
 const PRESETS = {
     schooling: {
-        separation: 0.5,
-        alignment: 3.0,
-        cohesion: 1.5,
-        neighborRadius: 100,
-        maxSpeed: 4,
-        maxForce: 0.1,
-        description: 'Synchronized formations moving as a coordinated unit'
+        separation: 0.8,
+        alignment: 3.5,
+        cohesion: 1.0,
+        neighborRadius: 120,
+        maxSpeed: 3.5,
+        maxForce: 0.04,
+        description: 'Synchronized formations - fish school behavior'
     },
     chaotic: {
-        separation: 1.2,
-        alignment: 0.3,
-        cohesion: 0.3,
-        neighborRadius: 30,
-        maxSpeed: 7,
-        maxForce: 0.25,
-        description: 'Erratic, unpredictable motion; panicked crowd behavior'
+        separation: 2.0,
+        alignment: 0.2,
+        cohesion: 0.2,
+        neighborRadius: 40,
+        maxSpeed: 6,
+        maxForce: 0.2,
+        description: 'Erratic swarm - panicked crowd behavior'
     },
     cluster: {
-        separation: 1.0,
-        alignment: 1.5,
-        cohesion: 4.0,
-        neighborRadius: 75,
-        maxSpeed: 3,
-        maxForce: 0.08,
-        description: 'Dense blob that moves together toward center mass'
+        separation: 0.6,
+        alignment: 2.0,
+        cohesion: 3.5,
+        neighborRadius: 150,
+        maxSpeed: 2.5,
+        maxForce: 0.03,
+        description: 'Dense flock that flows together organically'
     }
 };
 

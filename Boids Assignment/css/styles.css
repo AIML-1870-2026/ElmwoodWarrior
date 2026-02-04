@@ -403,43 +403,41 @@ body.theme-f1 #keyboard-hints span:hover {
     border-color: rgba(255, 204, 0, 0.3);
 }
 
-/* Instructions Panel */
+/* Instructions Panel - Compact Corner Version */
 #instructions-panel {
     position: fixed;
-    top: 15px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 400px;
-    max-width: calc(100vw - 350px);
-    background: rgba(20, 20, 25, 0.95);
-    border-radius: 12px;
+    bottom: 50px;
+    left: 15px;
+    width: 280px;
+    background: rgba(0, 0, 0, 0.6);
+    border-radius: 8px;
     overflow: hidden;
     z-index: 100;
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(8px);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-    transition: max-height 0.3s ease;
+    font-size: 11px;
 }
 
 #instructions-header {
-    padding: 12px 16px;
-    background: rgba(40, 40, 50, 0.8);
+    padding: 8px 12px;
+    background: rgba(40, 40, 50, 0.6);
     cursor: pointer;
     display: flex;
     justify-content: space-between;
     align-items: center;
     font-weight: 600;
-    color: #fff;
-    font-size: 14px;
+    color: #888;
+    font-size: 11px;
     user-select: none;
 }
 
 #instructions-header:hover {
-    background: rgba(50, 50, 60, 0.8);
+    background: rgba(50, 50, 60, 0.7);
+    color: #00ff88;
 }
 
 #instructions-toggle-icon {
-    font-size: 18px;
+    font-size: 14px;
     font-weight: bold;
     transition: transform 0.3s ease;
 }
@@ -452,33 +450,40 @@ body.theme-f1 #keyboard-hints span:hover {
     transform: rotate(45deg);
 }
 
+#instructions-panel:not(.collapsed) #instructions-header {
+    color: #00ff88;
+    border-bottom: 1px solid rgba(0, 255, 136, 0.2);
+}
+
 #instructions-content {
-    padding: 16px 18px;
-    max-height: 60vh;
+    padding: 10px 12px;
+    max-height: 50vh;
     overflow-y: auto;
-    color: #ccc;
-    font-size: 13px;
-    line-height: 1.6;
+    color: #999;
+    font-size: 11px;
+    line-height: 1.5;
 }
 
 #instructions-content h3 {
-    color: #00ff88;
-    font-size: 16px;
-    margin-bottom: 8px;
+    display: none;
 }
 
 #instructions-content h4 {
-    color: #fff;
-    font-size: 13px;
-    margin-top: 16px;
-    margin-bottom: 8px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    padding-bottom: 4px;
+    color: #00ff88;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 8px;
+    margin-bottom: 4px;
+    padding-bottom: 2px;
+}
+
+#instructions-content h4:first-of-type {
+    margin-top: 0;
 }
 
 #instructions-content p {
-    margin-bottom: 12px;
-    color: #aaa;
+    display: none;
 }
 
 #instructions-content ul {
@@ -488,64 +493,59 @@ body.theme-f1 #keyboard-hints span:hover {
 }
 
 #instructions-content li {
-    padding: 4px 0;
-    padding-left: 12px;
+    padding: 2px 0;
+    padding-left: 0;
     position: relative;
-}
-
-#instructions-content li::before {
-    content: ">";
-    position: absolute;
-    left: 0;
-    color: #00ff88;
     font-size: 11px;
 }
 
+#instructions-content li::before {
+    display: none;
+}
+
 #instructions-content li strong {
-    color: #fff;
+    color: #ccc;
 }
 
 #instructions-content kbd {
     display: inline-block;
-    background: rgba(0, 255, 136, 0.15);
+    background: rgba(255, 255, 255, 0.1);
     color: #00ff88;
-    padding: 2px 8px;
-    border-radius: 4px;
+    padding: 1px 5px;
+    border-radius: 3px;
     font-family: 'Consolas', 'Monaco', monospace;
-    font-size: 11px;
-    margin-right: 6px;
-    border: 1px solid rgba(0, 255, 136, 0.3);
+    font-size: 10px;
+    margin-right: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    min-width: 18px;
+    text-align: center;
 }
 
 /* Theme-specific instructions styling */
 body.theme-rush #instructions-panel {
-    background: rgba(255, 255, 255, 0.95);
+    background: rgba(255, 255, 255, 0.9);
     border-color: rgba(0, 0, 0, 0.1);
 }
 
 body.theme-rush #instructions-header {
-    background: rgba(240, 240, 240, 0.9);
-    color: #333;
-}
-
-body.theme-rush #instructions-content {
-    color: #555;
-}
-
-body.theme-rush #instructions-content h3 {
-    color: #0066cc;
-}
-
-body.theme-rush #instructions-content h4 {
-    color: #333;
-    border-color: rgba(0, 0, 0, 0.1);
-}
-
-body.theme-rush #instructions-content p {
+    background: rgba(240, 240, 240, 0.8);
     color: #666;
 }
 
-body.theme-rush #instructions-content li::before {
+body.theme-rush #instructions-header:hover,
+body.theme-rush #instructions-panel:not(.collapsed) #instructions-header {
+    color: #0066cc;
+}
+
+body.theme-rush #instructions-panel:not(.collapsed) #instructions-header {
+    border-color: rgba(0, 102, 204, 0.2);
+}
+
+body.theme-rush #instructions-content {
+    color: #666;
+}
+
+body.theme-rush #instructions-content h4 {
     color: #0066cc;
 }
 
@@ -554,21 +554,26 @@ body.theme-rush #instructions-content li strong {
 }
 
 body.theme-rush #instructions-content kbd {
-    background: rgba(0, 102, 204, 0.1);
+    background: rgba(0, 0, 0, 0.05);
     color: #0066cc;
-    border-color: rgba(0, 102, 204, 0.3);
+    border-color: rgba(0, 0, 0, 0.1);
 }
 
-body.theme-f1 #instructions-content h3 {
+body.theme-f1 #instructions-header:hover,
+body.theme-f1 #instructions-panel:not(.collapsed) #instructions-header {
+    color: #ffcc00;
+}
+
+body.theme-f1 #instructions-panel:not(.collapsed) #instructions-header {
+    border-color: rgba(255, 204, 0, 0.2);
+}
+
+body.theme-f1 #instructions-content h4 {
     color: #ff3333;
 }
 
 body.theme-f1 #instructions-content kbd {
-    background: rgba(255, 204, 0, 0.15);
+    background: rgba(255, 204, 0, 0.1);
     color: #ffcc00;
-    border-color: rgba(255, 204, 0, 0.3);
-}
-
-body.theme-f1 #instructions-content li::before {
-    color: #ff3333;
+    border-color: rgba(255, 204, 0, 0.2);
 }
