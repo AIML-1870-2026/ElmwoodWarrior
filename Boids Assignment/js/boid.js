@@ -188,17 +188,9 @@ class Boid {
     // Calculate steering behaviors
     flock(neighbors, totalAgents) {
         // Filter neighbors by perception cone
-        let visibleNeighbors = neighbors.filter(n =>
+        const visibleNeighbors = neighbors.filter(n =>
             this.isInPerceptionCone(n.dx, n.dy)
         );
-
-        // Limit group size based on percentage of total agents
-        const maxGroupSize = Math.max(1, Math.floor(totalAgents * CONFIG.maxGroupPercent / 100));
-        if (visibleNeighbors.length > maxGroupSize) {
-            // Keep only the closest neighbors up to max group size
-            visibleNeighbors.sort((a, b) => a.distSq - b.distSq);
-            visibleNeighbors = visibleNeighbors.slice(0, maxGroupSize);
-        }
 
         this.neighborCount = visibleNeighbors.length;
 
@@ -218,20 +210,58 @@ class Boid {
 
         if (visibleNeighbors.length === 0) return;
 
+        // Calculate max group size based on percentage
+        const maxGroupSize = Math.max(1, Math.floor(totalAgents * CONFIG.maxGroupPercent / 100));
+
         // Calculate separation, alignment, and cohesion forces
         const separation = this.separate(visibleNeighbors);
         const alignment = this.align(visibleNeighbors);
         const cohesion = this.cohere(visibleNeighbors);
 
-        // Apply weighted forces
-        this.applyForce(
-            separation.x * CONFIG.separation +
-            alignment.x * CONFIG.alignment +
-            cohesion.x * CONFIG.cohesion,
-            separation.y * CONFIG.separation +
-            alignment.y * CONFIG.alignment +
-            cohesion.y * CONFIG.cohesion
-        );
+        // Check if group is overcrowded
+        if (visibleNeighbors.length > maxGroupSize) {
+            // Group too large - flee from group center instead of cohering
+            // Calculate center of visible neighbors
+            let centerX = 0, centerY = 0;
+            for (const n of visibleNeighbors) {
+                centerX += n.boid.x;
+                centerY += n.boid.y;
+            }
+            centerX /= visibleNeighbors.length;
+            centerY /= visibleNeighbors.length;
+
+            // Flee from center - strength based on how overcrowded
+            const overcrowdRatio = visibleNeighbors.length / maxGroupSize;
+            const fleeStrength = Math.min(overcrowdRatio - 1, 2) * 0.15;
+
+            const dx = this.x - centerX;
+            const dy = this.y - centerY;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist > 0) {
+                this.applyForce(
+                    (dx / dist) * fleeStrength,
+                    (dy / dist) * fleeStrength
+                );
+            }
+
+            // Apply separation and alignment but NOT cohesion when overcrowded
+            this.applyForce(
+                separation.x * CONFIG.separation +
+                alignment.x * CONFIG.alignment * 0.5,
+                separation.y * CONFIG.separation +
+                alignment.y * CONFIG.alignment * 0.5
+            );
+        } else {
+            // Normal flocking - apply all three forces
+            this.applyForce(
+                separation.x * CONFIG.separation +
+                alignment.x * CONFIG.alignment +
+                cohesion.x * CONFIG.cohesion,
+                separation.y * CONFIG.separation +
+                alignment.y * CONFIG.alignment +
+                cohesion.y * CONFIG.cohesion
+            );
+        }
     }
 
     // Separation: Steer away from nearby neighbors
