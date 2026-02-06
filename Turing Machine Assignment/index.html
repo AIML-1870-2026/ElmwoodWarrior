@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Turing Patterns Explorer</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Turing Patterns Explorer</h1>
+            <p class="subtitle">Reaction-Diffusion Simulation based on the Gray-Scott Model</p>
+        </header>
+
+        <main class="main-content">
+            <div class="canvas-container">
+                <canvas id="simulation-canvas" width="512" height="512"></canvas>
+                <div id="brush-cursor" class="brush-cursor"></div>
+            </div>
+
+            <aside class="control-panel">
+                <!-- Preset Patterns Section -->
+                <section class="control-section">
+                    <h2>Preset Patterns</h2>
+                    <div class="preset-buttons">
+                        <button class="preset-btn" data-f="0.035" data-k="0.065">Spots</button>
+                        <button class="preset-btn" data-f="0.035" data-k="0.060">Stripes</button>
+                        <button class="preset-btn" data-f="0.014" data-k="0.054">Spirals</button>
+                        <button class="preset-btn" data-f="0.029" data-k="0.057">Maze</button>
+                        <button class="preset-btn" data-f="0.014" data-k="0.045">Waves</button>
+                        <button class="preset-btn" data-f="0.026" data-k="0.051">Unstable</button>
+                    </div>
+                </section>
+
+                <!-- Parameter Controls Section -->
+                <section class="control-section">
+                    <h2>Parameters</h2>
+                    <div class="slider-group">
+                        <label for="feed-rate">
+                            Feed Rate (F): <span id="feed-value">0.035</span>
+                        </label>
+                        <input type="range" id="feed-rate" min="0" max="0.1" step="0.001" value="0.035" aria-label="Feed Rate">
+                    </div>
+                    <div class="slider-group">
+                        <label for="kill-rate">
+                            Kill Rate (K): <span id="kill-value">0.065</span>
+                        </label>
+                        <input type="range" id="kill-rate" min="0" max="0.1" step="0.001" value="0.065" aria-label="Kill Rate">
+                    </div>
+                    <p class="pattern-label">Current Pattern: <span id="pattern-name">Spots</span></p>
+                </section>
+
+                <!-- Simulation Controls Section -->
+                <section class="control-section">
+                    <h2>Simulation</h2>
+                    <div class="button-group">
+                        <button id="play-pause-btn" class="control-btn primary" aria-label="Play or Pause">Pause</button>
+                        <button id="reset-btn" class="control-btn" aria-label="Reset simulation">Reset</button>
+                        <button id="clear-btn" class="control-btn" aria-label="Clear canvas">Clear</button>
+                    </div>
+                    <div class="slider-group">
+                        <label for="speed">
+                            Speed: <span id="speed-value">5</span> steps/frame
+                        </label>
+                        <input type="range" id="speed" min="1" max="10" step="1" value="5" aria-label="Simulation speed">
+                    </div>
+                </section>
+
+                <!-- Interactive Tools Section -->
+                <section class="control-section">
+                    <h2>Interactive Tools</h2>
+                    <div class="slider-group">
+                        <label for="brush-size">
+                            Brush Size: <span id="brush-value">20</span>px
+                        </label>
+                        <input type="range" id="brush-size" min="5" max="50" step="1" value="20" aria-label="Brush size">
+                    </div>
+                    <div class="tool-mode">
+                        <label>Tool Mode:</label>
+                        <select id="tool-mode" aria-label="Select tool mode">
+                            <option value="addB" selected>Add Chemical B</option>
+                            <option value="addA">Add Chemical A</option>
+                            <option value="noise">Random Noise</option>
+                        </select>
+                    </div>
+                </section>
+
+                <!-- Visual Settings Section -->
+                <section class="control-section">
+                    <h2>Visual Settings</h2>
+                    <div class="color-scheme">
+                        <label for="color-scheme">Color Scheme:</label>
+                        <select id="color-scheme" aria-label="Select color scheme">
+                            <option value="grayscale" selected>Grayscale</option>
+                            <option value="heatmap">Heat Map</option>
+                            <option value="viridis">Viridis</option>
+                            <option value="ocean">Ocean</option>
+                        </select>
+                    </div>
+                </section>
+
+                <!-- Parameter Space Map -->
+                <section class="control-section">
+                    <h2>Parameter Space</h2>
+                    <div class="param-map-container">
+                        <canvas id="param-map" width="200" height="200" aria-label="Click to set F and K parameters"></canvas>
+                        <div class="param-map-labels">
+                            <span class="axis-label x-label">K (0.045 - 0.070)</span>
+                            <span class="axis-label y-label">F (0.010 - 0.050)</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Information Panel -->
+                <section class="control-section info-panel">
+                    <h2>Information</h2>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <span class="info-label">F:</span>
+                            <span id="info-f" class="info-value">0.035</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">K:</span>
+                            <span id="info-k" class="info-value">0.065</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">FPS:</span>
+                            <span id="fps-counter" class="info-value">0</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Export Section -->
+                <section class="control-section">
+                    <h2>Export</h2>
+                    <button id="save-image-btn" class="control-btn" aria-label="Save image">Save as PNG</button>
+                </section>
+            </aside>
+        </main>
+
+        <footer>
+            <p>Turing Patterns Explorer - Gray-Scott Reaction-Diffusion Model</p>
+        </footer>
+    </div>
+
+    <script src="simulation.js"></script>
+    <script src="renderer.js"></script>
+    <script src="ui.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>

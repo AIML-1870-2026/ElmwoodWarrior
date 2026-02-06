@@ -1,0 +1,394 @@
+/* Turing Patterns Explorer - Styles */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    background-color: #1a1a2e;
+    color: #eee;
+    min-height: 100vh;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+/* Header */
+header {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+header h1 {
+    font-size: 2.2rem;
+    color: #fff;
+    margin-bottom: 5px;
+}
+
+.subtitle {
+    color: #aaa;
+    font-size: 1rem;
+}
+
+/* Main Content Layout */
+.main-content {
+    display: flex;
+    gap: 30px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* Canvas Container */
+.canvas-container {
+    position: relative;
+    flex-shrink: 0;
+}
+
+#simulation-canvas {
+    display: block;
+    border: 2px solid #444;
+    border-radius: 8px;
+    background-color: #000;
+    cursor: crosshair;
+    max-width: 100%;
+    height: auto;
+}
+
+.brush-cursor {
+    position: absolute;
+    border: 2px solid rgba(255, 255, 255, 0.7);
+    border-radius: 50%;
+    pointer-events: none;
+    display: none;
+    transform: translate(-50%, -50%);
+}
+
+/* Control Panel */
+.control-panel {
+    background-color: #252540;
+    border-radius: 12px;
+    padding: 20px;
+    width: 320px;
+    max-height: calc(100vh - 150px);
+    overflow-y: auto;
+}
+
+.control-section {
+    margin-bottom: 24px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid #3a3a5a;
+}
+
+.control-section:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.control-section h2 {
+    font-size: 1rem;
+    color: #7b7bff;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Preset Buttons */
+.preset-buttons {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.preset-btn {
+    padding: 10px 12px;
+    background: linear-gradient(135deg, #4a4a8a, #3a3a6a);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.preset-btn:hover {
+    background: linear-gradient(135deg, #5a5aaa, #4a4a8a);
+    transform: translateY(-2px);
+}
+
+.preset-btn:active {
+    transform: translateY(0);
+}
+
+.preset-btn.active {
+    background: linear-gradient(135deg, #6a6acc, #5a5aaa);
+    box-shadow: 0 0 10px rgba(107, 107, 204, 0.5);
+}
+
+/* Slider Groups */
+.slider-group {
+    margin-bottom: 16px;
+}
+
+.slider-group label {
+    display: block;
+    margin-bottom: 6px;
+    color: #ccc;
+    font-size: 0.9rem;
+}
+
+.slider-group label span {
+    color: #7bff7b;
+    font-weight: bold;
+}
+
+input[type="range"] {
+    width: 100%;
+    height: 6px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: #3a3a5a;
+    border-radius: 3px;
+    outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    background: linear-gradient(135deg, #7b7bff, #5a5acc);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+}
+
+input[type="range"]::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    background: linear-gradient(135deg, #7b7bff, #5a5acc);
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+}
+
+/* Pattern Label */
+.pattern-label {
+    text-align: center;
+    color: #aaa;
+    font-size: 0.85rem;
+    margin-top: 12px;
+}
+
+.pattern-label span {
+    color: #ffaa7b;
+    font-weight: bold;
+}
+
+/* Button Groups */
+.button-group {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.control-btn {
+    flex: 1;
+    padding: 10px 16px;
+    background: #3a3a5a;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.control-btn:hover {
+    background: #4a4a7a;
+}
+
+.control-btn.primary {
+    background: linear-gradient(135deg, #4a8a4a, #3a6a3a);
+}
+
+.control-btn.primary:hover {
+    background: linear-gradient(135deg, #5aaa5a, #4a8a4a);
+}
+
+.control-btn.primary.paused {
+    background: linear-gradient(135deg, #8a4a4a, #6a3a3a);
+}
+
+.control-btn.primary.paused:hover {
+    background: linear-gradient(135deg, #aa5a5a, #8a4a4a);
+}
+
+/* Tool Mode and Color Scheme */
+.tool-mode,
+.color-scheme {
+    margin-bottom: 12px;
+}
+
+.tool-mode label,
+.color-scheme label {
+    display: block;
+    margin-bottom: 6px;
+    color: #ccc;
+    font-size: 0.9rem;
+}
+
+select {
+    width: 100%;
+    padding: 10px;
+    background: #3a3a5a;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    outline: none;
+}
+
+select:focus {
+    box-shadow: 0 0 0 2px rgba(123, 123, 255, 0.5);
+}
+
+/* Parameter Space Map */
+.param-map-container {
+    position: relative;
+    text-align: center;
+}
+
+#param-map {
+    border: 1px solid #444;
+    border-radius: 4px;
+    cursor: crosshair;
+    margin-bottom: 8px;
+}
+
+.param-map-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.75rem;
+    color: #888;
+}
+
+.axis-label {
+    font-size: 0.7rem;
+}
+
+/* Information Panel */
+.info-panel .info-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.info-item {
+    background: #1a1a2e;
+    padding: 10px;
+    border-radius: 6px;
+    text-align: center;
+}
+
+.info-label {
+    display: block;
+    color: #888;
+    font-size: 0.8rem;
+    margin-bottom: 4px;
+}
+
+.info-value {
+    color: #7bff7b;
+    font-size: 1.1rem;
+    font-weight: bold;
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    margin-top: 30px;
+    color: #666;
+    font-size: 0.85rem;
+}
+
+/* Scrollbar Styling */
+.control-panel::-webkit-scrollbar {
+    width: 8px;
+}
+
+.control-panel::-webkit-scrollbar-track {
+    background: #1a1a2e;
+    border-radius: 4px;
+}
+
+.control-panel::-webkit-scrollbar-thumb {
+    background: #4a4a7a;
+    border-radius: 4px;
+}
+
+.control-panel::-webkit-scrollbar-thumb:hover {
+    background: #5a5a9a;
+}
+
+/* Responsive Design */
+@media (max-width: 900px) {
+    .main-content {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .control-panel {
+        width: 100%;
+        max-width: 512px;
+        max-height: none;
+    }
+
+    #simulation-canvas {
+        width: 100%;
+        max-width: 512px;
+    }
+}
+
+@media (max-width: 600px) {
+    .container {
+        padding: 10px;
+    }
+
+    header h1 {
+        font-size: 1.6rem;
+    }
+
+    .preset-buttons {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .info-panel .info-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* Focus States for Accessibility */
+button:focus,
+select:focus,
+input:focus {
+    outline: 2px solid #7b7bff;
+    outline-offset: 2px;
+}
+
+/* Keyboard Navigation */
+.preset-btn:focus {
+    box-shadow: 0 0 0 3px rgba(123, 123, 255, 0.5);
+}
