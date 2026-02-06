@@ -34,7 +34,8 @@ class UI {
             maxSpeed: document.getElementById('max-speed'),
             maxForce: document.getElementById('max-force'),
             agentCount: document.getElementById('agent-count-slider'),
-            trailLength: document.getElementById('trail-length')
+            trailLength: document.getElementById('trail-length'),
+            maxGroup: document.getElementById('max-group-slider')
         };
 
         // Value displays
@@ -46,7 +47,8 @@ class UI {
             maxSpeed: document.getElementById('max-speed-value'),
             maxForce: document.getElementById('max-force-value'),
             agentCount: document.getElementById('count-value'),
-            trailLength: document.getElementById('trail-value')
+            trailLength: document.getElementById('trail-value'),
+            maxGroup: document.getElementById('max-group-value')
         };
 
         this.setupEventListeners();
@@ -108,6 +110,12 @@ class UI {
         this.sliders.trailLength.addEventListener('input', (e) => {
             CONFIG.trailLength = parseInt(e.target.value);
             this.valueDisplays.trailLength.textContent = CONFIG.trailLength;
+        });
+
+        // Max group size slider
+        this.sliders.maxGroup.addEventListener('input', (e) => {
+            CONFIG.maxGroupPercent = parseInt(e.target.value);
+            this.valueDisplays.maxGroup.textContent = CONFIG.maxGroupPercent;
         });
 
         // Preset buttons

@@ -186,11 +186,19 @@ class Boid {
     }
 
     // Calculate steering behaviors
-    flock(neighbors) {
+    flock(neighbors, totalAgents) {
         // Filter neighbors by perception cone
-        const visibleNeighbors = neighbors.filter(n =>
+        let visibleNeighbors = neighbors.filter(n =>
             this.isInPerceptionCone(n.dx, n.dy)
         );
+
+        // Limit group size based on percentage of total agents
+        const maxGroupSize = Math.max(1, Math.floor(totalAgents * CONFIG.maxGroupPercent / 100));
+        if (visibleNeighbors.length > maxGroupSize) {
+            // Keep only the closest neighbors up to max group size
+            visibleNeighbors.sort((a, b) => a.distSq - b.distSq);
+            visibleNeighbors = visibleNeighbors.slice(0, maxGroupSize);
+        }
 
         this.neighborCount = visibleNeighbors.length;
 

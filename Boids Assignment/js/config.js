@@ -32,7 +32,10 @@ const CONFIG = {
 
     // Trail settings for Night City theme
     trailLength: 25,
-    trailFade: 0.92
+    trailFade: 0.92,
+
+    // Max group size (percentage of total agents)
+    maxGroupPercent: 100
 };
 
 // Preset configurations that produce visibly distinct behaviors

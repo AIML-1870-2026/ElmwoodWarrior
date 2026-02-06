@@ -93,12 +93,14 @@ class Flock {
         let totalSpeed = 0;
         let totalNeighbors = 0;
 
+        const totalAgents = this.boids.length;
+
         for (const boid of this.boids) {
             // Get neighbors from spatial grid
             const neighbors = this.grid.getNeighbors(boid, CONFIG.neighborRadius);
 
             // Apply flocking behavior
-            boid.flock(neighbors);
+            boid.flock(neighbors, totalAgents);
 
             // Apply mouse interaction (flee or seek based on config)
             if (CONFIG.mouseAttract) {
