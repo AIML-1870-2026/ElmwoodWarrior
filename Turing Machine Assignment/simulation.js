@@ -12,9 +12,9 @@ class Simulation {
         this.dA = 1.0;
         this.dB = 0.5;
 
-        // Reaction parameters (default: Spots pattern)
-        this.F = 0.035;  // Feed rate
-        this.K = 0.065;  // Kill rate
+        // Reaction parameters (default: Coral pattern)
+        this.F = 0.037;  // Feed rate
+        this.K = 0.060;  // Kill rate
 
         // Time step
         this.dt = 1.0;

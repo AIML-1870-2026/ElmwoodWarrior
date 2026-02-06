@@ -12,12 +12,14 @@ class UIController {
 
         // Preset patterns with F and K values
         this.presets = {
-            'Spots': { f: 0.035, k: 0.065 },
-            'Stripes': { f: 0.035, k: 0.060 },
-            'Spirals': { f: 0.014, k: 0.054 },
-            'Maze': { f: 0.029, k: 0.057 },
-            'Waves': { f: 0.014, k: 0.045 },
-            'Unstable': { f: 0.026, k: 0.051 }
+            'Coral': { f: 0.037, k: 0.060 },
+            'Worms': { f: 0.030, k: 0.055 },
+            'Bubbles': { f: 0.025, k: 0.060 },
+            'Fingerprint': { f: 0.039, k: 0.058 },
+            'Mitosis': { f: 0.022, k: 0.051 },
+            'Solitons': { f: 0.040, k: 0.062 },
+            'Pulsing': { f: 0.018, k: 0.050 },
+            'Chaos': { f: 0.062, k: 0.061 }
         };
 
         this.init();
@@ -65,9 +67,9 @@ class UIController {
             });
         });
 
-        // Set initial active state
-        const spotsBtn = document.querySelector('.preset-btn[data-k="0.065"]');
-        if (spotsBtn) spotsBtn.classList.add('active');
+        // Set initial active state (Coral is the first preset)
+        const coralBtn = document.querySelector('.preset-btn[data-k="0.060"][data-f="0.037"]');
+        if (coralBtn) coralBtn.classList.add('active');
     }
 
     /**
@@ -218,12 +220,17 @@ class UIController {
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
 
-            // Show and position brush cursor
+            // Calculate scaled brush size based on canvas display size vs actual size
+            const displayScale = rect.width / canvas.width;
+            const displayBrushSize = this.brushSize * displayScale;
+
+            // Show and position brush cursor - use clientX/clientY directly for fixed positioning
+            // Offset by half the brush size to center it on the cursor
             brushCursor.style.display = 'block';
-            brushCursor.style.left = (rect.left + x) + 'px';
-            brushCursor.style.top = (rect.top + y) + 'px';
-            brushCursor.style.width = (this.brushSize * 2) + 'px';
-            brushCursor.style.height = (this.brushSize * 2) + 'px';
+            brushCursor.style.left = (e.clientX - displayBrushSize) + 'px';
+            brushCursor.style.top = (e.clientY - displayBrushSize) + 'px';
+            brushCursor.style.width = (displayBrushSize * 2) + 'px';
+            brushCursor.style.height = (displayBrushSize * 2) + 'px';
 
             // Draw if mouse is down
             if (this.isDrawing) {
@@ -247,6 +254,11 @@ class UIController {
 
         // Stop drawing
         canvas.addEventListener('mouseup', () => {
+            this.isDrawing = false;
+        });
+
+        // Also stop drawing if mouse leaves window
+        document.addEventListener('mouseup', () => {
             this.isDrawing = false;
         });
 

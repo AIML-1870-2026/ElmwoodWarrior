@@ -24,12 +24,14 @@
                 <section class="control-section">
                     <h2>Preset Patterns</h2>
                     <div class="preset-buttons">
-                        <button class="preset-btn" data-f="0.035" data-k="0.065">Spots</button>
-                        <button class="preset-btn" data-f="0.035" data-k="0.060">Stripes</button>
-                        <button class="preset-btn" data-f="0.014" data-k="0.054">Spirals</button>
-                        <button class="preset-btn" data-f="0.029" data-k="0.057">Maze</button>
-                        <button class="preset-btn" data-f="0.014" data-k="0.045">Waves</button>
-                        <button class="preset-btn" data-f="0.026" data-k="0.051">Unstable</button>
+                        <button class="preset-btn" data-f="0.037" data-k="0.060">Coral</button>
+                        <button class="preset-btn" data-f="0.030" data-k="0.055">Worms</button>
+                        <button class="preset-btn" data-f="0.025" data-k="0.060">Bubbles</button>
+                        <button class="preset-btn" data-f="0.039" data-k="0.058">Fingerprint</button>
+                        <button class="preset-btn" data-f="0.022" data-k="0.051">Mitosis</button>
+                        <button class="preset-btn" data-f="0.040" data-k="0.062">Solitons</button>
+                        <button class="preset-btn" data-f="0.018" data-k="0.050">Pulsing</button>
+                        <button class="preset-btn" data-f="0.062" data-k="0.061">Chaos</button>
                     </div>
                 </section>
 
@@ -38,17 +40,17 @@
                     <h2>Parameters</h2>
                     <div class="slider-group">
                         <label for="feed-rate">
-                            Feed Rate (F): <span id="feed-value">0.035</span>
+                            Feed Rate (F): <span id="feed-value">0.037</span>
                         </label>
-                        <input type="range" id="feed-rate" min="0" max="0.1" step="0.001" value="0.035" aria-label="Feed Rate">
+                        <input type="range" id="feed-rate" min="0" max="0.1" step="0.001" value="0.037" aria-label="Feed Rate">
                     </div>
                     <div class="slider-group">
                         <label for="kill-rate">
-                            Kill Rate (K): <span id="kill-value">0.065</span>
+                            Kill Rate (K): <span id="kill-value">0.060</span>
                         </label>
-                        <input type="range" id="kill-rate" min="0" max="0.1" step="0.001" value="0.065" aria-label="Kill Rate">
+                        <input type="range" id="kill-rate" min="0" max="0.1" step="0.001" value="0.060" aria-label="Kill Rate">
                     </div>
-                    <p class="pattern-label">Current Pattern: <span id="pattern-name">Spots</span></p>
+                    <p class="pattern-label">Current Pattern: <span id="pattern-name">Coral</span></p>
                 </section>
 
                 <!-- Simulation Controls Section -->
@@ -118,11 +120,11 @@
                     <div class="info-grid">
                         <div class="info-item">
                             <span class="info-label">F:</span>
-                            <span id="info-f" class="info-value">0.035</span>
+                            <span id="info-f" class="info-value">0.037</span>
                         </div>
                         <div class="info-item">
                             <span class="info-label">K:</span>
-                            <span id="info-k" class="info-value">0.065</span>
+                            <span id="info-k" class="info-value">0.060</span>
                         </div>
                         <div class="info-item">
                             <span class="info-label">FPS:</span>
