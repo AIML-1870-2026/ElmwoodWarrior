@@ -186,7 +186,7 @@ class Boid {
     }
 
     // Calculate steering behaviors
-    flock(neighbors, totalAgents) {
+    flock(neighbors, totalAgents, groupSize, maxGroupSize) {
         // Filter neighbors by perception cone
         const visibleNeighbors = neighbors.filter(n =>
             this.isInPerceptionCone(n.dx, n.dy)
@@ -210,32 +210,27 @@ class Boid {
 
         if (visibleNeighbors.length === 0) return;
 
-        // Max local density based on percentage
-        // Scale: at 100% allow ~30 neighbors, at 5% allow ~1-2 neighbors
-        const maxLocalDensity = Math.max(1, Math.floor(30 * CONFIG.maxGroupPercent / 100));
-
-        // Use ALL neighbors (not just FOV) for density check - you can sense crowding all around
-        const localDensity = neighbors.length;
-
         // Calculate separation, alignment, and cohesion forces
         const separation = this.separate(visibleNeighbors);
         const alignment = this.align(visibleNeighbors);
         const cohesion = this.cohere(visibleNeighbors);
 
-        // Check if local area is too crowded
-        if (localDensity > maxLocalDensity) {
-            // Too crowded - flee from local center
+        // Check if this boid's GROUP is too large
+        if (groupSize > maxGroupSize) {
+            // Group too large - flee from local neighbors to split up
             let centerX = 0, centerY = 0;
             for (const n of neighbors) {
                 centerX += n.boid.x;
                 centerY += n.boid.y;
             }
-            centerX /= neighbors.length;
-            centerY /= neighbors.length;
+            if (neighbors.length > 0) {
+                centerX /= neighbors.length;
+                centerY /= neighbors.length;
+            }
 
-            // Strong flee force - scales with how overcrowded
-            const overcrowdRatio = localDensity / maxLocalDensity;
-            const fleeStrength = Math.min(overcrowdRatio - 1, 3) * 0.3;
+            // Strong flee force - scales with how oversized the group is
+            const overcrowdRatio = groupSize / maxGroupSize;
+            const fleeStrength = Math.min(overcrowdRatio - 1, 3) * 0.4;
 
             const dx = this.x - centerX;
             const dy = this.y - centerY;
@@ -247,7 +242,7 @@ class Boid {
                 );
             }
 
-            // Only separation when overcrowded - no cohesion or alignment
+            // Only separation when group oversized - no cohesion or alignment
             this.applyForce(
                 separation.x * CONFIG.separation * 2,
                 separation.y * CONFIG.separation * 2

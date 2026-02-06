@@ -89,18 +89,27 @@ class Flock {
             this.grid.insert(boid);
         }
 
+        // Identify groups using union-find
+        const groupIds = this.identifyGroups();
+        const groupSizes = this.calculateGroupSizes(groupIds);
+
         // Update each boid
         let totalSpeed = 0;
         let totalNeighbors = 0;
 
         const totalAgents = this.boids.length;
+        const maxGroupSize = Math.max(1, Math.floor(totalAgents * CONFIG.maxGroupPercent / 100));
 
-        for (const boid of this.boids) {
+        for (let i = 0; i < this.boids.length; i++) {
+            const boid = this.boids[i];
             // Get neighbors from spatial grid
             const neighbors = this.grid.getNeighbors(boid, CONFIG.neighborRadius);
 
-            // Apply flocking behavior
-            boid.flock(neighbors, totalAgents);
+            // Get this boid's group size
+            const groupSize = groupSizes[groupIds[i]];
+
+            // Apply flocking behavior with group info
+            boid.flock(neighbors, totalAgents, groupSize, maxGroupSize);
 
             // Apply mouse interaction (flee or seek based on config)
             if (CONFIG.mouseAttract) {
@@ -123,6 +132,79 @@ class Flock {
             this.avgSpeed = this.avgSpeed * 0.9 + (totalSpeed / count) * 0.1;
             this.avgNeighbors = this.avgNeighbors * 0.9 + (totalNeighbors / count) * 0.1;
         }
+    }
+
+    // Identify groups using union-find algorithm
+    identifyGroups() {
+        const n = this.boids.length;
+        const parent = new Array(n);
+        const rank = new Array(n);
+
+        // Initialize each boid as its own group
+        for (let i = 0; i < n; i++) {
+            parent[i] = i;
+            rank[i] = 0;
+        }
+
+        // Find with path compression
+        const find = (x) => {
+            if (parent[x] !== x) {
+                parent[x] = find(parent[x]);
+            }
+            return parent[x];
+        };
+
+        // Union by rank
+        const union = (x, y) => {
+            const px = find(x);
+            const py = find(y);
+            if (px === py) return;
+
+            if (rank[px] < rank[py]) {
+                parent[px] = py;
+            } else if (rank[px] > rank[py]) {
+                parent[py] = px;
+            } else {
+                parent[py] = px;
+                rank[px]++;
+            }
+        };
+
+        // Create a map from boid to index
+        const boidIndex = new Map();
+        for (let i = 0; i < n; i++) {
+            boidIndex.set(this.boids[i], i);
+        }
+
+        // Union boids that are neighbors
+        for (let i = 0; i < n; i++) {
+            const boid = this.boids[i];
+            const neighbors = this.grid.getNeighbors(boid, CONFIG.neighborRadius);
+
+            for (const neighbor of neighbors) {
+                const j = boidIndex.get(neighbor.boid);
+                if (j !== undefined) {
+                    union(i, j);
+                }
+            }
+        }
+
+        // Get final group IDs (with path compression)
+        const groupIds = new Array(n);
+        for (let i = 0; i < n; i++) {
+            groupIds[i] = find(i);
+        }
+
+        return groupIds;
+    }
+
+    // Calculate size of each group
+    calculateGroupSizes(groupIds) {
+        const sizes = {};
+        for (const id of groupIds) {
+            sizes[id] = (sizes[id] || 0) + 1;
+        }
+        return sizes;
     }
 
     // Get current stats
