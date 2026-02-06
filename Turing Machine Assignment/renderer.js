@@ -13,26 +13,59 @@ class Renderer {
         this.imageData = this.ctx.createImageData(simulation.width, simulation.height);
 
         // Current color scheme
-        this.colorScheme = 'grayscale';
+        this.colorScheme = 'neon';
 
-        // Precompute Viridis color map (256 entries)
+        // Precompute color maps for performance
         this.viridisMap = this.generateViridisMap();
+        this.plasmaMap = this.generatePlasmaMap();
+        this.infernoMap = this.generateInfernoMap();
     }
 
     /**
      * Generate Viridis color map lookup table
      */
     generateViridisMap() {
-        const map = new Array(256);
-
-        // Viridis color stops (simplified approximation)
-        const stops = [
+        return this.generateColorMap([
             { t: 0.0, r: 68, g: 1, b: 84 },
             { t: 0.25, r: 59, g: 82, b: 139 },
             { t: 0.5, r: 33, g: 145, b: 140 },
             { t: 0.75, r: 94, g: 201, b: 98 },
             { t: 1.0, r: 253, g: 231, b: 37 }
-        ];
+        ]);
+    }
+
+    /**
+     * Generate Plasma color map lookup table
+     */
+    generatePlasmaMap() {
+        return this.generateColorMap([
+            { t: 0.0, r: 13, g: 8, b: 135 },
+            { t: 0.25, r: 126, g: 3, b: 168 },
+            { t: 0.5, r: 204, g: 71, b: 120 },
+            { t: 0.75, r: 248, g: 149, b: 64 },
+            { t: 1.0, r: 240, g: 249, b: 33 }
+        ]);
+    }
+
+    /**
+     * Generate Inferno color map lookup table
+     */
+    generateInfernoMap() {
+        return this.generateColorMap([
+            { t: 0.0, r: 0, g: 0, b: 4 },
+            { t: 0.2, r: 40, g: 11, b: 84 },
+            { t: 0.4, r: 101, g: 21, b: 110 },
+            { t: 0.6, r: 186, g: 55, b: 85 },
+            { t: 0.8, r: 249, g: 142, b: 9 },
+            { t: 1.0, r: 252, g: 255, b: 164 }
+        ]);
+    }
+
+    /**
+     * Generate a color map from stops
+     */
+    generateColorMap(stops) {
+        const map = new Array(256);
 
         for (let i = 0; i < 256; i++) {
             const t = i / 255;
@@ -68,32 +101,88 @@ class Renderer {
 
     /**
      * Map concentration value to RGB based on current color scheme
-     * @param {number} value - Concentration (0.0 to 1.0)
-     * @returns {object} - { r, g, b }
      */
     mapColor(value) {
         // Clamp value
         value = Math.max(0, Math.min(1, value));
+        const idx = Math.floor(value * 255);
 
         switch (this.colorScheme) {
+            case 'neon':
+                return this.neonMap(value);
+            case 'plasma':
+                return this.plasmaMap[idx];
+            case 'inferno':
+                return this.infernoMap[idx];
+            case 'toxic':
+                return this.toxicMap(value);
+            case 'ocean':
+                return this.oceanMap(value);
             case 'grayscale':
                 return this.grayscaleMap(value);
             case 'heatmap':
                 return this.heatMap(value);
             case 'viridis':
-                return this.viridisMap[Math.floor(value * 255)];
-            case 'ocean':
-                return this.oceanMap(value);
+                return this.viridisMap[idx];
             default:
-                return this.grayscaleMap(value);
+                return this.neonMap(value);
         }
     }
 
     /**
-     * Grayscale: 0.0 -> white, 1.0 -> black
+     * Neon: Black -> Cyan -> Magenta -> White (cyberpunk style)
+     */
+    neonMap(value) {
+        if (value < 0.33) {
+            const t = value / 0.33;
+            return {
+                r: Math.floor(20 * t),
+                g: Math.floor(255 * t),
+                b: Math.floor(200 * t)
+            };
+        } else if (value < 0.66) {
+            const t = (value - 0.33) / 0.33;
+            return {
+                r: Math.floor(20 + 235 * t),
+                g: Math.floor(255 - 55 * t),
+                b: Math.floor(200 + 55 * t)
+            };
+        } else {
+            const t = (value - 0.66) / 0.34;
+            return {
+                r: 255,
+                g: Math.floor(200 + 55 * t),
+                b: 255
+            };
+        }
+    }
+
+    /**
+     * Toxic: Black -> Bright Green -> Yellow
+     */
+    toxicMap(value) {
+        if (value < 0.5) {
+            const t = value / 0.5;
+            return {
+                r: Math.floor(30 * t),
+                g: Math.floor(255 * t),
+                b: Math.floor(50 * t)
+            };
+        } else {
+            const t = (value - 0.5) / 0.5;
+            return {
+                r: Math.floor(30 + 225 * t),
+                g: 255,
+                b: Math.floor(50 + 50 * t)
+            };
+        }
+    }
+
+    /**
+     * Grayscale: 0.0 -> black, 1.0 -> white
      */
     grayscaleMap(value) {
-        const gray = Math.floor((1.0 - value) * 255);
+        const gray = Math.floor(value * 255);
         return { r: gray, g: gray, b: gray };
     }
 
@@ -101,22 +190,29 @@ class Renderer {
      * Heat Map: dark blue -> cyan -> yellow -> red
      */
     heatMap(value) {
-        if (value < 0.33) {
-            const t = value / 0.33;
+        if (value < 0.25) {
+            const t = value / 0.25;
+            return {
+                r: 0,
+                g: 0,
+                b: Math.floor(100 + 155 * t)
+            };
+        } else if (value < 0.5) {
+            const t = (value - 0.25) / 0.25;
             return {
                 r: 0,
                 g: Math.floor(255 * t),
-                b: Math.floor(128 + 127 * (1 - t))
+                b: 255
             };
-        } else if (value < 0.66) {
-            const t = (value - 0.33) / 0.33;
+        } else if (value < 0.75) {
+            const t = (value - 0.5) / 0.25;
             return {
                 r: Math.floor(255 * t),
                 g: 255,
                 b: Math.floor(255 * (1 - t))
             };
         } else {
-            const t = (value - 0.66) / 0.34;
+            const t = (value - 0.75) / 0.25;
             return {
                 r: 255,
                 g: Math.floor(255 * (1 - t)),
@@ -126,21 +222,28 @@ class Renderer {
     }
 
     /**
-     * Ocean: dark blue -> cyan -> white
+     * Ocean: deep blue -> cyan -> white
      */
     oceanMap(value) {
-        if (value < 0.5) {
-            const t = value / 0.5;
+        if (value < 0.4) {
+            const t = value / 0.4;
             return {
-                r: 0,
-                g: Math.floor(128 * t),
-                b: Math.floor(64 + 191 * t)
+                r: Math.floor(10 * t),
+                g: Math.floor(50 + 80 * t),
+                b: Math.floor(80 + 120 * t)
+            };
+        } else if (value < 0.7) {
+            const t = (value - 0.4) / 0.3;
+            return {
+                r: Math.floor(10 + 90 * t),
+                g: Math.floor(130 + 125 * t),
+                b: Math.floor(200 + 55 * t)
             };
         } else {
-            const t = (value - 0.5) / 0.5;
+            const t = (value - 0.7) / 0.3;
             return {
-                r: Math.floor(255 * t),
-                g: Math.floor(128 + 127 * t),
+                r: Math.floor(100 + 155 * t),
+                g: 255,
                 b: 255
             };
         }
@@ -186,7 +289,6 @@ class Renderer {
 
     /**
      * Export canvas as PNG
-     * @returns {string} - Data URL of the image
      */
     exportImage() {
         return this.canvas.toDataURL('image/png');
@@ -209,8 +311,8 @@ class ParameterMapRenderer {
         this.fMax = 0.050;
 
         // Current position
-        this.currentF = 0.035;
-        this.currentK = 0.065;
+        this.currentF = 0.037;
+        this.currentK = 0.060;
 
         this.render();
     }
@@ -224,45 +326,51 @@ class ParameterMapRenderer {
         const height = canvas.height;
 
         // Create gradient based on typical pattern regions
+        const imageData = ctx.createImageData(width, height);
+        const data = imageData.data;
+
         for (let y = 0; y < height; y++) {
             for (let x = 0; x < width; x++) {
                 const k = kMin + (x / width) * (kMax - kMin);
                 const f = fMax - (y / height) * (fMax - fMin);
 
                 const color = this.getRegionColor(f, k);
-                ctx.fillStyle = `rgb(${color.r}, ${color.g}, ${color.b})`;
-                ctx.fillRect(x, y, 1, 1);
+                const idx = (y * width + x) * 4;
+                data[idx] = color.r;
+                data[idx + 1] = color.g;
+                data[idx + 2] = color.b;
+                data[idx + 3] = 255;
             }
         }
+
+        ctx.putImageData(imageData, 0, 0);
 
         // Draw crosshairs at current position
         this.drawCrosshairs();
     }
 
     /**
-     * Get color for a parameter region
+     * Get color for a parameter region (cyberpunk palette)
      */
     getRegionColor(f, k) {
-        // Approximate pattern regions based on F/K values
-        // These are rough estimates based on Gray-Scott behavior
-
-        const ratio = k / f;
-
         if (f < 0.02) {
-            // Waves/spirals region
-            return { r: 100, g: 150, b: 200 };
-        } else if (f > 0.03 && k > 0.062) {
-            // Spots region
-            return { r: 200, g: 100, b: 100 };
-        } else if (f > 0.03 && k < 0.062) {
-            // Stripes region
-            return { r: 100, g: 200, b: 100 };
+            // Waves/spirals region - cyan
+            return { r: 0, g: 180, b: 200 };
+        } else if (f > 0.035 && k > 0.058) {
+            // Spots region - magenta
+            return { r: 180, g: 50, b: 150 };
+        } else if (f > 0.03 && k < 0.058) {
+            // Stripes region - green
+            return { r: 0, g: 200, b: 100 };
         } else if (f > 0.025 && f < 0.035) {
-            // Maze/unstable region
-            return { r: 200, g: 200, b: 100 };
+            // Maze/unstable region - orange
+            return { r: 220, g: 120, b: 30 };
+        } else if (f > 0.035 && k >= 0.058 && k <= 0.062) {
+            // Fingerprint region - purple
+            return { r: 120, g: 80, b: 200 };
         } else {
-            // Mixed/transition
-            return { r: 150, g: 150, b: 150 };
+            // Mixed/transition - dark blue
+            return { r: 30, g: 40, b: 80 };
         }
     }
 
@@ -275,7 +383,11 @@ class ParameterMapRenderer {
         const x = ((currentK - kMin) / (kMax - kMin)) * canvas.width;
         const y = ((fMax - currentF) / (fMax - fMin)) * canvas.height;
 
-        ctx.strokeStyle = 'white';
+        // Glow effect
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = '#00ff88';
+
+        ctx.strokeStyle = '#00ff88';
         ctx.lineWidth = 2;
 
         // Vertical line
@@ -292,12 +404,14 @@ class ParameterMapRenderer {
 
         // Center circle
         ctx.beginPath();
-        ctx.arc(x, y, 5, 0, Math.PI * 2);
-        ctx.fillStyle = 'white';
+        ctx.arc(x, y, 6, 0, Math.PI * 2);
+        ctx.fillStyle = '#00ff88';
         ctx.fill();
-        ctx.strokeStyle = 'black';
-        ctx.lineWidth = 1;
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
         ctx.stroke();
+
+        ctx.shadowBlur = 0;
     }
 
     /**

@@ -1,5 +1,5 @@
 /**
- * UI Controller for Turing Patterns Explorer
+ * UI Controller for Morphogenesis Lab
  * Handles all user interface interactions
  */
 
@@ -9,6 +9,8 @@ class UIController {
         this.isDrawing = false;
         this.brushSize = 20;
         this.toolMode = 'addB';
+        this.symmetryMode = 0; // 0=off, 1=2-fold, 2=4-fold, 3=8-fold
+        this.isFullscreen = false;
 
         // Preset patterns with F and K values
         this.presets = {
@@ -30,6 +32,7 @@ class UIController {
      */
     init() {
         this.setupPresetButtons();
+        this.setupSeedButtons();
         this.setupSliders();
         this.setupControlButtons();
         this.setupToolControls();
@@ -38,6 +41,7 @@ class UIController {
         this.setupParameterMap();
         this.setupExport();
         this.setupKeyboardShortcuts();
+        this.setupCanvasControls();
     }
 
     /**
@@ -67,9 +71,28 @@ class UIController {
             });
         });
 
-        // Set initial active state (Coral is the first preset)
+        // Set initial active state
         const coralBtn = document.querySelector('.preset-btn[data-k="0.060"][data-f="0.037"]');
         if (coralBtn) coralBtn.classList.add('active');
+    }
+
+    /**
+     * Setup seed pattern buttons
+     */
+    setupSeedButtons() {
+        const buttons = document.querySelectorAll('.seed-btn');
+
+        buttons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const seed = btn.dataset.seed;
+                this.app.simulation.setSeedPattern(seed);
+                this.app.reset();
+
+                // Update active state
+                document.querySelectorAll('.seed-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
     }
 
     /**
@@ -169,12 +192,16 @@ class UIController {
      */
     updatePlayPauseButton() {
         const btn = document.getElementById('play-pause-btn');
+        const overlay = document.getElementById('canvas-overlay');
+
         if (this.app.running) {
-            btn.textContent = 'Pause';
+            btn.innerHTML = '<span class="btn-icon">||</span> PAUSE';
             btn.classList.remove('paused');
+            overlay.classList.remove('visible');
         } else {
-            btn.textContent = 'Play';
+            btn.innerHTML = '<span class="btn-icon">></span> PLAY';
             btn.classList.add('paused');
+            overlay.classList.add('visible');
         }
     }
 
@@ -208,6 +235,65 @@ class UIController {
     }
 
     /**
+     * Setup canvas controls (fullscreen, symmetry, randomize)
+     */
+    setupCanvasControls() {
+        const fullscreenBtn = document.getElementById('fullscreen-btn');
+        const symmetryBtn = document.getElementById('symmetry-btn');
+        const randomizeBtn = document.getElementById('randomize-btn');
+
+        fullscreenBtn.addEventListener('click', () => this.toggleFullscreen());
+        symmetryBtn.addEventListener('click', () => this.toggleSymmetry());
+        randomizeBtn.addEventListener('click', () => this.randomizeParameters());
+    }
+
+    /**
+     * Toggle fullscreen mode
+     */
+    toggleFullscreen() {
+        this.isFullscreen = !this.isFullscreen;
+        document.body.classList.toggle('fullscreen', this.isFullscreen);
+
+        const btn = document.getElementById('fullscreen-btn');
+        btn.querySelector('.icon').textContent = this.isFullscreen ? 'X' : '[ ]';
+    }
+
+    /**
+     * Toggle symmetry mode
+     */
+    toggleSymmetry() {
+        this.symmetryMode = (this.symmetryMode + 1) % 4;
+        this.app.simulation.symmetryMode = this.symmetryMode;
+
+        const display = document.getElementById('symmetry-display');
+        const labels = ['OFF', '2X', '4X', '8X'];
+        display.textContent = labels[this.symmetryMode];
+    }
+
+    /**
+     * Randomize F/K parameters to find interesting patterns
+     */
+    randomizeParameters() {
+        // Generate random F/K in interesting regions
+        const f = 0.01 + Math.random() * 0.06;
+        const k = 0.045 + Math.random() * 0.03;
+
+        this.app.setParameters(f, k);
+        this.app.reset();
+        this.app.running = true;
+
+        // Update UI
+        document.getElementById('feed-rate').value = f;
+        document.getElementById('kill-rate').value = k;
+        document.getElementById('feed-value').textContent = f.toFixed(3);
+        document.getElementById('kill-value').textContent = k.toFixed(3);
+
+        this.updatePatternLabel(f, k);
+        this.updateActivePreset(null);
+        this.updatePlayPauseButton();
+    }
+
+    /**
      * Setup canvas interaction (click, drag)
      */
     setupCanvasInteraction() {
@@ -220,12 +306,11 @@ class UIController {
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
 
-            // Calculate scaled brush size based on canvas display size vs actual size
+            // Calculate scaled brush size
             const displayScale = rect.width / canvas.width;
             const displayBrushSize = this.brushSize * displayScale;
 
-            // Show and position brush cursor - use clientX/clientY directly for fixed positioning
-            // Offset by half the brush size to center it on the cursor
+            // Position brush cursor
             brushCursor.style.display = 'block';
             brushCursor.style.left = (e.clientX - displayBrushSize) + 'px';
             brushCursor.style.top = (e.clientY - displayBrushSize) + 'px';
@@ -257,12 +342,11 @@ class UIController {
             this.isDrawing = false;
         });
 
-        // Also stop drawing if mouse leaves window
         document.addEventListener('mouseup', () => {
             this.isDrawing = false;
         });
 
-        // Handle touch events for mobile
+        // Handle touch events
         canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
             this.isDrawing = true;
@@ -290,10 +374,9 @@ class UIController {
     }
 
     /**
-     * Paint chemical at position
+     * Paint chemical at position with symmetry
      */
     paint(x, y, rect) {
-        // Scale coordinates to canvas size
         const canvas = document.getElementById('simulation-canvas');
         const scaleX = canvas.width / rect.width;
         const scaleY = canvas.height / rect.height;
@@ -303,20 +386,40 @@ class UIController {
 
         let chemType;
         switch (this.toolMode) {
-            case 'addB':
-                chemType = 'B';
-                break;
-            case 'addA':
-                chemType = 'A';
-                break;
-            case 'noise':
-                chemType = 'noise';
-                break;
-            default:
-                chemType = 'B';
+            case 'addB': chemType = 'B'; break;
+            case 'addA': chemType = 'A'; break;
+            case 'noise': chemType = 'noise'; break;
+            default: chemType = 'B';
         }
 
+        // Apply symmetry
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+
         this.app.addChemical(canvasX, canvasY, this.brushSize, chemType);
+
+        if (this.symmetryMode >= 1) {
+            // 2-fold symmetry (180 degrees)
+            const mirrorX = 2 * centerX - canvasX;
+            const mirrorY = 2 * centerY - canvasY;
+            this.app.addChemical(mirrorX, mirrorY, this.brushSize, chemType);
+        }
+
+        if (this.symmetryMode >= 2) {
+            // 4-fold symmetry
+            this.app.addChemical(2 * centerX - canvasX, canvasY, this.brushSize, chemType);
+            this.app.addChemical(canvasX, 2 * centerY - canvasY, this.brushSize, chemType);
+        }
+
+        if (this.symmetryMode >= 3) {
+            // 8-fold symmetry (diagonal mirrors)
+            const dx = canvasX - centerX;
+            const dy = canvasY - centerY;
+            this.app.addChemical(centerX + dy, centerY + dx, this.brushSize, chemType);
+            this.app.addChemical(centerX - dy, centerY - dx, this.brushSize, chemType);
+            this.app.addChemical(centerX + dy, centerY - dx, this.brushSize, chemType);
+            this.app.addChemical(centerX - dy, centerY + dx, this.brushSize, chemType);
+        }
     }
 
     /**
@@ -330,7 +433,11 @@ class UIController {
             const x = e.clientX - rect.left;
             const y = e.clientY - rect.top;
 
-            const values = this.app.paramMapRenderer.getValuesFromClick(x, y);
+            // Scale to actual canvas size
+            const scaleX = paramMap.width / rect.width;
+            const scaleY = paramMap.height / rect.height;
+
+            const values = this.app.paramMapRenderer.getValuesFromClick(x * scaleX, y * scaleY);
 
             // Update sliders and simulation
             document.getElementById('feed-rate').value = values.f;
@@ -357,7 +464,7 @@ class UIController {
             const timestamp = Date.now();
 
             const link = document.createElement('a');
-            link.download = `turing-pattern-F${f}-K${k}-${timestamp}.png`;
+            link.download = `morphogenesis-F${f}-K${k}-${timestamp}.png`;
             link.href = dataUrl;
             link.click();
         });
@@ -368,20 +475,30 @@ class UIController {
      */
     setupKeyboardShortcuts() {
         document.addEventListener('keydown', (e) => {
+            // Don't trigger shortcuts when typing in inputs
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+
             switch (e.key.toLowerCase()) {
                 case ' ':
-                    // Space: toggle play/pause
                     e.preventDefault();
                     this.app.running = !this.app.running;
                     this.updatePlayPauseButton();
                     break;
                 case 'r':
-                    // R: reset
                     this.app.reset();
                     break;
                 case 'c':
-                    // C: clear
                     this.app.clear();
+                    break;
+                case 's':
+                    this.toggleSymmetry();
+                    break;
+                case 'f':
+                    this.toggleFullscreen();
+                    break;
+                case '?':
+                case '/':
+                    this.randomizeParameters();
                     break;
             }
         });

@@ -25,15 +25,57 @@ class Simulation {
         this.nextA = new Float32Array(width * height);
         this.nextB = new Float32Array(width * height);
 
+        // Seed pattern type
+        this.seedPattern = 'center';
+
+        // Symmetry mode
+        this.symmetryMode = 0; // 0 = off, 1 = 2-fold, 2 = 4-fold, 3 = 8-fold
+
         // Initialize to default state
         this.reset();
     }
 
     /**
-     * Reset simulation to initial conditions
-     * Chemical A everywhere, small perturbation of B in center
+     * Set the seed pattern type
+     */
+    setSeedPattern(pattern) {
+        this.seedPattern = pattern;
+    }
+
+    /**
+     * Reset simulation to initial conditions based on seed pattern
      */
     reset() {
+        const { width, height, gridA, gridB, seedPattern } = this;
+
+        // Clear grids
+        for (let i = 0; i < width * height; i++) {
+            gridA[i] = 1.0;
+            gridB[i] = 0.0;
+        }
+
+        switch (seedPattern) {
+            case 'center':
+                this.seedCenter();
+                break;
+            case 'random':
+                this.seedRandom();
+                break;
+            case 'ring':
+                this.seedRing();
+                break;
+            case 'grid':
+                this.seedGrid();
+                break;
+            default:
+                this.seedCenter();
+        }
+    }
+
+    /**
+     * Center seed pattern - single blob in center
+     */
+    seedCenter() {
         const { width, height, gridA, gridB } = this;
         const centerX = width / 2;
         const centerY = height / 2;
@@ -42,12 +84,6 @@ class Simulation {
         for (let y = 0; y < height; y++) {
             for (let x = 0; x < width; x++) {
                 const idx = y * width + x;
-
-                // Fill with chemical A
-                gridA[idx] = 1.0;
-                gridB[idx] = 0.0;
-
-                // Add B in center region with random perturbation
                 const dx = x - centerX;
                 const dy = y - centerY;
                 const dist = Math.sqrt(dx * dx + dy * dy);
@@ -55,6 +91,93 @@ class Simulation {
                 if (dist < seedRadius) {
                     gridB[idx] = 1.0;
                     gridA[idx] = 0.5 + Math.random() * 0.1;
+                }
+            }
+        }
+    }
+
+    /**
+     * Random seed pattern - scattered seeds
+     */
+    seedRandom() {
+        const { width, height, gridA, gridB } = this;
+        const numSeeds = 15 + Math.floor(Math.random() * 10);
+        const seedRadius = 8;
+
+        for (let s = 0; s < numSeeds; s++) {
+            const seedX = Math.floor(Math.random() * width);
+            const seedY = Math.floor(Math.random() * height);
+
+            for (let dy = -seedRadius; dy <= seedRadius; dy++) {
+                for (let dx = -seedRadius; dx <= seedRadius; dx++) {
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist <= seedRadius) {
+                        let px = (seedX + dx + width) % width;
+                        let py = (seedY + dy + height) % height;
+                        const idx = py * width + px;
+
+                        gridB[idx] = 1.0;
+                        gridA[idx] = 0.5 + Math.random() * 0.1;
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Ring seed pattern - circle of seeds
+     */
+    seedRing() {
+        const { width, height, gridA, gridB } = this;
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const ringRadius = Math.min(width, height) / 4;
+        const seedRadius = 8;
+        const numSeeds = 12;
+
+        for (let i = 0; i < numSeeds; i++) {
+            const angle = (i / numSeeds) * Math.PI * 2;
+            const seedX = Math.floor(centerX + Math.cos(angle) * ringRadius);
+            const seedY = Math.floor(centerY + Math.sin(angle) * ringRadius);
+
+            for (let dy = -seedRadius; dy <= seedRadius; dy++) {
+                for (let dx = -seedRadius; dx <= seedRadius; dx++) {
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist <= seedRadius) {
+                        let px = (seedX + dx + width) % width;
+                        let py = (seedY + dy + height) % height;
+                        const idx = py * width + px;
+
+                        gridB[idx] = 1.0;
+                        gridA[idx] = 0.5 + Math.random() * 0.1;
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Grid seed pattern - regular grid of seeds
+     */
+    seedGrid() {
+        const { width, height, gridA, gridB } = this;
+        const spacing = 50;
+        const seedRadius = 6;
+
+        for (let gy = spacing; gy < height; gy += spacing) {
+            for (let gx = spacing; gx < width; gx += spacing) {
+                for (let dy = -seedRadius; dy <= seedRadius; dy++) {
+                    for (let dx = -seedRadius; dx <= seedRadius; dx++) {
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist <= seedRadius) {
+                            let px = (gx + dx + width) % width;
+                            let py = (gy + dy + height) % height;
+                            const idx = py * width + px;
+
+                            gridB[idx] = 1.0;
+                            gridA[idx] = 0.5 + Math.random() * 0.1;
+                        }
+                    }
                 }
             }
         }

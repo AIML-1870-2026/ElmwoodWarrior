@@ -3,26 +3,53 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Turing Patterns Explorer</title>
+    <title>MORPHOGENESIS LAB</title>
     <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600&display=swap" rel="stylesheet">
 </head>
 <body>
+    <div class="bg-animation"></div>
+
     <div class="container">
         <header>
-            <h1>Turing Patterns Explorer</h1>
-            <p class="subtitle">Reaction-Diffusion Simulation based on the Gray-Scott Model</p>
+            <div class="logo-container">
+                <div class="logo-icon">M</div>
+                <div class="logo-text">
+                    <h1>MORPHOGENESIS LAB</h1>
+                    <p class="subtitle">Emergent Pattern Synthesis Engine</p>
+                </div>
+            </div>
+            <p class="tagline">Watch complexity emerge from simple rules. Nature's algorithm, visualized.</p>
         </header>
 
         <main class="main-content">
-            <div class="canvas-container">
-                <canvas id="simulation-canvas" width="512" height="512"></canvas>
-                <div id="brush-cursor" class="brush-cursor"></div>
+            <div class="canvas-wrapper">
+                <div class="canvas-container">
+                    <canvas id="simulation-canvas" width="512" height="512"></canvas>
+                    <div id="brush-cursor" class="brush-cursor"></div>
+                    <div class="canvas-overlay" id="canvas-overlay">
+                        <span class="overlay-text">PAUSED</span>
+                    </div>
+                </div>
+                <div class="canvas-controls">
+                    <button id="fullscreen-btn" class="icon-btn" title="Fullscreen (F)">
+                        <span class="icon">[ ]</span>
+                    </button>
+                    <button id="symmetry-btn" class="icon-btn" title="Toggle Symmetry (S)">
+                        <span class="icon">*</span>
+                    </button>
+                    <button id="randomize-btn" class="icon-btn" title="Random Parameters (R)">
+                        <span class="icon">?</span>
+                    </button>
+                </div>
             </div>
 
             <aside class="control-panel">
                 <!-- Preset Patterns Section -->
                 <section class="control-section">
-                    <h2>Preset Patterns</h2>
+                    <h2><span class="section-icon">//</span> Organisms</h2>
                     <div class="preset-buttons">
                         <button class="preset-btn" data-f="0.037" data-k="0.060">Coral</button>
                         <button class="preset-btn" data-f="0.030" data-k="0.055">Worms</button>
@@ -35,9 +62,20 @@
                     </div>
                 </section>
 
+                <!-- Seed Patterns Section -->
+                <section class="control-section">
+                    <h2><span class="section-icon">//</span> Seed Pattern</h2>
+                    <div class="seed-buttons">
+                        <button class="seed-btn active" data-seed="center">Center</button>
+                        <button class="seed-btn" data-seed="random">Random</button>
+                        <button class="seed-btn" data-seed="ring">Ring</button>
+                        <button class="seed-btn" data-seed="grid">Grid</button>
+                    </div>
+                </section>
+
                 <!-- Parameter Controls Section -->
                 <section class="control-section">
-                    <h2>Parameters</h2>
+                    <h2><span class="section-icon">//</span> Reaction Parameters</h2>
                     <div class="slider-group">
                         <label for="feed-rate">
                             Feed Rate (F): <span id="feed-value">0.037</span>
@@ -50,99 +88,124 @@
                         </label>
                         <input type="range" id="kill-rate" min="0" max="0.1" step="0.001" value="0.060" aria-label="Kill Rate">
                     </div>
-                    <p class="pattern-label">Current Pattern: <span id="pattern-name">Coral</span></p>
+                    <p class="pattern-label">Detected: <span id="pattern-name">Coral</span></p>
                 </section>
 
                 <!-- Simulation Controls Section -->
                 <section class="control-section">
-                    <h2>Simulation</h2>
+                    <h2><span class="section-icon">//</span> Engine Control</h2>
                     <div class="button-group">
-                        <button id="play-pause-btn" class="control-btn primary" aria-label="Play or Pause">Pause</button>
-                        <button id="reset-btn" class="control-btn" aria-label="Reset simulation">Reset</button>
-                        <button id="clear-btn" class="control-btn" aria-label="Clear canvas">Clear</button>
+                        <button id="play-pause-btn" class="control-btn primary" aria-label="Play or Pause">
+                            <span class="btn-icon">||</span> PAUSE
+                        </button>
+                        <button id="reset-btn" class="control-btn" aria-label="Reset simulation">RESET</button>
+                        <button id="clear-btn" class="control-btn" aria-label="Clear canvas">CLEAR</button>
                     </div>
                     <div class="slider-group">
                         <label for="speed">
-                            Speed: <span id="speed-value">5</span> steps/frame
+                            Time Warp: <span id="speed-value">5</span>x
                         </label>
-                        <input type="range" id="speed" min="1" max="10" step="1" value="5" aria-label="Simulation speed">
+                        <input type="range" id="speed" min="1" max="20" step="1" value="5" aria-label="Simulation speed">
                     </div>
                 </section>
 
                 <!-- Interactive Tools Section -->
                 <section class="control-section">
-                    <h2>Interactive Tools</h2>
+                    <h2><span class="section-icon">//</span> Mutagen Tools</h2>
                     <div class="slider-group">
                         <label for="brush-size">
-                            Brush Size: <span id="brush-value">20</span>px
+                            Brush Radius: <span id="brush-value">20</span>px
                         </label>
-                        <input type="range" id="brush-size" min="5" max="50" step="1" value="20" aria-label="Brush size">
+                        <input type="range" id="brush-size" min="5" max="80" step="1" value="20" aria-label="Brush size">
                     </div>
                     <div class="tool-mode">
-                        <label>Tool Mode:</label>
+                        <label>Injection Mode:</label>
                         <select id="tool-mode" aria-label="Select tool mode">
-                            <option value="addB" selected>Add Chemical B</option>
-                            <option value="addA">Add Chemical A</option>
-                            <option value="noise">Random Noise</option>
+                            <option value="addB" selected>Catalyst B (Growth)</option>
+                            <option value="addA">Substrate A (Kill)</option>
+                            <option value="noise">Mutation (Noise)</option>
                         </select>
                     </div>
                 </section>
 
                 <!-- Visual Settings Section -->
                 <section class="control-section">
-                    <h2>Visual Settings</h2>
+                    <h2><span class="section-icon">//</span> Visualization</h2>
                     <div class="color-scheme">
-                        <label for="color-scheme">Color Scheme:</label>
+                        <label for="color-scheme">Render Mode:</label>
                         <select id="color-scheme" aria-label="Select color scheme">
-                            <option value="grayscale" selected>Grayscale</option>
-                            <option value="heatmap">Heat Map</option>
-                            <option value="viridis">Viridis</option>
+                            <option value="neon" selected>Neon</option>
+                            <option value="plasma">Plasma</option>
+                            <option value="inferno">Inferno</option>
+                            <option value="toxic">Toxic</option>
                             <option value="ocean">Ocean</option>
+                            <option value="grayscale">X-Ray</option>
+                            <option value="heatmap">Thermal</option>
+                            <option value="viridis">Bio-Scan</option>
                         </select>
                     </div>
                 </section>
 
                 <!-- Parameter Space Map -->
                 <section class="control-section">
-                    <h2>Parameter Space</h2>
+                    <h2><span class="section-icon">//</span> Phase Space</h2>
                     <div class="param-map-container">
-                        <canvas id="param-map" width="200" height="200" aria-label="Click to set F and K parameters"></canvas>
+                        <canvas id="param-map" width="200" height="160" aria-label="Click to set F and K parameters"></canvas>
                         <div class="param-map-labels">
-                            <span class="axis-label x-label">K (0.045 - 0.070)</span>
-                            <span class="axis-label y-label">F (0.010 - 0.050)</span>
+                            <span class="axis-label">K: Kill Rate</span>
+                            <span class="axis-label">F: Feed Rate</span>
                         </div>
                     </div>
                 </section>
 
                 <!-- Information Panel -->
                 <section class="control-section info-panel">
-                    <h2>Information</h2>
+                    <h2><span class="section-icon">//</span> Telemetry</h2>
                     <div class="info-grid">
                         <div class="info-item">
-                            <span class="info-label">F:</span>
+                            <span class="info-label">FEED</span>
                             <span id="info-f" class="info-value">0.037</span>
                         </div>
                         <div class="info-item">
-                            <span class="info-label">K:</span>
+                            <span class="info-label">KILL</span>
                             <span id="info-k" class="info-value">0.060</span>
                         </div>
                         <div class="info-item">
-                            <span class="info-label">FPS:</span>
+                            <span class="info-label">FPS</span>
                             <span id="fps-counter" class="info-value">0</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">SYM</span>
+                            <span id="symmetry-display" class="info-value">OFF</span>
                         </div>
                     </div>
                 </section>
 
                 <!-- Export Section -->
                 <section class="control-section">
-                    <h2>Export</h2>
-                    <button id="save-image-btn" class="control-btn" aria-label="Save image">Save as PNG</button>
+                    <h2><span class="section-icon">//</span> Export</h2>
+                    <button id="save-image-btn" class="control-btn export-btn" aria-label="Save image">
+                        CAPTURE SPECIMEN
+                    </button>
+                </section>
+
+                <!-- Keyboard Shortcuts -->
+                <section class="control-section shortcuts">
+                    <h2><span class="section-icon">//</span> Hotkeys</h2>
+                    <div class="shortcuts-grid">
+                        <span class="key">SPACE</span><span>Play/Pause</span>
+                        <span class="key">R</span><span>Reset</span>
+                        <span class="key">C</span><span>Clear</span>
+                        <span class="key">S</span><span>Symmetry</span>
+                        <span class="key">F</span><span>Fullscreen</span>
+                        <span class="key">?</span><span>Randomize</span>
+                    </div>
                 </section>
             </aside>
         </main>
 
         <footer>
-            <p>Turing Patterns Explorer - Gray-Scott Reaction-Diffusion Model</p>
+            <p>MORPHOGENESIS LAB v2.0 | Gray-Scott Reaction-Diffusion Engine</p>
         </footer>
     </div>
 
