@@ -140,63 +140,47 @@ class Renderer {
     // Night City theme - neon traffic at night
     renderNightCity(boids) {
         const ctx = this.ctx;
+        const maxJump = 50; // Max pixels between consecutive points
+
+        // Draw all trails first (batched for performance)
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
 
         for (const boid of boids) {
-            // Draw trail - with strict validation to prevent screen-crossing lines
-            if (boid.trail.length >= 2) {
-                // Build array of valid consecutive points
-                const validPoints = [boid.trail[0]];
-                const maxJump = 50; // Max pixels between consecutive points
+            if (boid.trail.length < 2) continue;
 
-                for (let i = 1; i < boid.trail.length; i++) {
-                    const prev = validPoints[validPoints.length - 1];
-                    const curr = boid.trail[i];
-                    const dx = Math.abs(curr.x - prev.x);
-                    const dy = Math.abs(curr.y - prev.y);
+            // Quick validation - check current position to last trail point
+            const last = boid.trail[boid.trail.length - 1];
+            const dx = Math.abs(boid.x - last.x);
+            const dy = Math.abs(boid.y - last.y);
+            if (dx >= maxJump || dy >= maxJump) continue;
 
-                    if (dx < maxJump && dy < maxJump) {
-                        validPoints.push(curr);
-                    } else {
-                        // Gap detected - restart trail from this point
-                        validPoints.length = 0;
-                        validPoints.push(curr);
-                    }
-                }
+            // Draw trail with simple fading segments (no gradients)
+            const len = boid.trail.length;
+            for (let i = 1; i < len; i++) {
+                const prev = boid.trail[i - 1];
+                const curr = boid.trail[i];
+                const segDx = Math.abs(curr.x - prev.x);
+                const segDy = Math.abs(curr.y - prev.y);
+                if (segDx >= maxJump || segDy >= maxJump) continue;
 
-                // Check current position against last valid point
-                if (validPoints.length > 0) {
-                    const last = validPoints[validPoints.length - 1];
-                    const dx = Math.abs(boid.x - last.x);
-                    const dy = Math.abs(boid.y - last.y);
-                    if (dx >= maxJump || dy >= maxJump) {
-                        validPoints.length = 0; // Invalid - don't draw trail
-                    }
-                }
-
-                // Only draw if we have enough valid points
-                if (validPoints.length >= 2) {
-                    ctx.beginPath();
-                    ctx.moveTo(validPoints[0].x, validPoints[0].y);
-                    for (let i = 1; i < validPoints.length; i++) {
-                        ctx.lineTo(validPoints[i].x, validPoints[i].y);
-                    }
-                    ctx.lineTo(boid.x, boid.y);
-
-                    const gradient = ctx.createLinearGradient(
-                        validPoints[0].x, validPoints[0].y,
-                        boid.x, boid.y
-                    );
-                    gradient.addColorStop(0, 'rgba(255, 50, 50, 0)');
-                    gradient.addColorStop(1, 'rgba(255, 80, 60, 0.8)');
-
-                    ctx.strokeStyle = gradient;
-                    ctx.lineWidth = 4;
-                    ctx.lineCap = 'round';
-                    ctx.stroke();
-                }
+                const alpha = (i / len) * 0.7;
+                ctx.strokeStyle = `rgba(255, 70, 55, ${alpha})`;
+                ctx.beginPath();
+                ctx.moveTo(prev.x, prev.y);
+                ctx.lineTo(curr.x, curr.y);
+                ctx.stroke();
             }
+            // Final segment to current position
+            ctx.strokeStyle = 'rgba(255, 80, 60, 0.8)';
+            ctx.beginPath();
+            ctx.moveTo(last.x, last.y);
+            ctx.lineTo(boid.x, boid.y);
+            ctx.stroke();
+        }
 
-            // Draw car
+        // Draw all cars (no shadow blur - use simple glow instead)
+        for (const boid of boids) {
             ctx.save();
             ctx.translate(boid.x, boid.y);
             ctx.rotate(boid.heading);
@@ -204,27 +188,23 @@ class Renderer {
             const carWidth = 22 * boid.size;
             const carHeight = 10 * boid.size;
 
-            // Headlight glow
-            ctx.shadowColor = '#ffffaa';
-            ctx.shadowBlur = 15;
+            // Simple headlight glow (no expensive shadowBlur)
+            ctx.fillStyle = 'rgba(255, 255, 180, 0.15)';
+            ctx.beginPath();
+            ctx.arc(carWidth * 0.4, 0, 20, 0, Math.PI * 2);
+            ctx.fill();
 
             // Car body (dark silhouette)
             this.drawCar(ctx, carWidth, carHeight, '#1a1a2e', 'rgba(40, 40, 60, 0.8)', true);
 
-            // Headlight beams
-            ctx.shadowBlur = 0;
-            const beamGradient = ctx.createRadialGradient(carWidth * 0.4, 0, 0, carWidth * 0.4, 0, 40);
-            beamGradient.addColorStop(0, 'rgba(255, 255, 200, 0.6)');
-            beamGradient.addColorStop(0.5, 'rgba(255, 255, 200, 0.2)');
-            beamGradient.addColorStop(1, 'rgba(255, 255, 200, 0)');
-
+            // Headlight beams (simple triangles, no gradient)
+            ctx.fillStyle = 'rgba(255, 255, 200, 0.25)';
             ctx.beginPath();
             ctx.moveTo(carWidth * 0.4, -carHeight * 0.3);
-            ctx.lineTo(carWidth * 0.4 + 40, -15);
-            ctx.lineTo(carWidth * 0.4 + 40, 15);
+            ctx.lineTo(carWidth * 0.4 + 35, -12);
+            ctx.lineTo(carWidth * 0.4 + 35, 12);
             ctx.lineTo(carWidth * 0.4, carHeight * 0.3);
             ctx.closePath();
-            ctx.fillStyle = beamGradient;
             ctx.fill();
 
             ctx.restore();
