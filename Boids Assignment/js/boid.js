@@ -194,6 +194,20 @@ class Boid {
 
         this.neighborCount = visibleNeighbors.length;
 
+        // Hard collision avoidance - always active, ignores FOV
+        const minDist = 25;
+        for (const n of neighbors) {
+            const dist = Math.sqrt(n.distSq);
+            if (dist > 0 && dist < minDist) {
+                // Strong push away - bypasses normal force limits
+                const push = (minDist - dist) / minDist * 0.5;
+                this.applyForce(
+                    -(n.dx / dist) * push,
+                    -(n.dy / dist) * push
+                );
+            }
+        }
+
         if (visibleNeighbors.length === 0) return;
 
         // Calculate separation, alignment, and cohesion forces
@@ -217,11 +231,20 @@ class Boid {
         let steerX = 0;
         let steerY = 0;
 
+        // Minimum distance to prevent overlap (based on car size ~20px)
+        const minDist = 25;
+
         for (const n of neighbors) {
             const dist = Math.sqrt(n.distSq);
             if (dist > 0) {
-                // Quadratic falloff for smoother separation
-                const weight = 1 / (dist * dist) * 50;
+                let weight;
+                if (dist < minDist) {
+                    // Hard repulsion when too close - exponential force
+                    weight = Math.pow((minDist - dist) / minDist, 2) * 200;
+                } else {
+                    // Normal quadratic falloff for smoother separation
+                    weight = 1 / (dist * dist) * 50;
+                }
                 steerX -= (n.dx / dist) * weight;
                 steerY -= (n.dy / dist) * weight;
             }
