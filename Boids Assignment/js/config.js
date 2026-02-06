@@ -20,6 +20,7 @@ const CONFIG = {
     mouseRadius: 120,
     mouseForce: 2.5,
     mouseAttract: false, // false = flee from mouse, true = follow mouse
+    mouseEnabled: true,  // false = mouse has no effect on boids
 
     // Boundary mode: 'wrap' or 'bounce'
     boundaryMode: 'wrap',

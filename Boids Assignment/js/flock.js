@@ -112,10 +112,12 @@ class Flock {
             boid.flock(neighbors, totalAgents, groupSize, maxGroupSize);
 
             // Apply mouse interaction (flee or seek based on config)
-            if (CONFIG.mouseAttract) {
-                boid.seek(this.mouseX, this.mouseY);
-            } else {
-                boid.flee(this.mouseX, this.mouseY);
+            if (CONFIG.mouseEnabled) {
+                if (CONFIG.mouseAttract) {
+                    boid.seek(this.mouseX, this.mouseY);
+                } else {
+                    boid.flee(this.mouseX, this.mouseY);
+                }
             }
 
             // Update position

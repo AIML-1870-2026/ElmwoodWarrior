@@ -13,6 +13,7 @@ class UI {
         this.bounceBtn = document.getElementById('bounce-btn');
         this.fleeBtn = document.getElementById('flee-btn');
         this.followBtn = document.getElementById('follow-btn');
+        this.offBtn = document.getElementById('off-btn');
         this.themeSelect = document.getElementById('theme-select');
 
         // Instructions panel
@@ -137,11 +138,15 @@ class UI {
 
         // Mouse interaction mode
         this.fleeBtn.addEventListener('click', () => {
-            this.setMouseMode(false);
+            this.setMouseMode('flee');
         });
 
         this.followBtn.addEventListener('click', () => {
-            this.setMouseMode(true);
+            this.setMouseMode('follow');
+        });
+
+        this.offBtn.addEventListener('click', () => {
+            this.setMouseMode('off');
         });
 
         // Instructions panel toggle
@@ -223,14 +228,27 @@ class UI {
         this.setBoundaryMode(newMode);
     }
 
-    setMouseMode(attract) {
-        CONFIG.mouseAttract = attract;
-        this.fleeBtn.classList.toggle('active', !attract);
-        this.followBtn.classList.toggle('active', attract);
+    setMouseMode(mode) {
+        if (mode === 'off') {
+            CONFIG.mouseEnabled = false;
+        } else {
+            CONFIG.mouseEnabled = true;
+            CONFIG.mouseAttract = (mode === 'follow');
+        }
+        this.fleeBtn.classList.toggle('active', mode === 'flee');
+        this.followBtn.classList.toggle('active', mode === 'follow');
+        this.offBtn.classList.toggle('active', mode === 'off');
     }
 
     toggleMouseMode() {
-        this.setMouseMode(!CONFIG.mouseAttract);
+        // Cycle through: flee -> follow -> off -> flee
+        if (!CONFIG.mouseEnabled) {
+            this.setMouseMode('flee');
+        } else if (CONFIG.mouseAttract) {
+            this.setMouseMode('off');
+        } else {
+            this.setMouseMode('follow');
+        }
     }
 
     cycleTheme() {
