@@ -210,29 +210,32 @@ class Boid {
 
         if (visibleNeighbors.length === 0) return;
 
-        // Calculate max group size based on percentage
-        const maxGroupSize = Math.max(1, Math.floor(totalAgents * CONFIG.maxGroupPercent / 100));
+        // Max local density based on percentage
+        // Scale: at 100% allow ~30 neighbors, at 5% allow ~1-2 neighbors
+        const maxLocalDensity = Math.max(1, Math.floor(30 * CONFIG.maxGroupPercent / 100));
+
+        // Use ALL neighbors (not just FOV) for density check - you can sense crowding all around
+        const localDensity = neighbors.length;
 
         // Calculate separation, alignment, and cohesion forces
         const separation = this.separate(visibleNeighbors);
         const alignment = this.align(visibleNeighbors);
         const cohesion = this.cohere(visibleNeighbors);
 
-        // Check if group is overcrowded
-        if (visibleNeighbors.length > maxGroupSize) {
-            // Group too large - flee from group center instead of cohering
-            // Calculate center of visible neighbors
+        // Check if local area is too crowded
+        if (localDensity > maxLocalDensity) {
+            // Too crowded - flee from local center
             let centerX = 0, centerY = 0;
-            for (const n of visibleNeighbors) {
+            for (const n of neighbors) {
                 centerX += n.boid.x;
                 centerY += n.boid.y;
             }
-            centerX /= visibleNeighbors.length;
-            centerY /= visibleNeighbors.length;
+            centerX /= neighbors.length;
+            centerY /= neighbors.length;
 
-            // Flee from center - strength based on how overcrowded
-            const overcrowdRatio = visibleNeighbors.length / maxGroupSize;
-            const fleeStrength = Math.min(overcrowdRatio - 1, 2) * 0.15;
+            // Strong flee force - scales with how overcrowded
+            const overcrowdRatio = localDensity / maxLocalDensity;
+            const fleeStrength = Math.min(overcrowdRatio - 1, 3) * 0.3;
 
             const dx = this.x - centerX;
             const dy = this.y - centerY;
@@ -244,12 +247,10 @@ class Boid {
                 );
             }
 
-            // Apply separation and alignment but NOT cohesion when overcrowded
+            // Only separation when overcrowded - no cohesion or alignment
             this.applyForce(
-                separation.x * CONFIG.separation +
-                alignment.x * CONFIG.alignment * 0.5,
-                separation.y * CONFIG.separation +
-                alignment.y * CONFIG.alignment * 0.5
+                separation.x * CONFIG.separation * 2,
+                separation.y * CONFIG.separation * 2
             );
         } else {
             // Normal flocking - apply all three forces
