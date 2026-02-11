@@ -8,84 +8,138 @@
 </head>
 <body>
 
-<div class="app">
-    <!-- Header -->
-    <div class="header">
-        <div class="header-left">
-            <button class="theme-toggle" id="themeToggle" title="Toggle theme">&#127769;</button>
-            <h1>Julia Set Explorer</h1>
+<!-- Header -->
+<header class="header">
+    <div class="header-left">
+        <button class="theme-toggle" id="themeToggle" title="Toggle theme">&#127769;</button>
+        <h1>Julia Set Explorer</h1>
+    </div>
+    <div class="header-info">
+        <span class="c-value" id="cValueDisplay">c = -0.745 + 0.186i</span>
+        <span id="zoomDisplay">Zoom: 1.0x</span>
+        <span id="coordDisplay">z = 0 + 0i</span>
+    </div>
+</header>
+
+<!-- Main Layout -->
+<div class="layout">
+    <!-- Canvas Area -->
+    <div class="canvas-area">
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="mandelbrot">Mandelbrot</button>
+            <button class="tab-btn" data-tab="julia">Julia</button>
         </div>
-        <div class="header-info">
-            <span class="c-value" id="cValueDisplay">c = -0.745 + 0.186i</span>
-            <span id="zoomDisplay">Zoom: 1.0x</span>
-            <span id="coordDisplay">z = 0 + 0i</span>
+        <div class="canvas-container" id="canvasContainer">
+            <canvas id="fractalCanvas" width="500" height="375"></canvas>
+            <div class="rendering-indicator" id="renderingIndicator">Rendering...</div>
         </div>
     </div>
 
-    <!-- Tabs -->
-    <div class="tabs">
-        <button class="tab-btn active" data-tab="mandelbrot">Mandelbrot</button>
-        <button class="tab-btn" data-tab="julia">Julia</button>
-    </div>
+    <!-- Sidebar -->
+    <aside class="sidebar">
 
-    <!-- Canvas -->
-    <div class="canvas-container" id="canvasContainer">
-        <canvas id="fractalCanvas" width="500" height="375"></canvas>
-        <div class="rendering-indicator" id="renderingIndicator">Rendering...</div>
-    </div>
+        <!-- Julia Preview -->
+        <div class="panel" id="previewPanel">
+            <div class="panel-header">
+                <span class="panel-icon">&#9672;</span>
+                <span>Julia Preview</span>
+                <span class="panel-hint" id="previewHint">hover Mandelbrot</span>
+            </div>
+            <div class="preview-wrap">
+                <canvas id="previewCanvas" width="120" height="90"></canvas>
+                <span class="preview-c" id="previewC"></span>
+            </div>
+        </div>
 
-    <!-- Controls -->
-    <div class="controls">
-        <!-- Palette & Zoom -->
-        <div class="control-row">
-            <span class="control-label">Palette</span>
-            <button class="btn active" data-palette="rainbow">Rainbow</button>
-            <button class="btn" data-palette="fire">Fire</button>
-            <button class="btn" data-palette="ocean">Ocean</button>
-            <button class="btn" data-palette="synthwave">Synthwave</button>
-            <div class="separator"></div>
-            <span class="control-label">Zoom</span>
-            <button class="btn btn-icon" id="zoomIn" title="Zoom In (=)">+</button>
-            <button class="btn btn-icon" id="zoomOut" title="Zoom Out (-)">&#8722;</button>
-            <button class="btn btn-icon" id="resetView" title="Reset View (R)">&#8962;</button>
-            <div class="separator"></div>
-            <span class="control-label">Iters</span>
-            <input type="range" class="iter-slider" id="iterSlider" min="50" max="500" value="150" step="50">
-            <span class="iter-value" id="iterValue">150</span>
+        <!-- Palette -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-icon">&#9681;</span>
+                <span>Color Palette</span>
+            </div>
+            <div class="panel-body palette-grid">
+                <button class="palette-btn active" data-palette="rainbow">
+                    <span class="palette-swatch swatch-rainbow"></span>
+                    <span>Rainbow</span>
+                </button>
+                <button class="palette-btn" data-palette="fire">
+                    <span class="palette-swatch swatch-fire"></span>
+                    <span>Fire</span>
+                </button>
+                <button class="palette-btn" data-palette="ocean">
+                    <span class="palette-swatch swatch-ocean"></span>
+                    <span>Ocean</span>
+                </button>
+                <button class="palette-btn" data-palette="synthwave">
+                    <span class="palette-swatch swatch-synthwave"></span>
+                    <span>Synthwave</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- View Controls -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-icon">&#8982;</span>
+                <span>View</span>
+            </div>
+            <div class="panel-body">
+                <div class="btn-row">
+                    <button class="btn" id="zoomIn" title="Zoom In (=)">+ Zoom In</button>
+                    <button class="btn" id="zoomOut" title="Zoom Out (-)">&#8722; Zoom Out</button>
+                    <button class="btn" id="resetView" title="Reset View (R)">&#8962; Reset</button>
+                </div>
+                <div class="slider-row">
+                    <label class="slider-label">Iterations</label>
+                    <input type="range" class="styled-slider" id="iterSlider" min="50" max="500" value="150" step="50">
+                    <span class="slider-value" id="iterValue">150</span>
+                </div>
+            </div>
         </div>
 
         <!-- Presets -->
-        <div class="control-row">
-            <span class="control-label">Presets</span>
-            <div class="presets-row">
-                <button class="btn preset-btn" data-cr="-0.123" data-ci="0.745">Rabbit</button>
-                <button class="btn preset-btn" data-cr="0" data-ci="1">Dendrite</button>
-                <button class="btn preset-btn" data-cr="-0.75" data-ci="0">San Marco</button>
-                <button class="btn preset-btn" data-cr="-0.391" data-ci="-0.587">Siegel Disk</button>
-                <button class="btn preset-btn" data-cr="-0.75" data-ci="0.1">Seahorse</button>
-                <button class="btn preset-btn" data-cr="-0.4" data-ci="0.6">Lightning</button>
-                <button class="btn preset-btn" data-cr="-0.8" data-ci="0.156">Galaxy</button>
-                <button class="btn preset-btn" data-cr="-0.5" data-ci="0.563">Starfish</button>
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-icon">&#10025;</span>
+                <span>Presets</span>
+            </div>
+            <div class="panel-body presets-grid">
+                <button class="preset-btn" data-cr="-0.123" data-ci="0.745">Rabbit</button>
+                <button class="preset-btn" data-cr="0" data-ci="1">Dendrite</button>
+                <button class="preset-btn" data-cr="-0.75" data-ci="0">San Marco</button>
+                <button class="preset-btn" data-cr="-0.391" data-ci="-0.587">Siegel Disk</button>
+                <button class="preset-btn" data-cr="-0.75" data-ci="0.1">Seahorse</button>
+                <button class="preset-btn" data-cr="-0.4" data-ci="0.6">Lightning</button>
+                <button class="preset-btn" data-cr="-0.8" data-ci="0.156">Galaxy</button>
+                <button class="preset-btn" data-cr="-0.5" data-ci="0.563">Starfish</button>
             </div>
         </div>
 
         <!-- Animation -->
-        <div class="control-row">
-            <span class="control-label">Animate</span>
-            <button class="btn" data-anim="orbit" id="animOrbit">Orbit</button>
-            <button class="btn" data-anim="path" id="animPath">Path</button>
-            <button class="btn" data-anim="morph" id="animMorph">Morph</button>
-            <div class="separator"></div>
-            <div class="anim-controls">
-                <button class="btn btn-icon" id="animPlay" title="Play">&#9654;</button>
-                <button class="btn btn-icon" id="animPause" title="Pause">&#9208;</button>
-                <button class="btn btn-icon" id="animStop" title="Stop">&#9209;</button>
-                <div class="separator"></div>
-                <span class="speed-label">Speed</span>
-                <input type="range" class="speed-slider" id="speedSlider" min="0.1" max="3" value="1" step="0.1">
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-icon">&#9654;</span>
+                <span>Animation</span>
+            </div>
+            <div class="panel-body">
+                <div class="btn-row">
+                    <button class="anim-mode-btn" data-anim="orbit" id="animOrbit">Orbit</button>
+                    <button class="anim-mode-btn" data-anim="path" id="animPath">Path</button>
+                    <button class="anim-mode-btn" data-anim="morph" id="animMorph">Morph</button>
+                </div>
+                <div class="btn-row" style="margin-top:6px">
+                    <button class="btn btn-play" id="animPlay">&#9654; Play</button>
+                    <button class="btn" id="animPause">&#9208; Pause</button>
+                    <button class="btn" id="animStop">&#9209; Stop</button>
+                </div>
+                <div class="slider-row">
+                    <label class="slider-label">Speed</label>
+                    <input type="range" class="styled-slider" id="speedSlider" min="0.1" max="3" value="1" step="0.1">
+                </div>
             </div>
         </div>
-    </div>
+
+    </aside>
 </div>
 
 <script src="script.js"></script>

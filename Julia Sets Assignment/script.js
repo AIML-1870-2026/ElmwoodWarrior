@@ -1,7 +1,8 @@
 // ===== Performance Config =====
-const FAST_RES = 200;      // render width during drag/zoom/animation
-const FULL_RES = 500;      // render width for idle high-quality pass
-const REFINE_DELAY = 300;  // ms to wait before rendering full quality
+const FAST_RES = 200;
+const FULL_RES = 500;
+const REFINE_DELAY = 300;
+const PREVIEW_RES = 100;  // mini Julia preview resolution
 
 // ===== State =====
 const state = {
@@ -13,22 +14,18 @@ const state = {
         mandelbrot: { cx: -0.5, cy: 0, scale: 1.5 },
         julia:      { cx: 0,    cy: 0, scale: 1.5 }
     },
-    anim: {
-        mode: null,
-        playing: false,
-        speed: 1,
-        time: 0
-    },
+    anim: { mode: null, playing: false, speed: 1, time: 0 },
     dragging: false,
     dragStart: null,
     viewAtDragStart: null,
-    theme: 'dark',
-    quality: 'fast'  // 'fast' or 'full'
+    theme: 'dark'
 };
 
 // ===== DOM =====
 const canvas = document.getElementById('fractalCanvas');
 const ctx = canvas.getContext('2d');
+const previewCanvas = document.getElementById('previewCanvas');
+const previewCtx = previewCanvas.getContext('2d');
 const cValueDisplay = document.getElementById('cValueDisplay');
 const zoomDisplay = document.getElementById('zoomDisplay');
 const coordDisplay = document.getElementById('coordDisplay');
@@ -36,6 +33,8 @@ const renderingIndicator = document.getElementById('renderingIndicator');
 const iterSlider = document.getElementById('iterSlider');
 const iterValue = document.getElementById('iterValue');
 const speedSlider = document.getElementById('speedSlider');
+const previewCDisplay = document.getElementById('previewC');
+const previewHint = document.getElementById('previewHint');
 
 const presets = [
     { name: 'Rabbit',      r: -0.123, i: 0.745 },
@@ -48,18 +47,16 @@ const presets = [
     { name: 'Starfish',    r: -0.5,   i: 0.563 }
 ];
 
-// ===== Pre-baked Color LUTs (256 entries each) =====
+// ===== Color LUTs =====
 const LUT_SIZE = 256;
 const colorLUTs = {};
 
-function buildLUT(name, paletteFunc) {
+function buildLUT(paletteFunc) {
     const lut = new Uint8ClampedArray(LUT_SIZE * 3);
     for (let i = 0; i < LUT_SIZE; i++) {
         const t = i / (LUT_SIZE - 1);
         const c = paletteFunc(t);
-        lut[i * 3]     = c[0];
-        lut[i * 3 + 1] = c[1];
-        lut[i * 3 + 2] = c[2];
+        lut[i * 3] = c[0]; lut[i * 3 + 1] = c[1]; lut[i * 3 + 2] = c[2];
     }
     return lut;
 }
@@ -92,9 +89,7 @@ function hslToRgb(h, s, l) {
         };
         const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
         const p = 2 * l - q;
-        r = hue2rgb(p, q, h + 1/3);
-        g = hue2rgb(p, q, h);
-        b = hue2rgb(p, q, h - 1/3);
+        r = hue2rgb(p, q, h + 1/3); g = hue2rgb(p, q, h); b = hue2rgb(p, q, h - 1/3);
     }
     return [r * 255, g * 255, b * 255];
 }
@@ -114,17 +109,12 @@ const paletteFuncs = {
         { pos: 0.66, color: [148,0,211] }, { pos: 1, color: [0,255,255] }
     ], t)
 };
-
 const boundedColors = {
     rainbow: [0,0,0], fire: [0,0,0], ocean: [0,0,51], synthwave: [0,0,0]
 };
+for (const name in paletteFuncs) colorLUTs[name] = buildLUT(paletteFuncs[name]);
 
-// Build all LUTs at startup
-for (const name in paletteFuncs) {
-    colorLUTs[name] = buildLUT(name, paletteFuncs[name]);
-}
-
-// ===== Fractal Computation (optimized with LUT) =====
+// ===== Fractal Computation =====
 function computeFractal(imageData, width, height, view, isJulia, cVal, maxIter, paletteName) {
     const data = imageData.data;
     const lut = colorLUTs[paletteName];
@@ -143,37 +133,23 @@ function computeFractal(imageData, width, height, view, isJulia, cVal, maxIter, 
         const y0 = startY + stepY * py;
         for (let px = 0; px < width; px++) {
             const x0 = startX + stepX * px;
-
             let zr, zi, cr, ci;
-            if (isJulia) {
-                zr = x0; zi = y0;
-                cr = cr_c; ci = ci_c;
-            } else {
-                zr = 0; zi = 0;
-                cr = x0; ci = y0;
-            }
+            if (isJulia) { zr = x0; zi = y0; cr = cr_c; ci = ci_c; }
+            else { zr = 0; zi = 0; cr = x0; ci = y0; }
 
-            let iter = 0;
-            let zr2 = zr * zr, zi2 = zi * zi;
+            let iter = 0, zr2 = zr * zr, zi2 = zi * zi;
             while (zr2 + zi2 <= 4 && iter < maxIter) {
-                zi = 2 * zr * zi + ci;
-                zr = zr2 - zi2 + cr;
-                zr2 = zr * zr;
-                zi2 = zi * zi;
-                iter++;
+                zi = 2 * zr * zi + ci; zr = zr2 - zi2 + cr;
+                zr2 = zr * zr; zi2 = zi * zi; iter++;
             }
-
             const idx = (py * width + px) * 4;
             if (iter === maxIter) {
                 data[idx] = bc[0]; data[idx+1] = bc[1]; data[idx+2] = bc[2];
             } else {
-                // Smooth coloring with LUT lookup
                 const logZn = Math.log(zr2 + zi2) * 0.5;
-                const nu = Math.log(logZn * 1.4426950408889634) * 1.4426950408889634; // 1/ln2
-                const smooth = (iter + 1 - nu) / maxIter;
-                const t = Math.abs(smooth * 4 % 1);
-                const li = (t * lutMax) | 0;
-                const li3 = li * 3;
+                const nu = Math.log(logZn * 1.4426950408889634) * 1.4426950408889634;
+                const t = Math.abs(((iter + 1 - nu) / maxIter) * 4 % 1);
+                const li3 = ((t * lutMax) | 0) * 3;
                 data[idx] = lut[li3]; data[idx+1] = lut[li3+1]; data[idx+2] = lut[li3+2];
             }
             data[idx+3] = 255;
@@ -181,84 +157,75 @@ function computeFractal(imageData, width, height, view, isJulia, cVal, maxIter, 
     }
 }
 
-// ===== Rendering with quality tiers =====
+// ===== Rendering =====
 let renderQueued = false;
 let refineTimer = null;
 
 function render(quality) {
-    const isAnimating = state.anim.playing;
     const isFast = quality === 'fast';
-
-    // Choose resolution
-    const baseW = isFast || isAnimating ? FAST_RES : FULL_RES;
-    const w = baseW;
+    const w = isFast || state.anim.playing ? FAST_RES : FULL_RES;
     const h = Math.round(w * 0.75);
-
-    canvas.width = w;
-    canvas.height = h;
-
+    canvas.width = w; canvas.height = h;
     const view = state.views[state.tab];
-    const isJulia = state.tab === 'julia';
     const iterCount = isFast ? Math.min(state.maxIter, 100) : state.maxIter;
-
     const imageData = ctx.createImageData(w, h);
-    computeFractal(imageData, w, h, view, isJulia, state.c, iterCount, state.palette);
+    computeFractal(imageData, w, h, view, state.tab === 'julia', state.c, iterCount, state.palette);
     ctx.putImageData(imageData, 0, 0);
-
     updateUI();
 }
 
 function requestRender(fast) {
     clearTimeout(refineTimer);
-
     if (fast) {
-        // Immediate fast render
         if (!renderQueued) {
             renderQueued = true;
-            requestAnimationFrame(() => {
-                renderQueued = false;
-                render('fast');
-            });
+            requestAnimationFrame(() => { renderQueued = false; render('fast'); });
         }
-        // Schedule high-quality refine
         refineTimer = setTimeout(() => render('full'), REFINE_DELAY);
     } else {
         if (!renderQueued) {
             renderQueued = true;
-            requestAnimationFrame(() => {
-                renderQueued = false;
-                render('full');
-            });
+            requestAnimationFrame(() => { renderQueued = false; render('full'); });
         }
     }
 }
 
-// ===== UI Updates =====
+// ===== Julia Preview =====
+let previewThrottle = 0;
+
+function renderPreview(cr, ci) {
+    const w = PREVIEW_RES;
+    const h = Math.round(w * 0.75);
+    previewCanvas.width = w;
+    previewCanvas.height = h;
+    const view = { cx: 0, cy: 0, scale: 1.5 };
+    const cVal = { r: cr, i: ci };
+    const imageData = previewCtx.createImageData(w, h);
+    computeFractal(imageData, w, h, view, true, cVal, 80, state.palette);
+    previewCtx.putImageData(imageData, 0, 0);
+    previewCDisplay.textContent = `c = ${formatComplex(cr, ci)}`;
+    previewHint.textContent = '';
+}
+
+// ===== UI =====
 function formatComplex(r, i) {
     const sign = i >= 0 ? '+' : '\u2212';
     return `${r.toFixed(3)} ${sign} ${Math.abs(i).toFixed(3)}i`;
 }
-
 function updateUI() {
     cValueDisplay.textContent = `c = ${formatComplex(state.c.r, state.c.i)}`;
     const view = state.views[state.tab];
-    const zoomLevel = (1.5 / view.scale).toFixed(1);
-    zoomDisplay.textContent = `Zoom: ${zoomLevel}x`;
+    zoomDisplay.textContent = `Zoom: ${(1.5 / view.scale).toFixed(1)}x`;
 }
 
-// ===== Pixel to Complex =====
 function pixelToComplex(px, py) {
     const rect = canvas.getBoundingClientRect();
     const x = (px - rect.left) / rect.width;
     const y = (py - rect.top) / rect.height;
     const view = state.views[state.tab];
-    const aspect = 4 / 3; // fixed aspect
-    const scaleX = view.scale * aspect;
-    const scaleY = view.scale;
-    return {
-        r: view.cx - scaleX + 2 * scaleX * x,
-        i: view.cy - scaleY + 2 * scaleY * y
-    };
+    const aspect = 4 / 3;
+    const scaleX = view.scale * aspect, scaleY = view.scale;
+    return { r: view.cx - scaleX + 2 * scaleX * x, i: view.cy - scaleY + 2 * scaleY * y };
 }
 
 // ===== Event Handlers =====
@@ -273,10 +240,10 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     });
 });
 
-// Palettes
-document.querySelectorAll('[data-palette]').forEach(btn => {
+// Palettes (new selector)
+document.querySelectorAll('.palette-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-        document.querySelectorAll('[data-palette]').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.palette-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         state.palette = btn.dataset.palette;
         requestRender(false);
@@ -296,35 +263,22 @@ document.querySelectorAll('.preset-btn').forEach(btn => {
     });
 });
 
-// Zoom buttons
-document.getElementById('zoomIn').addEventListener('click', () => {
-    state.views[state.tab].scale *= 0.5;
-    requestRender(true);
-});
-document.getElementById('zoomOut').addEventListener('click', () => {
-    state.views[state.tab].scale *= 2;
-    requestRender(true);
-});
+// Zoom
+document.getElementById('zoomIn').addEventListener('click', () => { state.views[state.tab].scale *= 0.5; requestRender(true); });
+document.getElementById('zoomOut').addEventListener('click', () => { state.views[state.tab].scale *= 2; requestRender(true); });
 document.getElementById('resetView').addEventListener('click', () => {
-    if (state.tab === 'mandelbrot') {
-        state.views.mandelbrot = { cx: -0.5, cy: 0, scale: 1.5 };
-    } else {
-        state.views.julia = { cx: 0, cy: 0, scale: 1.5 };
-    }
+    if (state.tab === 'mandelbrot') state.views.mandelbrot = { cx: -0.5, cy: 0, scale: 1.5 };
+    else state.views.julia = { cx: 0, cy: 0, scale: 1.5 };
     requestRender(false);
 });
 
-// Iterations
+// Sliders
 iterSlider.addEventListener('input', () => {
     state.maxIter = parseInt(iterSlider.value);
     iterValue.textContent = state.maxIter;
     requestRender(true);
 });
-
-// Speed
-speedSlider.addEventListener('input', () => {
-    state.anim.speed = parseFloat(speedSlider.value);
-});
+speedSlider.addEventListener('input', () => { state.anim.speed = parseFloat(speedSlider.value); });
 
 // Scroll zoom
 canvas.addEventListener('wheel', (e) => {
@@ -338,9 +292,8 @@ canvas.addEventListener('wheel', (e) => {
     requestRender(true);
 }, { passive: false });
 
-// Drag to pan / click to select c
-let clickStart = null;
-let hasDragged = false;
+// Drag / click
+let clickStart = null, hasDragged = false;
 
 canvas.addEventListener('mousedown', (e) => {
     clickStart = { x: e.clientX, y: e.clientY };
@@ -354,17 +307,23 @@ canvas.addEventListener('mousemove', (e) => {
     const complex = pixelToComplex(e.clientX, e.clientY);
     coordDisplay.textContent = `z = ${formatComplex(complex.r, complex.i)}`;
 
+    // Live Julia preview on Mandelbrot hover
+    if (state.tab === 'mandelbrot' && !state.dragging) {
+        const now = performance.now();
+        if (now - previewThrottle > 60) {
+            previewThrottle = now;
+            renderPreview(complex.r, complex.i);
+        }
+    }
+
     if (state.dragging) {
         const dx = e.clientX - state.dragStart.x;
         const dy = e.clientY - state.dragStart.y;
         if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasDragged = true;
-
         const rect = canvas.getBoundingClientRect();
         const view = state.views[state.tab];
-        const aspect = 4 / 3;
-        const scaleX = state.viewAtDragStart.scale * aspect;
+        const scaleX = state.viewAtDragStart.scale * (4/3);
         const scaleY = state.viewAtDragStart.scale;
-
         view.cx = state.viewAtDragStart.cx - (dx / rect.width) * 2 * scaleX;
         view.cy = state.viewAtDragStart.cy - (dy / rect.height) * 2 * scaleY;
         requestRender(true);
@@ -375,19 +334,16 @@ canvas.addEventListener('mouseup', (e) => {
     state.dragging = false;
     if (!hasDragged && state.tab === 'mandelbrot') {
         const complex = pixelToComplex(e.clientX, e.clientY);
-        state.c.r = complex.r;
-        state.c.i = complex.i;
+        state.c.r = complex.r; state.c.i = complex.i;
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.querySelector('[data-tab="julia"]').classList.add('active');
         state.tab = 'julia';
         state.views.julia = { cx: 0, cy: 0, scale: 1.5 };
         requestRender(false);
     } else if (hasDragged) {
-        // Refine after drag ends
         requestRender(false);
     }
 });
-
 canvas.addEventListener('mouseleave', () => { state.dragging = false; });
 
 // Touch
@@ -396,8 +352,7 @@ canvas.addEventListener('touchstart', (e) => {
     e.preventDefault();
     if (e.touches.length === 1) {
         clickStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
-        hasDragged = false;
-        state.dragging = true;
+        hasDragged = false; state.dragging = true;
         state.dragStart = { x: e.touches[0].clientX, y: e.touches[0].clientY };
         state.viewAtDragStart = { ...state.views[state.tab] };
     } else if (e.touches.length === 2) {
@@ -406,7 +361,6 @@ canvas.addEventListener('touchstart', (e) => {
         lastTouchDist = Math.sqrt(dx * dx + dy * dy);
     }
 }, { passive: false });
-
 canvas.addEventListener('touchmove', (e) => {
     e.preventDefault();
     if (e.touches.length === 1 && state.dragging) {
@@ -415,9 +369,7 @@ canvas.addEventListener('touchmove', (e) => {
         if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasDragged = true;
         const rect = canvas.getBoundingClientRect();
         const view = state.views[state.tab];
-        const aspect = 4 / 3;
-        const scaleX = state.viewAtDragStart.scale * aspect;
-        const scaleY = state.viewAtDragStart.scale;
+        const scaleX = state.viewAtDragStart.scale * (4/3), scaleY = state.viewAtDragStart.scale;
         view.cx = state.viewAtDragStart.cx - (dx / rect.width) * 2 * scaleX;
         view.cy = state.viewAtDragStart.cy - (dy / rect.height) * 2 * scaleY;
         requestRender(true);
@@ -437,23 +389,18 @@ canvas.addEventListener('touchmove', (e) => {
         requestRender(true);
     }
 }, { passive: false });
-
 canvas.addEventListener('touchend', (e) => {
     if (e.touches.length === 0) {
-        state.dragging = false;
-        lastTouchDist = null;
+        state.dragging = false; lastTouchDist = null;
         if (!hasDragged && state.tab === 'mandelbrot' && clickStart) {
             const complex = pixelToComplex(clickStart.x, clickStart.y);
-            state.c.r = complex.r;
-            state.c.i = complex.i;
+            state.c.r = complex.r; state.c.i = complex.i;
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             document.querySelector('[data-tab="julia"]').classList.add('active');
             state.tab = 'julia';
             state.views.julia = { cx: 0, cy: 0, scale: 1.5 };
             requestRender(false);
-        } else {
-            requestRender(false); // refine
-        }
+        } else { requestRender(false); }
     }
 });
 
@@ -478,10 +425,9 @@ document.addEventListener('keydown', (e) => {
         case '4': selectPalette('synthwave'); break;
     }
 });
-
 function selectPalette(name) {
-    document.querySelectorAll('[data-palette]').forEach(b => b.classList.remove('active'));
-    document.querySelector(`[data-palette="${name}"]`).classList.add('active');
+    document.querySelectorAll('.palette-btn').forEach(b => b.classList.remove('active'));
+    document.querySelector(`.palette-btn[data-palette="${name}"]`).classList.add('active');
     state.palette = name;
     requestRender(false);
 }
@@ -504,25 +450,20 @@ try {
 } catch (e) {}
 
 // ===== Animations =====
-let animFrame = null;
-let animLastTime = null;
+let animFrame = null, animLastTime = null;
 
 document.querySelectorAll('[data-anim]').forEach(btn => {
     btn.addEventListener('click', () => {
         const mode = btn.dataset.anim;
         if (state.anim.mode === mode) {
             document.querySelectorAll('[data-anim]').forEach(b => b.classList.remove('active'));
-            state.anim.mode = null;
-            stopAnimation();
+            state.anim.mode = null; stopAnimation();
         } else {
             document.querySelectorAll('[data-anim]').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            state.anim.mode = mode;
-            state.anim.time = 0;
+            btn.classList.add('active'); state.anim.mode = mode; state.anim.time = 0;
         }
     });
 });
-
 document.getElementById('animPlay').addEventListener('click', () => {
     if (!state.anim.mode) {
         state.anim.mode = 'orbit';
@@ -531,14 +472,10 @@ document.getElementById('animPlay').addEventListener('click', () => {
     startAnimation();
 });
 document.getElementById('animPause').addEventListener('click', () => { state.anim.playing = false; });
-document.getElementById('animStop').addEventListener('click', () => {
-    stopAnimation();
-    requestRender(false);
-});
+document.getElementById('animStop').addEventListener('click', () => { stopAnimation(); requestRender(false); });
 
 function startAnimation() {
-    state.anim.playing = true;
-    animLastTime = performance.now();
+    state.anim.playing = true; animLastTime = performance.now();
     if (state.tab !== 'julia') {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.querySelector('[data-tab="julia"]').classList.add('active');
@@ -546,55 +483,42 @@ function startAnimation() {
     }
     if (!animFrame) animLoop();
 }
-
 function stopAnimation() {
-    state.anim.playing = false;
-    state.anim.time = 0;
-    animLastTime = null;
+    state.anim.playing = false; state.anim.time = 0; animLastTime = null;
     if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
 }
-
 function animLoop() {
     if (!state.anim.playing) { animFrame = null; return; }
-
     const now = performance.now();
     const dt = (now - (animLastTime || now)) / 1000;
-    animLastTime = now;
-    state.anim.time += dt * state.anim.speed;
-
+    animLastTime = now; state.anim.time += dt * state.anim.speed;
     switch (state.anim.mode) {
         case 'orbit': animOrbit(); break;
         case 'path':  animPath(); break;
         case 'morph': animMorph(); break;
     }
-
     render('fast');
     animFrame = requestAnimationFrame(animLoop);
 }
-
 function animOrbit() {
     const t = state.anim.time;
     state.c.r = -0.5 + 0.5 * Math.cos(t * Math.PI * 2);
     state.c.i = 0.5 * Math.sin(t * Math.PI * 2);
 }
-
 function animPath() {
     const angle = state.anim.time * 0.3 * Math.PI * 2;
     const r = 0.5 * (1 - Math.cos(angle));
     state.c.r = r * Math.cos(angle) / 2 - 0.25;
     state.c.i = r * Math.sin(angle) / 2;
 }
-
 function animMorph() {
-    const duration = 3;
-    const total = presets.length;
+    const duration = 3, total = presets.length;
     const seg = state.anim.time % duration;
     const idx = Math.floor(state.anim.time / duration) % total;
     const next = (idx + 1) % total;
-    const t = seg / duration;
-    const e = t * t * (3 - 2 * t);
-    state.c.r = presets[idx].r * (1 - e) + presets[next].r * e;
-    state.c.i = presets[idx].i * (1 - e) + presets[next].i * e;
+    const e = (seg / duration); const t = e * e * (3 - 2 * e);
+    state.c.r = presets[idx].r * (1 - t) + presets[next].r * t;
+    state.c.i = presets[idx].i * (1 - t) + presets[next].i * t;
 }
 
 // ===== Canvas sizing =====
@@ -603,12 +527,10 @@ function setCanvasDisplay() {
     const w = container.clientWidth;
     canvas.style.height = Math.round(w * 0.75) + 'px';
 }
-
-window.addEventListener('resize', () => {
-    setCanvasDisplay();
-    requestRender(false);
-});
+window.addEventListener('resize', () => { setCanvasDisplay(); requestRender(false); });
 
 // ===== Init =====
 setCanvasDisplay();
+// Render initial preview with default c value
+renderPreview(state.c.r, state.c.i);
 requestRender(false);
