@@ -1,9 +1,14 @@
+// ===== Performance Config =====
+const FAST_RES = 200;      // render width during drag/zoom/animation
+const FULL_RES = 500;      // render width for idle high-quality pass
+const REFINE_DELAY = 300;  // ms to wait before rendering full quality
+
 // ===== State =====
 const state = {
     tab: 'mandelbrot',
     c: { r: -0.745, i: 0.186 },
     palette: 'rainbow',
-    maxIter: 256,
+    maxIter: 150,
     views: {
         mandelbrot: { cx: -0.5, cy: 0, scale: 1.5 },
         julia:      { cx: 0,    cy: 0, scale: 1.5 }
@@ -12,30 +17,26 @@ const state = {
         mode: null,
         playing: false,
         speed: 1,
-        time: 0,
-        morphFrom: null,
-        morphTo: null,
-        morphPresetIndex: 0
+        time: 0
     },
     dragging: false,
     dragStart: null,
     viewAtDragStart: null,
-    theme: 'dark'
+    theme: 'dark',
+    quality: 'fast'  // 'fast' or 'full'
 };
 
-// ===== DOM Elements =====
+// ===== DOM =====
 const canvas = document.getElementById('fractalCanvas');
 const ctx = canvas.getContext('2d');
 const cValueDisplay = document.getElementById('cValueDisplay');
 const zoomDisplay = document.getElementById('zoomDisplay');
 const coordDisplay = document.getElementById('coordDisplay');
-const canvasOverlay = document.getElementById('canvasOverlay');
 const renderingIndicator = document.getElementById('renderingIndicator');
 const iterSlider = document.getElementById('iterSlider');
 const iterValue = document.getElementById('iterValue');
 const speedSlider = document.getElementById('speedSlider');
 
-// Presets data
 const presets = [
     { name: 'Rabbit',      r: -0.123, i: 0.745 },
     { name: 'Dendrite',    r: 0,      i: 1 },
@@ -47,12 +48,26 @@ const presets = [
     { name: 'Starfish',    r: -0.5,   i: 0.563 }
 ];
 
-// ===== Color Palettes =====
+// ===== Pre-baked Color LUTs (256 entries each) =====
+const LUT_SIZE = 256;
+const colorLUTs = {};
+
+function buildLUT(name, paletteFunc) {
+    const lut = new Uint8ClampedArray(LUT_SIZE * 3);
+    for (let i = 0; i < LUT_SIZE; i++) {
+        const t = i / (LUT_SIZE - 1);
+        const c = paletteFunc(t);
+        lut[i * 3]     = c[0];
+        lut[i * 3 + 1] = c[1];
+        lut[i * 3 + 2] = c[2];
+    }
+    return lut;
+}
+
 function lerp(a, b, t) { return a + (b - a) * t; }
 function lerpColor(c1, c2, t) {
     return [lerp(c1[0], c2[0], t), lerp(c1[1], c2[1], t), lerp(c1[2], c2[2], t)];
 }
-
 function gradientColor(stops, t) {
     t = Math.max(0, Math.min(1, t));
     for (let i = 0; i < stops.length - 1; i++) {
@@ -63,87 +78,76 @@ function gradientColor(stops, t) {
     }
     return stops[stops.length - 1].color;
 }
-
 function hslToRgb(h, s, l) {
     h /= 360; s /= 100; l /= 100;
     let r, g, b;
-    if (s === 0) {
-        r = g = b = l;
-    } else {
+    if (s === 0) { r = g = b = l; }
+    else {
         const hue2rgb = (p, q, t) => {
-            if (t < 0) t += 1;
-            if (t > 1) t -= 1;
-            if (t < 1 / 6) return p + (q - p) * 6 * t;
-            if (t < 1 / 2) return q;
-            if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+            if (t < 0) t += 1; if (t > 1) t -= 1;
+            if (t < 1/6) return p + (q - p) * 6 * t;
+            if (t < 1/2) return q;
+            if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
             return p;
         };
         const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
         const p = 2 * l - q;
-        r = hue2rgb(p, q, h + 1 / 3);
+        r = hue2rgb(p, q, h + 1/3);
         g = hue2rgb(p, q, h);
-        b = hue2rgb(p, q, h - 1 / 3);
+        b = hue2rgb(p, q, h - 1/3);
     }
     return [r * 255, g * 255, b * 255];
 }
 
-const palettes = {
-    rainbow: (t) => {
-        return hslToRgb(t * 360, 100, 50);
-    },
-    fire: (t) => {
-        const stops = [
-            { pos: 0,    color: [0, 0, 0] },
-            { pos: 0.33, color: [139, 0, 0] },
-            { pos: 0.66, color: [255, 69, 0] },
-            { pos: 1.0,  color: [255, 215, 0] }
-        ];
-        return gradientColor(stops, t);
-    },
-    ocean: (t) => {
-        const stops = [
-            { pos: 0,   color: [0, 0, 51] },
-            { pos: 0.5, color: [0, 206, 209] },
-            { pos: 1.0, color: [255, 255, 255] }
-        ];
-        return gradientColor(stops, t);
-    },
-    synthwave: (t) => {
-        const stops = [
-            { pos: 0,    color: [26, 0, 51] },
-            { pos: 0.33, color: [255, 20, 147] },
-            { pos: 0.66, color: [148, 0, 211] },
-            { pos: 1.0,  color: [0, 255, 255] }
-        ];
-        return gradientColor(stops, t);
-    }
+const paletteFuncs = {
+    rainbow: (t) => hslToRgb(t * 360, 100, 50),
+    fire: (t) => gradientColor([
+        { pos: 0, color: [0,0,0] }, { pos: 0.33, color: [139,0,0] },
+        { pos: 0.66, color: [255,69,0] }, { pos: 1, color: [255,215,0] }
+    ], t),
+    ocean: (t) => gradientColor([
+        { pos: 0, color: [0,0,51] }, { pos: 0.5, color: [0,206,209] },
+        { pos: 1, color: [255,255,255] }
+    ], t),
+    synthwave: (t) => gradientColor([
+        { pos: 0, color: [26,0,51] }, { pos: 0.33, color: [255,20,147] },
+        { pos: 0.66, color: [148,0,211] }, { pos: 1, color: [0,255,255] }
+    ], t)
 };
 
 const boundedColors = {
-    rainbow: [0, 0, 0],
-    fire: [0, 0, 0],
-    ocean: [0, 0, 51],
-    synthwave: [0, 0, 0]
+    rainbow: [0,0,0], fire: [0,0,0], ocean: [0,0,51], synthwave: [0,0,0]
 };
 
-// ===== Fractal Computation =====
+// Build all LUTs at startup
+for (const name in paletteFuncs) {
+    colorLUTs[name] = buildLUT(name, paletteFuncs[name]);
+}
+
+// ===== Fractal Computation (optimized with LUT) =====
 function computeFractal(imageData, width, height, view, isJulia, cVal, maxIter, paletteName) {
     const data = imageData.data;
-    const paletteFunc = palettes[paletteName];
-    const boundedColor = boundedColors[paletteName];
+    const lut = colorLUTs[paletteName];
+    const bc = boundedColors[paletteName];
     const aspect = width / height;
     const scaleX = view.scale * aspect;
     const scaleY = view.scale;
+    const startX = view.cx - scaleX;
+    const startY = view.cy - scaleY;
+    const stepX = (2 * scaleX) / width;
+    const stepY = (2 * scaleY) / height;
+    const cr_c = cVal.r, ci_c = cVal.i;
+    const lutMax = LUT_SIZE - 1;
 
     for (let py = 0; py < height; py++) {
-        const y0 = view.cy - scaleY + (2 * scaleY * py) / height;
+        const y0 = startY + stepY * py;
         for (let px = 0; px < width; px++) {
-            const x0 = view.cx - scaleX + (2 * scaleX * px) / width;
+            const x0 = startX + stepX * px;
 
             let zr, zi, cr, ci;
             if (isJulia) {
                 zr = x0; zi = y0;
-                cr = cVal.r; ci = cVal.i;
+                cr = cr_c; ci = ci_c;
             } else {
                 zr = 0; zi = 0;
                 cr = x0; ci = y0;
@@ -161,51 +165,71 @@ function computeFractal(imageData, width, height, view, isJulia, cVal, maxIter, 
 
             const idx = (py * width + px) * 4;
             if (iter === maxIter) {
-                data[idx]     = boundedColor[0];
-                data[idx + 1] = boundedColor[1];
-                data[idx + 2] = boundedColor[2];
+                data[idx] = bc[0]; data[idx+1] = bc[1]; data[idx+2] = bc[2];
             } else {
-                // Smooth coloring
-                const logZn = Math.log(zr2 + zi2) / 2;
-                const nu = Math.log(logZn / Math.LN2) / Math.LN2;
+                // Smooth coloring with LUT lookup
+                const logZn = Math.log(zr2 + zi2) * 0.5;
+                const nu = Math.log(logZn * 1.4426950408889634) * 1.4426950408889634; // 1/ln2
                 const smooth = (iter + 1 - nu) / maxIter;
-                const t = Math.max(0, Math.min(1, smooth * 4 % 1));
-                const color = paletteFunc(t);
-                data[idx]     = color[0];
-                data[idx + 1] = color[1];
-                data[idx + 2] = color[2];
+                const t = Math.abs(smooth * 4 % 1);
+                const li = (t * lutMax) | 0;
+                const li3 = li * 3;
+                data[idx] = lut[li3]; data[idx+1] = lut[li3+1]; data[idx+2] = lut[li3+2];
             }
-            data[idx + 3] = 255;
+            data[idx+3] = 255;
         }
     }
 }
 
-// ===== Rendering =====
+// ===== Rendering with quality tiers =====
 let renderQueued = false;
+let refineTimer = null;
 
-function render() {
-    const width = canvas.width;
-    const height = canvas.height;
+function render(quality) {
+    const isAnimating = state.anim.playing;
+    const isFast = quality === 'fast';
+
+    // Choose resolution
+    const baseW = isFast || isAnimating ? FAST_RES : FULL_RES;
+    const w = baseW;
+    const h = Math.round(w * 0.75);
+
+    canvas.width = w;
+    canvas.height = h;
+
     const view = state.views[state.tab];
     const isJulia = state.tab === 'julia';
+    const iterCount = isFast ? Math.min(state.maxIter, 100) : state.maxIter;
 
-    renderingIndicator.classList.add('visible');
-
-    const imageData = ctx.createImageData(width, height);
-    computeFractal(imageData, width, height, view, isJulia, state.c, state.maxIter, state.palette);
+    const imageData = ctx.createImageData(w, h);
+    computeFractal(imageData, w, h, view, isJulia, state.c, iterCount, state.palette);
     ctx.putImageData(imageData, 0, 0);
 
-    renderingIndicator.classList.remove('visible');
     updateUI();
 }
 
-function requestRender() {
-    if (!renderQueued) {
-        renderQueued = true;
-        requestAnimationFrame(() => {
-            renderQueued = false;
-            render();
-        });
+function requestRender(fast) {
+    clearTimeout(refineTimer);
+
+    if (fast) {
+        // Immediate fast render
+        if (!renderQueued) {
+            renderQueued = true;
+            requestAnimationFrame(() => {
+                renderQueued = false;
+                render('fast');
+            });
+        }
+        // Schedule high-quality refine
+        refineTimer = setTimeout(() => render('full'), REFINE_DELAY);
+    } else {
+        if (!renderQueued) {
+            renderQueued = true;
+            requestAnimationFrame(() => {
+                renderQueued = false;
+                render('full');
+            });
+        }
     }
 }
 
@@ -218,48 +242,48 @@ function formatComplex(r, i) {
 function updateUI() {
     cValueDisplay.textContent = `c = ${formatComplex(state.c.r, state.c.i)}`;
     const view = state.views[state.tab];
-    const defaultScale = 1.5;
-    const zoomLevel = (defaultScale / view.scale).toFixed(1);
+    const zoomLevel = (1.5 / view.scale).toFixed(1);
     zoomDisplay.textContent = `Zoom: ${zoomLevel}x`;
 }
 
-// ===== Pixel to Complex Coordinate =====
+// ===== Pixel to Complex =====
 function pixelToComplex(px, py) {
     const rect = canvas.getBoundingClientRect();
-    const x = (px - rect.left) / rect.width * canvas.width;
-    const y = (py - rect.top) / rect.height * canvas.height;
+    const x = (px - rect.left) / rect.width;
+    const y = (py - rect.top) / rect.height;
     const view = state.views[state.tab];
-    const aspect = canvas.width / canvas.height;
+    const aspect = 4 / 3; // fixed aspect
     const scaleX = view.scale * aspect;
     const scaleY = view.scale;
-    const cr = view.cx - scaleX + (2 * scaleX * x) / canvas.width;
-    const ci = view.cy - scaleY + (2 * scaleY * y) / canvas.height;
-    return { r: cr, i: ci };
+    return {
+        r: view.cx - scaleX + 2 * scaleX * x,
+        i: view.cy - scaleY + 2 * scaleY * y
+    };
 }
 
 // ===== Event Handlers =====
 
-// Tab switching
+// Tabs
 document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         state.tab = btn.dataset.tab;
-        requestRender();
+        requestRender(false);
     });
 });
 
-// Palette switching
+// Palettes
 document.querySelectorAll('[data-palette]').forEach(btn => {
     btn.addEventListener('click', () => {
         document.querySelectorAll('[data-palette]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         state.palette = btn.dataset.palette;
-        requestRender();
+        requestRender(false);
     });
 });
 
-// Preset buttons
+// Presets
 document.querySelectorAll('.preset-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         state.c.r = parseFloat(btn.dataset.cr);
@@ -268,58 +292,53 @@ document.querySelectorAll('.preset-btn').forEach(btn => {
         document.querySelector('[data-tab="julia"]').classList.add('active');
         state.tab = 'julia';
         state.views.julia = { cx: 0, cy: 0, scale: 1.5 };
-        requestRender();
+        requestRender(false);
     });
 });
 
 // Zoom buttons
 document.getElementById('zoomIn').addEventListener('click', () => {
-    const view = state.views[state.tab];
-    view.scale *= 0.5;
-    requestRender();
+    state.views[state.tab].scale *= 0.5;
+    requestRender(true);
 });
-
 document.getElementById('zoomOut').addEventListener('click', () => {
-    const view = state.views[state.tab];
-    view.scale *= 2;
-    requestRender();
+    state.views[state.tab].scale *= 2;
+    requestRender(true);
 });
-
 document.getElementById('resetView').addEventListener('click', () => {
     if (state.tab === 'mandelbrot') {
         state.views.mandelbrot = { cx: -0.5, cy: 0, scale: 1.5 };
     } else {
         state.views.julia = { cx: 0, cy: 0, scale: 1.5 };
     }
-    requestRender();
+    requestRender(false);
 });
 
-// Iteration slider
+// Iterations
 iterSlider.addEventListener('input', () => {
     state.maxIter = parseInt(iterSlider.value);
     iterValue.textContent = state.maxIter;
-    requestRender();
+    requestRender(true);
 });
 
-// Speed slider
+// Speed
 speedSlider.addEventListener('input', () => {
     state.anim.speed = parseFloat(speedSlider.value);
 });
 
-// Mouse: scroll to zoom
+// Scroll zoom
 canvas.addEventListener('wheel', (e) => {
     e.preventDefault();
     const view = state.views[state.tab];
     const complex = pixelToComplex(e.clientX, e.clientY);
-    const factor = e.deltaY > 0 ? 1.15 : 1 / 1.15;
-
+    const factor = e.deltaY > 0 ? 1.2 : 1 / 1.2;
     view.cx = complex.r + (view.cx - complex.r) * factor;
     view.cy = complex.i + (view.cy - complex.i) * factor;
     view.scale *= factor;
-    requestRender();
+    requestRender(true);
 }, { passive: false });
 
-// Mouse: click + drag to pan, click on Mandelbrot to select c
+// Drag to pan / click to select c
 let clickStart = null;
 let hasDragged = false;
 
@@ -342,13 +361,13 @@ canvas.addEventListener('mousemove', (e) => {
 
         const rect = canvas.getBoundingClientRect();
         const view = state.views[state.tab];
-        const aspect = canvas.width / canvas.height;
+        const aspect = 4 / 3;
         const scaleX = state.viewAtDragStart.scale * aspect;
         const scaleY = state.viewAtDragStart.scale;
 
         view.cx = state.viewAtDragStart.cx - (dx / rect.width) * 2 * scaleX;
         view.cy = state.viewAtDragStart.cy - (dy / rect.height) * 2 * scaleY;
-        requestRender();
+        requestRender(true);
     }
 });
 
@@ -362,18 +381,17 @@ canvas.addEventListener('mouseup', (e) => {
         document.querySelector('[data-tab="julia"]').classList.add('active');
         state.tab = 'julia';
         state.views.julia = { cx: 0, cy: 0, scale: 1.5 };
-        requestRender();
+        requestRender(false);
+    } else if (hasDragged) {
+        // Refine after drag ends
+        requestRender(false);
     }
 });
 
-canvas.addEventListener('mouseleave', () => {
-    state.dragging = false;
-});
+canvas.addEventListener('mouseleave', () => { state.dragging = false; });
 
-// Touch support
+// Touch
 let lastTouchDist = null;
-let lastTouchCenter = null;
-
 canvas.addEventListener('touchstart', (e) => {
     e.preventDefault();
     if (e.touches.length === 1) {
@@ -386,10 +404,6 @@ canvas.addEventListener('touchstart', (e) => {
         const dx = e.touches[0].clientX - e.touches[1].clientX;
         const dy = e.touches[0].clientY - e.touches[1].clientY;
         lastTouchDist = Math.sqrt(dx * dx + dy * dy);
-        lastTouchCenter = {
-            x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
-            y: (e.touches[0].clientY + e.touches[1].clientY) / 2
-        };
     }
 }, { passive: false });
 
@@ -399,36 +413,28 @@ canvas.addEventListener('touchmove', (e) => {
         const dx = e.touches[0].clientX - state.dragStart.x;
         const dy = e.touches[0].clientY - state.dragStart.y;
         if (Math.abs(dx) > 3 || Math.abs(dy) > 3) hasDragged = true;
-
         const rect = canvas.getBoundingClientRect();
         const view = state.views[state.tab];
-        const aspect = canvas.width / canvas.height;
+        const aspect = 4 / 3;
         const scaleX = state.viewAtDragStart.scale * aspect;
         const scaleY = state.viewAtDragStart.scale;
-
         view.cx = state.viewAtDragStart.cx - (dx / rect.width) * 2 * scaleX;
         view.cy = state.viewAtDragStart.cy - (dy / rect.height) * 2 * scaleY;
-        requestRender();
+        requestRender(true);
     } else if (e.touches.length === 2 && lastTouchDist) {
         const dx = e.touches[0].clientX - e.touches[1].clientX;
         const dy = e.touches[0].clientY - e.touches[1].clientY;
         const dist = Math.sqrt(dx * dx + dy * dy);
         const factor = lastTouchDist / dist;
-
-        const center = {
-            x: (e.touches[0].clientX + e.touches[1].clientX) / 2,
-            y: (e.touches[0].clientY + e.touches[1].clientY) / 2
-        };
-        const complex = pixelToComplex(center.x, center.y);
+        const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+        const complex = pixelToComplex(cx, cy);
         const view = state.views[state.tab];
-
         view.cx = complex.r + (view.cx - complex.r) * factor;
         view.cy = complex.i + (view.cy - complex.i) * factor;
         view.scale *= factor;
-
         lastTouchDist = dist;
-        lastTouchCenter = center;
-        requestRender();
+        requestRender(true);
     }
 }, { passive: false });
 
@@ -436,7 +442,6 @@ canvas.addEventListener('touchend', (e) => {
     if (e.touches.length === 0) {
         state.dragging = false;
         lastTouchDist = null;
-        lastTouchCenter = null;
         if (!hasDragged && state.tab === 'mandelbrot' && clickStart) {
             const complex = pixelToComplex(clickStart.x, clickStart.y);
             state.c.r = complex.r;
@@ -445,65 +450,32 @@ canvas.addEventListener('touchend', (e) => {
             document.querySelector('[data-tab="julia"]').classList.add('active');
             state.tab = 'julia';
             state.views.julia = { cx: 0, cy: 0, scale: 1.5 };
-            requestRender();
+            requestRender(false);
+        } else {
+            requestRender(false); // refine
         }
     }
 });
 
-// Keyboard shortcuts
+// Keyboard
 document.addEventListener('keydown', (e) => {
     const view = state.views[state.tab];
-    const panAmount = view.scale * 0.15;
-
+    const pan = view.scale * 0.15;
     switch (e.key) {
-        case '=': case '+':
-            view.scale *= 0.5;
-            requestRender();
-            break;
-        case '-':
-            view.scale *= 2;
-            requestRender();
-            break;
-        case 'ArrowLeft':
-            e.preventDefault();
-            view.cx -= panAmount;
-            requestRender();
-            break;
-        case 'ArrowRight':
-            e.preventDefault();
-            view.cx += panAmount;
-            requestRender();
-            break;
-        case 'ArrowUp':
-            e.preventDefault();
-            view.cy -= panAmount;
-            requestRender();
-            break;
-        case 'ArrowDown':
-            e.preventDefault();
-            view.cy += panAmount;
-            requestRender();
-            break;
+        case '=': case '+': view.scale *= 0.5; requestRender(true); break;
+        case '-': view.scale *= 2; requestRender(true); break;
+        case 'ArrowLeft':  e.preventDefault(); view.cx -= pan; requestRender(true); break;
+        case 'ArrowRight': e.preventDefault(); view.cx += pan; requestRender(true); break;
+        case 'ArrowUp':    e.preventDefault(); view.cy -= pan; requestRender(true); break;
+        case 'ArrowDown':  e.preventDefault(); view.cy += pan; requestRender(true); break;
         case 'r': case 'R':
-            if (state.tab === 'mandelbrot') {
-                state.views.mandelbrot = { cx: -0.5, cy: 0, scale: 1.5 };
-            } else {
-                state.views.julia = { cx: 0, cy: 0, scale: 1.5 };
-            }
-            requestRender();
-            break;
-        case '1':
-            selectPalette('rainbow');
-            break;
-        case '2':
-            selectPalette('fire');
-            break;
-        case '3':
-            selectPalette('ocean');
-            break;
-        case '4':
-            selectPalette('synthwave');
-            break;
+            if (state.tab === 'mandelbrot') state.views.mandelbrot = { cx: -0.5, cy: 0, scale: 1.5 };
+            else state.views.julia = { cx: 0, cy: 0, scale: 1.5 };
+            requestRender(false); break;
+        case '1': selectPalette('rainbow'); break;
+        case '2': selectPalette('fire'); break;
+        case '3': selectPalette('ocean'); break;
+        case '4': selectPalette('synthwave'); break;
     }
 });
 
@@ -511,10 +483,10 @@ function selectPalette(name) {
     document.querySelectorAll('[data-palette]').forEach(b => b.classList.remove('active'));
     document.querySelector(`[data-palette="${name}"]`).classList.add('active');
     state.palette = name;
-    requestRender();
+    requestRender(false);
 }
 
-// ===== Theme Toggle =====
+// ===== Theme =====
 const themeToggle = document.getElementById('themeToggle');
 themeToggle.addEventListener('click', () => {
     state.theme = state.theme === 'dark' ? 'light' : 'dark';
@@ -522,8 +494,6 @@ themeToggle.addEventListener('click', () => {
     themeToggle.textContent = state.theme === 'dark' ? '\uD83C\uDF19' : '\u2600\uFE0F';
     try { localStorage.setItem('fractal-theme', state.theme); } catch (e) {}
 });
-
-// Load saved theme
 try {
     const saved = localStorage.getItem('fractal-theme');
     if (saved) {
@@ -533,11 +503,10 @@ try {
     }
 } catch (e) {}
 
-// ===== Animation System =====
+// ===== Animations =====
 let animFrame = null;
 let animLastTime = null;
 
-// Animation mode buttons
 document.querySelectorAll('[data-anim]').forEach(btn => {
     btn.addEventListener('click', () => {
         const mode = btn.dataset.anim;
@@ -550,11 +519,6 @@ document.querySelectorAll('[data-anim]').forEach(btn => {
             btn.classList.add('active');
             state.anim.mode = mode;
             state.anim.time = 0;
-            if (mode === 'morph') {
-                state.anim.morphPresetIndex = 0;
-                state.anim.morphFrom = { ...presets[0] };
-                state.anim.morphTo = { ...presets[1] };
-            }
         }
     });
 });
@@ -566,13 +530,10 @@ document.getElementById('animPlay').addEventListener('click', () => {
     }
     startAnimation();
 });
-
-document.getElementById('animPause').addEventListener('click', () => {
-    state.anim.playing = false;
-});
-
+document.getElementById('animPause').addEventListener('click', () => { state.anim.playing = false; });
 document.getElementById('animStop').addEventListener('click', () => {
     stopAnimation();
+    requestRender(false);
 });
 
 function startAnimation() {
@@ -590,17 +551,11 @@ function stopAnimation() {
     state.anim.playing = false;
     state.anim.time = 0;
     animLastTime = null;
-    if (animFrame) {
-        cancelAnimationFrame(animFrame);
-        animFrame = null;
-    }
+    if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
 }
 
 function animLoop() {
-    if (!state.anim.playing) {
-        animFrame = null;
-        return;
-    }
+    if (!state.anim.playing) { animFrame = null; return; }
 
     const now = performance.now();
     const dt = (now - (animLastTime || now)) / 1000;
@@ -608,32 +563,23 @@ function animLoop() {
     state.anim.time += dt * state.anim.speed;
 
     switch (state.anim.mode) {
-        case 'orbit':
-            animOrbit();
-            break;
-        case 'path':
-            animPath();
-            break;
-        case 'morph':
-            animMorph();
-            break;
+        case 'orbit': animOrbit(); break;
+        case 'path':  animPath(); break;
+        case 'morph': animMorph(); break;
     }
 
-    render();
+    render('fast');
     animFrame = requestAnimationFrame(animLoop);
 }
 
 function animOrbit() {
     const t = state.anim.time;
-    const centerR = -0.5, centerI = 0;
-    const radius = 0.5;
-    state.c.r = centerR + radius * Math.cos(t * Math.PI * 2);
-    state.c.i = centerI + radius * Math.sin(t * Math.PI * 2);
+    state.c.r = -0.5 + 0.5 * Math.cos(t * Math.PI * 2);
+    state.c.i = 0.5 * Math.sin(t * Math.PI * 2);
 }
 
 function animPath() {
-    const t = state.anim.time * 0.3;
-    const angle = t * Math.PI * 2;
+    const angle = state.anim.time * 0.3 * Math.PI * 2;
     const r = 0.5 * (1 - Math.cos(angle));
     state.c.r = r * Math.cos(angle) / 2 - 0.25;
     state.c.i = r * Math.sin(angle) / 2;
@@ -641,34 +587,28 @@ function animPath() {
 
 function animMorph() {
     const duration = 3;
-    const totalPresets = presets.length;
-    const totalTime = state.anim.time;
-    const segmentTime = totalTime % duration;
-    const segmentIndex = Math.floor(totalTime / duration) % totalPresets;
-    const nextIndex = (segmentIndex + 1) % totalPresets;
-
-    const t = segmentTime / duration;
-    const easedT = t * t * (3 - 2 * t);
-
-    state.c.r = presets[segmentIndex].r * (1 - easedT) + presets[nextIndex].r * easedT;
-    state.c.i = presets[segmentIndex].i * (1 - easedT) + presets[nextIndex].i * easedT;
+    const total = presets.length;
+    const seg = state.anim.time % duration;
+    const idx = Math.floor(state.anim.time / duration) % total;
+    const next = (idx + 1) % total;
+    const t = seg / duration;
+    const e = t * t * (3 - 2 * t);
+    state.c.r = presets[idx].r * (1 - e) + presets[next].r * e;
+    state.c.i = presets[idx].i * (1 - e) + presets[next].i * e;
 }
 
-// ===== Responsive Canvas =====
-function resizeCanvas() {
+// ===== Canvas sizing =====
+function setCanvasDisplay() {
     const container = document.getElementById('canvasContainer');
-    const width = container.clientWidth;
-    const height = Math.round(width * 0.75);
-    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-    const renderWidth = Math.min(Math.round(width * dpr), 1200);
-    const renderHeight = Math.round(renderWidth * 0.75);
-    canvas.width = renderWidth;
-    canvas.height = renderHeight;
-    canvas.style.height = height + 'px';
-    requestRender();
+    const w = container.clientWidth;
+    canvas.style.height = Math.round(w * 0.75) + 'px';
 }
 
-window.addEventListener('resize', resizeCanvas);
+window.addEventListener('resize', () => {
+    setCanvasDisplay();
+    requestRender(false);
+});
 
 // ===== Init =====
-resizeCanvas();
+setCanvasDisplay();
+requestRender(false);

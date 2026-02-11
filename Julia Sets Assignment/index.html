@@ -8,35 +8,35 @@
 </head>
 <body>
 
-<!-- Header -->
-<div class="header">
-    <div class="header-left">
-        <button class="theme-toggle" id="themeToggle" title="Toggle theme">🌙</button>
-        <h1>Julia Set Explorer</h1>
+<div class="app">
+    <!-- Header -->
+    <div class="header">
+        <div class="header-left">
+            <button class="theme-toggle" id="themeToggle" title="Toggle theme">&#127769;</button>
+            <h1>Julia Set Explorer</h1>
+        </div>
+        <div class="header-info">
+            <span class="c-value" id="cValueDisplay">c = -0.745 + 0.186i</span>
+            <span id="zoomDisplay">Zoom: 1.0x</span>
+            <span id="coordDisplay">z = 0 + 0i</span>
+        </div>
     </div>
-    <div class="header-info">
-        <span class="c-value" id="cValueDisplay">c = -0.745 + 0.186i</span>
-        <span id="zoomDisplay">Zoom: 1.0x</span>
-        <span id="coordDisplay">z = 0 + 0i</span>
+
+    <!-- Tabs -->
+    <div class="tabs">
+        <button class="tab-btn active" data-tab="mandelbrot">Mandelbrot</button>
+        <button class="tab-btn" data-tab="julia">Julia</button>
     </div>
-</div>
 
-<!-- Tabs -->
-<div class="tabs">
-    <button class="tab-btn active" data-tab="mandelbrot">Mandelbrot</button>
-    <button class="tab-btn" data-tab="julia">Julia</button>
-</div>
-
-<!-- Main Area -->
-<div class="main">
+    <!-- Canvas -->
     <div class="canvas-container" id="canvasContainer">
-        <canvas id="fractalCanvas" width="800" height="600"></canvas>
+        <canvas id="fractalCanvas" width="500" height="375"></canvas>
         <div class="rendering-indicator" id="renderingIndicator">Rendering...</div>
-        <div class="canvas-overlay" id="canvasOverlay"></div>
     </div>
 
+    <!-- Controls -->
     <div class="controls">
-        <!-- Palette & Zoom Row -->
+        <!-- Palette & Zoom -->
         <div class="control-row">
             <span class="control-label">Palette</span>
             <button class="btn active" data-palette="rainbow">Rainbow</button>
@@ -46,15 +46,15 @@
             <div class="separator"></div>
             <span class="control-label">Zoom</span>
             <button class="btn btn-icon" id="zoomIn" title="Zoom In (=)">+</button>
-            <button class="btn btn-icon" id="zoomOut" title="Zoom Out (-)">−</button>
-            <button class="btn btn-icon" id="resetView" title="Reset View (R)">⌂</button>
+            <button class="btn btn-icon" id="zoomOut" title="Zoom Out (-)">&#8722;</button>
+            <button class="btn btn-icon" id="resetView" title="Reset View (R)">&#8962;</button>
             <div class="separator"></div>
             <span class="control-label">Iters</span>
-            <input type="range" class="iter-slider" id="iterSlider" min="64" max="1024" value="256" step="64">
-            <span class="iter-value" id="iterValue">256</span>
+            <input type="range" class="iter-slider" id="iterSlider" min="50" max="500" value="150" step="50">
+            <span class="iter-value" id="iterValue">150</span>
         </div>
 
-        <!-- Presets Row -->
+        <!-- Presets -->
         <div class="control-row">
             <span class="control-label">Presets</span>
             <div class="presets-row">
@@ -69,7 +69,7 @@
             </div>
         </div>
 
-        <!-- Animation Row -->
+        <!-- Animation -->
         <div class="control-row">
             <span class="control-label">Animate</span>
             <button class="btn" data-anim="orbit" id="animOrbit">Orbit</button>
@@ -77,11 +77,11 @@
             <button class="btn" data-anim="morph" id="animMorph">Morph</button>
             <div class="separator"></div>
             <div class="anim-controls">
-                <button class="btn btn-icon" id="animPlay" title="Play">▶</button>
-                <button class="btn btn-icon" id="animPause" title="Pause">⏸</button>
-                <button class="btn btn-icon" id="animStop" title="Stop">⏹</button>
+                <button class="btn btn-icon" id="animPlay" title="Play">&#9654;</button>
+                <button class="btn btn-icon" id="animPause" title="Pause">&#9208;</button>
+                <button class="btn btn-icon" id="animStop" title="Stop">&#9209;</button>
                 <div class="separator"></div>
-                <span style="font-size:0.8rem;color:var(--text-muted)">Speed</span>
+                <span class="speed-label">Speed</span>
                 <input type="range" class="speed-slider" id="speedSlider" min="0.1" max="3" value="1" step="0.1">
             </div>
         </div>
