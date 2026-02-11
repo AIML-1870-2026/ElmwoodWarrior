@@ -1,0 +1,270 @@
+/* ===== CSS Variables / Theme System ===== */
+:root[data-theme="dark"] {
+    --bg: #0d0d0d;
+    --panel: #1a1a2e;
+    --text: #e0e0e0;
+    --text-muted: #888;
+    --accent: #4a9eff;
+    --accent-hover: #6db3ff;
+    --border: #333333;
+    --btn-bg: #252540;
+    --btn-hover: #333355;
+    --btn-active: #4a9eff;
+    --btn-active-text: #fff;
+    --shadow: rgba(0,0,0,0.4);
+}
+:root[data-theme="light"] {
+    --bg: #f5f5f5;
+    --panel: #ffffff;
+    --text: #1a1a1a;
+    --text-muted: #666;
+    --accent: #0066cc;
+    --accent-hover: #0080ff;
+    --border: #cccccc;
+    --btn-bg: #e8e8f0;
+    --btn-hover: #d0d0e0;
+    --btn-active: #0066cc;
+    --btn-active-text: #fff;
+    --shadow: rgba(0,0,0,0.1);
+}
+
+/* ===== Reset & Base ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    transition: background 0.3s, color 0.3s;
+    overflow-x: hidden;
+}
+
+/* ===== Header ===== */
+.header {
+    width: 100%;
+    max-width: 900px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 20px;
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    border-radius: 0 0 12px 12px;
+    box-shadow: 0 2px 12px var(--shadow);
+    transition: background 0.3s, border-color 0.3s;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.header h1 {
+    font-size: 1.2rem;
+    font-weight: 600;
+    background: linear-gradient(135deg, var(--accent), #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+.theme-toggle {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 1.1rem;
+    color: var(--text);
+    transition: all 0.2s;
+}
+.theme-toggle:hover { border-color: var(--accent); }
+.header-info {
+    display: flex;
+    gap: 16px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-family: 'Consolas', 'Courier New', monospace;
+}
+.header-info span { white-space: nowrap; }
+.c-value { color: var(--accent); font-weight: 600; }
+
+/* ===== Tabs ===== */
+.tabs {
+    width: 100%;
+    max-width: 900px;
+    display: flex;
+    gap: 4px;
+    padding: 10px 20px 0;
+}
+.tab-btn {
+    padding: 8px 24px;
+    border: 1px solid var(--border);
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    background: var(--btn-bg);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+.tab-btn:hover { background: var(--btn-hover); }
+.tab-btn.active {
+    background: var(--panel);
+    color: var(--accent);
+    border-color: var(--accent);
+    border-bottom: 2px solid var(--panel);
+    position: relative;
+    z-index: 1;
+    margin-bottom: -1px;
+}
+
+/* ===== Main Container ===== */
+.main {
+    width: 100%;
+    max-width: 900px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 0 0 12px 12px;
+    box-shadow: 0 4px 20px var(--shadow);
+    padding: 0;
+    transition: background 0.3s, border-color 0.3s;
+}
+
+/* ===== Canvas ===== */
+.canvas-container {
+    width: 100%;
+    position: relative;
+    background: #000;
+    cursor: crosshair;
+}
+.canvas-container canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+}
+.canvas-overlay {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.6);
+    font-family: monospace;
+    pointer-events: none;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+}
+
+/* ===== Control Panels ===== */
+.controls {
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+.control-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+.control-label {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    min-width: 70px;
+}
+.btn {
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--btn-bg);
+    color: var(--text);
+    cursor: pointer;
+    font-size: 0.82rem;
+    transition: all 0.15s;
+    white-space: nowrap;
+}
+.btn:hover { background: var(--btn-hover); border-color: var(--accent); }
+.btn.active {
+    background: var(--btn-active);
+    color: var(--btn-active-text);
+    border-color: var(--btn-active);
+}
+.btn-icon {
+    padding: 6px 10px;
+    font-size: 1rem;
+}
+.speed-slider {
+    width: 100px;
+    accent-color: var(--accent);
+}
+.separator {
+    width: 1px;
+    height: 24px;
+    background: var(--border);
+    margin: 0 4px;
+}
+
+/* ===== Presets Row ===== */
+.presets-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+.preset-btn {
+    padding: 4px 10px;
+    font-size: 0.78rem;
+    border-radius: 12px;
+}
+
+/* ===== Animation Panel ===== */
+.anim-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* ===== Iteration Slider ===== */
+.iter-slider {
+    width: 80px;
+    accent-color: var(--accent);
+}
+.iter-value {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-family: monospace;
+    min-width: 30px;
+}
+
+/* Loading indicator */
+.rendering-indicator {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.7);
+    font-family: monospace;
+    pointer-events: none;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+.rendering-indicator.visible { opacity: 1; }
+
+/* ===== Responsive ===== */
+@media (max-width: 600px) {
+    .header { padding: 10px 12px; }
+    .header h1 { font-size: 1rem; }
+    .header-info { font-size: 0.75rem; gap: 8px; }
+    .tabs { padding: 8px 12px 0; }
+    .tab-btn { padding: 6px 16px; font-size: 0.85rem; }
+    .controls { padding: 10px 12px; }
+    .control-label { min-width: 55px; font-size: 0.75rem; }
+    .btn { padding: 5px 10px; font-size: 0.78rem; }
+}

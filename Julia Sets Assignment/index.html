@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Julia Set Explorer</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+    <div class="header-left">
+        <button class="theme-toggle" id="themeToggle" title="Toggle theme">🌙</button>
+        <h1>Julia Set Explorer</h1>
+    </div>
+    <div class="header-info">
+        <span class="c-value" id="cValueDisplay">c = -0.745 + 0.186i</span>
+        <span id="zoomDisplay">Zoom: 1.0x</span>
+        <span id="coordDisplay">z = 0 + 0i</span>
+    </div>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+    <button class="tab-btn active" data-tab="mandelbrot">Mandelbrot</button>
+    <button class="tab-btn" data-tab="julia">Julia</button>
+</div>
+
+<!-- Main Area -->
+<div class="main">
+    <div class="canvas-container" id="canvasContainer">
+        <canvas id="fractalCanvas" width="800" height="600"></canvas>
+        <div class="rendering-indicator" id="renderingIndicator">Rendering...</div>
+        <div class="canvas-overlay" id="canvasOverlay"></div>
+    </div>
+
+    <div class="controls">
+        <!-- Palette & Zoom Row -->
+        <div class="control-row">
+            <span class="control-label">Palette</span>
+            <button class="btn active" data-palette="rainbow">Rainbow</button>
+            <button class="btn" data-palette="fire">Fire</button>
+            <button class="btn" data-palette="ocean">Ocean</button>
+            <button class="btn" data-palette="synthwave">Synthwave</button>
+            <div class="separator"></div>
+            <span class="control-label">Zoom</span>
+            <button class="btn btn-icon" id="zoomIn" title="Zoom In (=)">+</button>
+            <button class="btn btn-icon" id="zoomOut" title="Zoom Out (-)">−</button>
+            <button class="btn btn-icon" id="resetView" title="Reset View (R)">⌂</button>
+            <div class="separator"></div>
+            <span class="control-label">Iters</span>
+            <input type="range" class="iter-slider" id="iterSlider" min="64" max="1024" value="256" step="64">
+            <span class="iter-value" id="iterValue">256</span>
+        </div>
+
+        <!-- Presets Row -->
+        <div class="control-row">
+            <span class="control-label">Presets</span>
+            <div class="presets-row">
+                <button class="btn preset-btn" data-cr="-0.123" data-ci="0.745">Rabbit</button>
+                <button class="btn preset-btn" data-cr="0" data-ci="1">Dendrite</button>
+                <button class="btn preset-btn" data-cr="-0.75" data-ci="0">San Marco</button>
+                <button class="btn preset-btn" data-cr="-0.391" data-ci="-0.587">Siegel Disk</button>
+                <button class="btn preset-btn" data-cr="-0.75" data-ci="0.1">Seahorse</button>
+                <button class="btn preset-btn" data-cr="-0.4" data-ci="0.6">Lightning</button>
+                <button class="btn preset-btn" data-cr="-0.8" data-ci="0.156">Galaxy</button>
+                <button class="btn preset-btn" data-cr="-0.5" data-ci="0.563">Starfish</button>
+            </div>
+        </div>
+
+        <!-- Animation Row -->
+        <div class="control-row">
+            <span class="control-label">Animate</span>
+            <button class="btn" data-anim="orbit" id="animOrbit">Orbit</button>
+            <button class="btn" data-anim="path" id="animPath">Path</button>
+            <button class="btn" data-anim="morph" id="animMorph">Morph</button>
+            <div class="separator"></div>
+            <div class="anim-controls">
+                <button class="btn btn-icon" id="animPlay" title="Play">▶</button>
+                <button class="btn btn-icon" id="animPause" title="Pause">⏸</button>
+                <button class="btn btn-icon" id="animStop" title="Stop">⏹</button>
+                <div class="separator"></div>
+                <span style="font-size:0.8rem;color:var(--text-muted)">Speed</span>
+                <input type="range" class="speed-slider" id="speedSlider" min="0.1" max="3" value="1" step="0.1">
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="script.js"></script>
+
+</body>
+</html>
