@@ -8,6 +8,12 @@
 </head>
 <body>
 
+<div class="bg-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+</div>
+
 <!-- Header -->
 <header class="header">
     <div class="header-left">
@@ -23,20 +29,8 @@
 
 <!-- Main Layout -->
 <div class="layout">
-    <!-- Canvas Area -->
-    <div class="canvas-area">
-        <div class="tabs">
-            <button class="tab-btn active" data-tab="mandelbrot">Mandelbrot</button>
-            <button class="tab-btn" data-tab="julia">Julia</button>
-        </div>
-        <div class="canvas-container" id="canvasContainer">
-            <canvas id="fractalCanvas" width="500" height="375"></canvas>
-            <div class="rendering-indicator" id="renderingIndicator">Rendering...</div>
-        </div>
-    </div>
-
-    <!-- Sidebar -->
-    <aside class="sidebar">
+    <!-- Left Sidebar -->
+    <aside class="sidebar sidebar-left">
 
         <!-- Julia Preview -->
         <div class="panel" id="previewPanel">
@@ -74,6 +68,14 @@
                     <span class="palette-swatch swatch-synthwave"></span>
                     <span>Synthwave</span>
                 </button>
+                <button class="palette-btn" data-palette="aurora">
+                    <span class="palette-swatch swatch-aurora"></span>
+                    <span>Aurora</span>
+                </button>
+                <button class="palette-btn" data-palette="infrared">
+                    <span class="palette-swatch swatch-infrared"></span>
+                    <span>Infrared</span>
+                </button>
             </div>
         </div>
 
@@ -85,8 +87,8 @@
             </div>
             <div class="panel-body">
                 <div class="btn-row">
-                    <button class="btn" id="zoomIn" title="Zoom In (=)">+ Zoom In</button>
-                    <button class="btn" id="zoomOut" title="Zoom Out (-)">&#8722; Zoom Out</button>
+                    <button class="btn" id="zoomIn" title="Zoom In (=)">+ Zoom</button>
+                    <button class="btn" id="zoomOut" title="Zoom Out (-)">&#8722; Zoom</button>
                     <button class="btn" id="resetView" title="Reset View (R)">&#8962; Reset</button>
                 </div>
                 <div class="slider-row">
@@ -97,6 +99,49 @@
             </div>
         </div>
 
+        <!-- Sound Lab -->
+        <div class="panel panel-glow-sound" id="soundPanel">
+            <div class="panel-header">
+                <span class="panel-icon sound-icon">&#9835;</span>
+                <span>Sound Lab</span>
+                <button class="sound-toggle" id="soundToggle" title="Toggle Sound">
+                    <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                </button>
+            </div>
+            <div class="panel-body">
+                <div class="slider-row">
+                    <label class="slider-label">Volume</label>
+                    <input type="range" class="styled-slider" id="volumeSlider" min="0" max="100" value="30" step="5">
+                </div>
+                <div class="scale-btns">
+                    <button class="scale-btn active" data-scale="pentatonic">Pentatonic</button>
+                    <button class="scale-btn" data-scale="chromatic">Chromatic</button>
+                    <button class="scale-btn" data-scale="ethereal">Ethereal</button>
+                </div>
+                <div class="waveform-wrap">
+                    <canvas id="waveformCanvas" width="220" height="44"></canvas>
+                </div>
+            </div>
+        </div>
+
+    </aside>
+
+    <!-- Canvas Area -->
+    <div class="canvas-area">
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="mandelbrot">Mandelbrot</button>
+            <button class="tab-btn" data-tab="julia">Julia</button>
+        </div>
+        <div class="canvas-container" id="canvasContainer">
+            <canvas id="fractalCanvas" width="500" height="375"></canvas>
+            <canvas id="orbitOverlay" width="500" height="375"></canvas>
+            <div class="rendering-indicator" id="renderingIndicator">Rendering...</div>
+        </div>
+    </div>
+
+    <!-- Right Sidebar -->
+    <aside class="sidebar sidebar-right">
+
         <!-- Presets -->
         <div class="panel">
             <div class="panel-header">
@@ -104,14 +149,38 @@
                 <span>Presets</span>
             </div>
             <div class="panel-body presets-grid">
-                <button class="preset-btn" data-cr="-0.123" data-ci="0.745">Rabbit</button>
-                <button class="preset-btn" data-cr="0" data-ci="1">Dendrite</button>
-                <button class="preset-btn" data-cr="-0.75" data-ci="0">San Marco</button>
-                <button class="preset-btn" data-cr="-0.391" data-ci="-0.587">Siegel Disk</button>
-                <button class="preset-btn" data-cr="-0.75" data-ci="0.1">Seahorse</button>
-                <button class="preset-btn" data-cr="-0.4" data-ci="0.6">Lightning</button>
-                <button class="preset-btn" data-cr="-0.8" data-ci="0.156">Galaxy</button>
-                <button class="preset-btn" data-cr="-0.5" data-ci="0.563">Starfish</button>
+                <button class="preset-btn" data-cr="-0.123" data-ci="0.745">
+                    <canvas class="preset-thumb" width="32" height="24"></canvas>
+                    <span>Rabbit</span>
+                </button>
+                <button class="preset-btn" data-cr="0" data-ci="1">
+                    <canvas class="preset-thumb" width="32" height="24"></canvas>
+                    <span>Dendrite</span>
+                </button>
+                <button class="preset-btn" data-cr="-0.75" data-ci="0">
+                    <canvas class="preset-thumb" width="32" height="24"></canvas>
+                    <span>San Marco</span>
+                </button>
+                <button class="preset-btn" data-cr="-0.391" data-ci="-0.587">
+                    <canvas class="preset-thumb" width="32" height="24"></canvas>
+                    <span>Siegel</span>
+                </button>
+                <button class="preset-btn" data-cr="-0.75" data-ci="0.1">
+                    <canvas class="preset-thumb" width="32" height="24"></canvas>
+                    <span>Seahorse</span>
+                </button>
+                <button class="preset-btn" data-cr="-0.4" data-ci="0.6">
+                    <canvas class="preset-thumb" width="32" height="24"></canvas>
+                    <span>Lightning</span>
+                </button>
+                <button class="preset-btn" data-cr="-0.8" data-ci="0.156">
+                    <canvas class="preset-thumb" width="32" height="24"></canvas>
+                    <span>Galaxy</span>
+                </button>
+                <button class="preset-btn" data-cr="-0.5" data-ci="0.563">
+                    <canvas class="preset-thumb" width="32" height="24"></canvas>
+                    <span>Starfish</span>
+                </button>
             </div>
         </div>
 
@@ -135,6 +204,42 @@
                 <div class="slider-row">
                     <label class="slider-label">Speed</label>
                     <input type="range" class="styled-slider" id="speedSlider" min="0.1" max="3" value="1" step="0.1">
+                </div>
+            </div>
+        </div>
+
+        <!-- Kaleidoscope -->
+        <div class="panel panel-glow-kaleido" id="kaleidoPanel">
+            <div class="panel-header">
+                <span class="panel-icon kaleido-icon">&#10022;</span>
+                <span>Kaleidoscope</span>
+                <button class="sound-toggle" id="kaleidoToggle" title="Toggle Kaleidoscope">
+                    <span class="toggle-track"><span class="toggle-thumb"></span></span>
+                </button>
+            </div>
+            <div class="panel-body">
+                <div class="slider-row">
+                    <label class="slider-label">Segments</label>
+                    <input type="range" class="styled-slider" id="kaleidoSlider" min="3" max="16" value="6" step="1">
+                    <span class="slider-value" id="kaleidoValue">6</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tools -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-icon">&#9673;</span>
+                <span>Tools</span>
+            </div>
+            <div class="panel-body">
+                <div class="btn-row">
+                    <button class="btn" id="orbitToggle">&#9673; Orbit Trace</button>
+                    <button class="btn" id="orbitClear">&#10005; Clear</button>
+                </div>
+                <div class="btn-row" style="margin-top:6px">
+                    <button class="btn" id="exportHD" data-res="2048">&#8615; 2K</button>
+                    <button class="btn btn-play" id="export4K" data-res="4096">&#8615; 4K Export</button>
                 </div>
             </div>
         </div>

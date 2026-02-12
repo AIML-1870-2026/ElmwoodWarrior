@@ -2,7 +2,7 @@
 const FAST_RES = 200;
 const FULL_RES = 500;
 const REFINE_DELAY = 300;
-const PREVIEW_RES = 100;  // mini Julia preview resolution
+const PREVIEW_RES = 100;
 
 // ===== State =====
 const state = {
@@ -18,7 +18,11 @@ const state = {
     dragging: false,
     dragStart: null,
     viewAtDragStart: null,
-    theme: 'dark'
+    theme: 'dark',
+    // New feature states
+    sound: { enabled: false, scale: 'pentatonic', volume: 0.3 },
+    kaleido: { enabled: false, segments: 6 },
+    orbit: { enabled: false, trails: [] }
 };
 
 // ===== DOM =====
@@ -26,6 +30,8 @@ const canvas = document.getElementById('fractalCanvas');
 const ctx = canvas.getContext('2d');
 const previewCanvas = document.getElementById('previewCanvas');
 const previewCtx = previewCanvas.getContext('2d');
+const orbitOverlay = document.getElementById('orbitOverlay');
+const orbitCtx = orbitOverlay.getContext('2d');
 const cValueDisplay = document.getElementById('cValueDisplay');
 const zoomDisplay = document.getElementById('zoomDisplay');
 const coordDisplay = document.getElementById('coordDisplay');
@@ -35,6 +41,8 @@ const iterValue = document.getElementById('iterValue');
 const speedSlider = document.getElementById('speedSlider');
 const previewCDisplay = document.getElementById('previewC');
 const previewHint = document.getElementById('previewHint');
+const waveformCanvas = document.getElementById('waveformCanvas');
+const waveformCtx = waveformCanvas.getContext('2d');
 
 const presets = [
     { name: 'Rabbit',      r: -0.123, i: 0.745 },
@@ -107,15 +115,25 @@ const paletteFuncs = {
     synthwave: (t) => gradientColor([
         { pos: 0, color: [26,0,51] }, { pos: 0.33, color: [255,20,147] },
         { pos: 0.66, color: [148,0,211] }, { pos: 1, color: [0,255,255] }
+    ], t),
+    aurora: (t) => gradientColor([
+        { pos: 0, color: [0,17,34] }, { pos: 0.25, color: [0,255,136] },
+        { pos: 0.5, color: [0,170,255] }, { pos: 0.75, color: [170,85,255] },
+        { pos: 1, color: [0,17,34] }
+    ], t),
+    infrared: (t) => gradientColor([
+        { pos: 0, color: [0,0,0] }, { pos: 0.25, color: [34,0,34] },
+        { pos: 0.6, color: [255,0,85] }, { pos: 1, color: [255,204,0] }
     ], t)
 };
 const boundedColors = {
-    rainbow: [0,0,0], fire: [0,0,0], ocean: [0,0,51], synthwave: [0,0,0]
+    rainbow: [0,0,0], fire: [0,0,0], ocean: [0,0,51], synthwave: [0,0,0],
+    aurora: [0,17,34], infrared: [0,0,0]
 };
 for (const name in paletteFuncs) colorLUTs[name] = buildLUT(paletteFuncs[name]);
 
 // ===== Fractal Computation =====
-function computeFractal(imageData, width, height, view, isJulia, cVal, maxIter, paletteName) {
+function computeFractal(imageData, width, height, view, isJulia, cVal, maxIter, paletteName, kaleidoscope) {
     const data = imageData.data;
     const lut = colorLUTs[paletteName];
     const bc = boundedColors[paletteName];
@@ -128,11 +146,29 @@ function computeFractal(imageData, width, height, view, isJulia, cVal, maxIter, 
     const stepY = (2 * scaleY) / height;
     const cr_c = cVal.r, ci_c = cVal.i;
     const lutMax = LUT_SIZE - 1;
+    const kEnabled = kaleidoscope && kaleidoscope.enabled;
+    const kSegments = kEnabled ? kaleidoscope.segments : 0;
+    const kAngle = kEnabled ? (2 * Math.PI / kSegments) : 0;
+    const vcx = view.cx, vcy = view.cy;
 
     for (let py = 0; py < height; py++) {
-        const y0 = startY + stepY * py;
+        const rawY = startY + stepY * py;
         for (let px = 0; px < width; px++) {
-            const x0 = startX + stepX * px;
+            let x0 = startX + stepX * px;
+            let y0 = rawY;
+
+            // Kaleidoscope coordinate transform
+            if (kEnabled) {
+                const dx = x0 - vcx;
+                const dy = y0 - vcy;
+                const r = Math.sqrt(dx * dx + dy * dy);
+                let theta = Math.atan2(dy, dx);
+                theta = ((theta % kAngle) + kAngle) % kAngle;
+                if (theta > kAngle / 2) theta = kAngle - theta;
+                x0 = vcx + r * Math.cos(theta);
+                y0 = vcy + r * Math.sin(theta);
+            }
+
             let zr, zi, cr, ci;
             if (isJulia) { zr = x0; zi = y0; cr = cr_c; ci = ci_c; }
             else { zr = 0; zi = 0; cr = x0; ci = y0; }
@@ -169,7 +205,7 @@ function render(quality) {
     const view = state.views[state.tab];
     const iterCount = isFast ? Math.min(state.maxIter, 100) : state.maxIter;
     const imageData = ctx.createImageData(w, h);
-    computeFractal(imageData, w, h, view, state.tab === 'julia', state.c, iterCount, state.palette);
+    computeFractal(imageData, w, h, view, state.tab === 'julia', state.c, iterCount, state.palette, state.kaleido);
     ctx.putImageData(imageData, 0, 0);
     updateUI();
 }
@@ -201,10 +237,25 @@ function renderPreview(cr, ci) {
     const view = { cx: 0, cy: 0, scale: 1.5 };
     const cVal = { r: cr, i: ci };
     const imageData = previewCtx.createImageData(w, h);
-    computeFractal(imageData, w, h, view, true, cVal, 80, state.palette);
+    computeFractal(imageData, w, h, view, true, cVal, 80, state.palette, null);
     previewCtx.putImageData(imageData, 0, 0);
     previewCDisplay.textContent = `c = ${formatComplex(cr, ci)}`;
     previewHint.textContent = '';
+}
+
+// ===== Preset Thumbnails =====
+function renderPresetThumbnails() {
+    document.querySelectorAll('.preset-btn').forEach(btn => {
+        const thumbCanvas = btn.querySelector('.preset-thumb');
+        if (!thumbCanvas) return;
+        const tCtx = thumbCanvas.getContext('2d');
+        const w = thumbCanvas.width, h = thumbCanvas.height;
+        const view = { cx: 0, cy: 0, scale: 1.5 };
+        const cVal = { r: parseFloat(btn.dataset.cr), i: parseFloat(btn.dataset.ci) };
+        const imageData = tCtx.createImageData(w, h);
+        computeFractal(imageData, w, h, view, true, cVal, 60, state.palette, null);
+        tCtx.putImageData(imageData, 0, 0);
+    });
 }
 
 // ===== UI =====
@@ -228,6 +279,362 @@ function pixelToComplex(px, py) {
     return { r: view.cx - scaleX + 2 * scaleX * x, i: view.cy - scaleY + 2 * scaleY * y };
 }
 
+// ===== Sound Lab (Web Audio API) =====
+let audioCtx = null;
+let oscillator = null;
+let gainNode = null;
+let analyserNode = null;
+let reverbNode = null;
+let soundInitialized = false;
+let waveformAnimFrame = null;
+
+const musicalScales = {
+    pentatonic: [261.63, 293.66, 329.63, 392.00, 440.00, 523.25, 587.33, 659.25, 783.99, 880.00],
+    chromatic:  [261.63, 277.18, 293.66, 311.13, 329.63, 349.23, 369.99, 392.00, 415.30, 440.00, 466.16, 493.88, 523.25],
+    ethereal:   [220.00, 261.63, 311.13, 349.23, 415.30, 466.16, 523.25, 622.25, 698.46, 830.61]
+};
+
+function initAudio() {
+    if (soundInitialized) return;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    // Create reverb impulse response
+    const sampleRate = audioCtx.sampleRate;
+    const length = sampleRate * 2.5;
+    const impulse = audioCtx.createBuffer(2, length, sampleRate);
+    for (let ch = 0; ch < 2; ch++) {
+        const channelData = impulse.getChannelData(ch);
+        for (let i = 0; i < length; i++) {
+            channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / length, 2.2);
+        }
+    }
+    reverbNode = audioCtx.createConvolver();
+    reverbNode.buffer = impulse;
+
+    // Analyser for waveform visualization
+    analyserNode = audioCtx.createAnalyser();
+    analyserNode.fftSize = 256;
+
+    // Gain
+    gainNode = audioCtx.createGain();
+    gainNode.gain.value = 0;
+
+    // Create dual oscillators for richness
+    oscillator = audioCtx.createOscillator();
+    oscillator.type = 'sine';
+    oscillator.frequency.value = 440;
+
+    const osc2 = audioCtx.createOscillator();
+    osc2.type = 'triangle';
+    osc2.frequency.value = 440;
+    osc2.detune.value = 5; // slight detune for chorus effect
+
+    const osc2Gain = audioCtx.createGain();
+    osc2Gain.gain.value = 0.3;
+
+    // Routing: oscillators -> gain -> reverb + dry -> analyser -> output
+    const dryGain = audioCtx.createGain();
+    dryGain.gain.value = 0.6;
+    const wetGain = audioCtx.createGain();
+    wetGain.gain.value = 0.4;
+
+    oscillator.connect(gainNode);
+    osc2.connect(osc2Gain);
+    osc2Gain.connect(gainNode);
+
+    gainNode.connect(dryGain);
+    gainNode.connect(reverbNode);
+    reverbNode.connect(wetGain);
+
+    dryGain.connect(analyserNode);
+    wetGain.connect(analyserNode);
+    analyserNode.connect(audioCtx.destination);
+
+    oscillator.start();
+    osc2.start();
+
+    // Store for frequency updates
+    state.sound._osc2 = osc2;
+
+    soundInitialized = true;
+}
+
+function playFractalNote(iterCount, maxIter, complexX, complexY) {
+    if (!state.sound.enabled || !audioCtx) return;
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+
+    const scale = musicalScales[state.sound.scale];
+    if (iterCount >= maxIter) {
+        // Inside the set - fade to silence
+        gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.1);
+        return;
+    }
+
+    const normalized = iterCount / maxIter;
+    const noteIndex = Math.floor(normalized * (scale.length - 1));
+    const freq = scale[Math.min(noteIndex, scale.length - 1)];
+
+    // Smooth frequency glide (portamento)
+    const now = audioCtx.currentTime;
+    oscillator.frequency.exponentialRampToValueAtTime(Math.max(freq, 20), now + 0.06);
+    if (state.sound._osc2) {
+        state.sound._osc2.frequency.exponentialRampToValueAtTime(Math.max(freq, 20), now + 0.06);
+    }
+
+    // Volume based on distance to boundary (louder near boundary = more interesting)
+    const boundary = 1 - Math.abs(normalized - 0.5) * 2; // peaks at 0.5
+    const vol = state.sound.volume * (0.3 + 0.7 * boundary);
+    gainNode.gain.linearRampToValueAtTime(Math.min(vol, 0.5), now + 0.05);
+}
+
+function drawWaveform() {
+    if (!state.sound.enabled || !analyserNode) {
+        waveformCtx.clearRect(0, 0, waveformCanvas.width, waveformCanvas.height);
+        return;
+    }
+
+    const bufferLength = analyserNode.frequencyBinCount;
+    const dataArray = new Uint8Array(bufferLength);
+    analyserNode.getByteTimeDomainData(dataArray);
+
+    const w = waveformCanvas.width;
+    const h = waveformCanvas.height;
+    waveformCtx.clearRect(0, 0, w, h);
+
+    // Draw waveform with gradient
+    const gradient = waveformCtx.createLinearGradient(0, 0, w, 0);
+    gradient.addColorStop(0, '#6c5ce7');
+    gradient.addColorStop(0.5, '#a855f7');
+    gradient.addColorStop(1, '#f093fb');
+
+    waveformCtx.lineWidth = 2;
+    waveformCtx.strokeStyle = gradient;
+    waveformCtx.beginPath();
+
+    const sliceWidth = w / bufferLength;
+    let x = 0;
+    for (let i = 0; i < bufferLength; i++) {
+        const v = dataArray[i] / 128.0;
+        const y = (v * h) / 2;
+        if (i === 0) waveformCtx.moveTo(x, y);
+        else waveformCtx.lineTo(x, y);
+        x += sliceWidth;
+    }
+    waveformCtx.lineTo(w, h / 2);
+    waveformCtx.stroke();
+
+    // Glow effect
+    waveformCtx.lineWidth = 4;
+    waveformCtx.strokeStyle = 'rgba(108, 92, 231, 0.2)';
+    waveformCtx.beginPath();
+    x = 0;
+    for (let i = 0; i < bufferLength; i++) {
+        const v = dataArray[i] / 128.0;
+        const y = (v * h) / 2;
+        if (i === 0) waveformCtx.moveTo(x, y);
+        else waveformCtx.lineTo(x, y);
+        x += sliceWidth;
+    }
+    waveformCtx.lineTo(w, h / 2);
+    waveformCtx.stroke();
+
+    waveformAnimFrame = requestAnimationFrame(drawWaveform);
+}
+
+// Sound toggle
+document.getElementById('soundToggle').addEventListener('click', function() {
+    state.sound.enabled = !state.sound.enabled;
+    this.classList.toggle('active', state.sound.enabled);
+    document.getElementById('soundPanel').classList.toggle('active-glow', state.sound.enabled);
+
+    if (state.sound.enabled) {
+        initAudio();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        drawWaveform();
+    } else {
+        if (gainNode) gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.1);
+        if (waveformAnimFrame) cancelAnimationFrame(waveformAnimFrame);
+        waveformCtx.clearRect(0, 0, waveformCanvas.width, waveformCanvas.height);
+    }
+});
+
+document.getElementById('volumeSlider').addEventListener('input', function() {
+    state.sound.volume = parseInt(this.value) / 100;
+});
+
+document.querySelectorAll('.scale-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.scale-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.sound.scale = btn.dataset.scale;
+    });
+});
+
+// ===== Orbit Trail Visualizer =====
+function computeOrbit(x0, y0) {
+    const isJulia = state.tab === 'julia';
+    let zr, zi, cr, ci;
+    if (isJulia) {
+        zr = x0; zi = y0; cr = state.c.r; ci = state.c.i;
+    } else {
+        zr = 0; zi = 0; cr = x0; ci = y0;
+    }
+
+    const points = [{ r: zr, i: zi }];
+    for (let iter = 0; iter < state.maxIter; iter++) {
+        const newZr = zr * zr - zi * zi + cr;
+        const newZi = 2 * zr * zi + ci;
+        zr = newZr; zi = newZi;
+        points.push({ r: zr, i: zi });
+        if (zr * zr + zi * zi > 100) break;
+    }
+    return points;
+}
+
+function complexToPixel(r, i) {
+    const rect = canvas.getBoundingClientRect();
+    const view = state.views[state.tab];
+    const aspect = 4 / 3;
+    const scaleX = view.scale * aspect;
+    const scaleY = view.scale;
+    const px = ((r - (view.cx - scaleX)) / (2 * scaleX)) * rect.width;
+    const py = ((i - (view.cy - scaleY)) / (2 * scaleY)) * rect.height;
+    return { x: px, y: py };
+}
+
+function drawOrbitTrails() {
+    const rect = canvas.getBoundingClientRect();
+    orbitOverlay.width = rect.width * window.devicePixelRatio;
+    orbitOverlay.height = rect.height * window.devicePixelRatio;
+    orbitOverlay.style.width = rect.width + 'px';
+    orbitOverlay.style.height = rect.height + 'px';
+    orbitCtx.scale(window.devicePixelRatio, window.devicePixelRatio);
+    orbitCtx.clearRect(0, 0, rect.width, rect.height);
+
+    state.orbit.trails.forEach((trail, trailIdx) => {
+        const points = trail.points;
+        if (points.length < 2) return;
+
+        const hue = (trailIdx * 60) % 360;
+
+        // Draw connecting lines
+        orbitCtx.lineWidth = 1.5;
+        orbitCtx.globalAlpha = 0.6;
+        for (let i = 0; i < points.length - 1; i++) {
+            const p1 = complexToPixel(points[i].r, points[i].i);
+            const p2 = complexToPixel(points[i + 1].r, points[i + 1].i);
+            const progress = i / points.length;
+            orbitCtx.strokeStyle = `hsla(${hue + progress * 120}, 100%, 65%, ${0.8 - progress * 0.5})`;
+            orbitCtx.beginPath();
+            orbitCtx.moveTo(p1.x, p1.y);
+            orbitCtx.lineTo(p2.x, p2.y);
+            orbitCtx.stroke();
+        }
+
+        // Draw dots at each iteration
+        orbitCtx.globalAlpha = 1;
+        for (let i = 0; i < points.length; i++) {
+            const p = complexToPixel(points[i].r, points[i].i);
+            if (p.x < -50 || p.x > rect.width + 50 || p.y < -50 || p.y > rect.height + 50) continue;
+            const progress = i / points.length;
+            const radius = 3 - progress * 1.5;
+
+            // Glow
+            orbitCtx.fillStyle = `hsla(${hue + progress * 120}, 100%, 70%, 0.3)`;
+            orbitCtx.beginPath();
+            orbitCtx.arc(p.x, p.y, radius + 3, 0, Math.PI * 2);
+            orbitCtx.fill();
+
+            // Dot
+            orbitCtx.fillStyle = `hsla(${hue + progress * 120}, 100%, 75%, 1)`;
+            orbitCtx.beginPath();
+            orbitCtx.arc(p.x, p.y, Math.max(radius, 1), 0, Math.PI * 2);
+            orbitCtx.fill();
+        }
+
+        // Mark starting point
+        const start = complexToPixel(points[0].r, points[0].i);
+        orbitCtx.fillStyle = '#fff';
+        orbitCtx.beginPath();
+        orbitCtx.arc(start.x, start.y, 4, 0, Math.PI * 2);
+        orbitCtx.fill();
+        orbitCtx.strokeStyle = `hsl(${hue}, 100%, 65%)`;
+        orbitCtx.lineWidth = 2;
+        orbitCtx.beginPath();
+        orbitCtx.arc(start.x, start.y, 4, 0, Math.PI * 2);
+        orbitCtx.stroke();
+    });
+    orbitCtx.globalAlpha = 1;
+}
+
+document.getElementById('orbitToggle').addEventListener('click', function() {
+    state.orbit.enabled = !state.orbit.enabled;
+    this.classList.toggle('active', state.orbit.enabled);
+    if (state.orbit.enabled) {
+        canvas.style.cursor = 'crosshair';
+    } else {
+        canvas.style.cursor = 'crosshair';
+    }
+});
+
+document.getElementById('orbitClear').addEventListener('click', () => {
+    state.orbit.trails = [];
+    const rect = canvas.getBoundingClientRect();
+    orbitOverlay.width = rect.width;
+    orbitOverlay.height = rect.height;
+    orbitCtx.clearRect(0, 0, orbitOverlay.width, orbitOverlay.height);
+});
+
+// ===== Kaleidoscope =====
+document.getElementById('kaleidoToggle').addEventListener('click', function() {
+    state.kaleido.enabled = !state.kaleido.enabled;
+    this.classList.toggle('active', state.kaleido.enabled);
+    document.getElementById('kaleidoPanel').classList.toggle('active-glow', state.kaleido.enabled);
+    requestRender(false);
+});
+
+document.getElementById('kaleidoSlider').addEventListener('input', function() {
+    state.kaleido.segments = parseInt(this.value);
+    document.getElementById('kaleidoValue').textContent = this.value;
+    if (state.kaleido.enabled) requestRender(true);
+});
+
+// ===== HD Export =====
+function exportFractal(resolution) {
+    const w = resolution;
+    const h = Math.round(w * 0.75);
+    const exportCanvas = document.createElement('canvas');
+    exportCanvas.width = w;
+    exportCanvas.height = h;
+    const exportCtx = exportCanvas.getContext('2d');
+    const view = state.views[state.tab];
+    const imageData = exportCtx.createImageData(w, h);
+
+    renderingIndicator.textContent = `Exporting ${w}x${h}...`;
+    renderingIndicator.classList.add('visible');
+
+    // Use setTimeout to allow UI update
+    setTimeout(() => {
+        computeFractal(imageData, w, h, view, state.tab === 'julia', state.c, state.maxIter, state.palette, state.kaleido);
+        exportCtx.putImageData(imageData, 0, 0);
+
+        exportCanvas.toBlob((blob) => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `julia-set-${state.tab}-${w}x${h}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            renderingIndicator.classList.remove('visible');
+        }, 'image/png');
+    }, 50);
+}
+
+document.getElementById('exportHD').addEventListener('click', () => exportFractal(2048));
+document.getElementById('export4K').addEventListener('click', () => exportFractal(4096));
+
 // ===== Event Handlers =====
 
 // Tabs
@@ -240,13 +647,15 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     });
 });
 
-// Palettes (new selector)
+// Palettes
 document.querySelectorAll('.palette-btn').forEach(btn => {
     btn.addEventListener('click', () => {
         document.querySelectorAll('.palette-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         state.palette = btn.dataset.palette;
         requestRender(false);
+        // Re-render preset thumbnails with new palette
+        setTimeout(renderPresetThumbnails, 100);
     });
 });
 
@@ -316,6 +725,23 @@ canvas.addEventListener('mousemove', (e) => {
         }
     }
 
+    // Sound: play note based on position
+    if (state.sound.enabled && !state.dragging) {
+        const view = state.views[state.tab];
+        const isJulia = state.tab === 'julia';
+        let zr, zi, cr, ci;
+        if (isJulia) { zr = complex.r; zi = complex.i; cr = state.c.r; ci = state.c.i; }
+        else { zr = 0; zi = 0; cr = complex.r; ci = complex.i; }
+
+        let iter = 0;
+        let zr2 = zr * zr, zi2 = zi * zi;
+        while (zr2 + zi2 <= 4 && iter < state.maxIter) {
+            zi = 2 * zr * zi + ci; zr = zr2 - zi2 + cr;
+            zr2 = zr * zr; zi2 = zi * zi; iter++;
+        }
+        playFractalNote(iter, state.maxIter, complex.r, complex.i);
+    }
+
     if (state.dragging) {
         const dx = e.clientX - state.dragStart.x;
         const dy = e.clientY - state.dragStart.y;
@@ -332,6 +758,16 @@ canvas.addEventListener('mousemove', (e) => {
 
 canvas.addEventListener('mouseup', (e) => {
     state.dragging = false;
+
+    // Orbit trace mode
+    if (!hasDragged && state.orbit.enabled) {
+        const complex = pixelToComplex(e.clientX, e.clientY);
+        const orbitPoints = computeOrbit(complex.r, complex.i);
+        state.orbit.trails.push({ points: orbitPoints, origin: complex });
+        drawOrbitTrails();
+        return;
+    }
+
     if (!hasDragged && state.tab === 'mandelbrot') {
         const complex = pixelToComplex(e.clientX, e.clientY);
         state.c.r = complex.r; state.c.i = complex.i;
@@ -342,9 +778,17 @@ canvas.addEventListener('mouseup', (e) => {
         requestRender(false);
     } else if (hasDragged) {
         requestRender(false);
+        // Redraw orbit trails after pan
+        if (state.orbit.trails.length > 0) drawOrbitTrails();
     }
 });
-canvas.addEventListener('mouseleave', () => { state.dragging = false; });
+canvas.addEventListener('mouseleave', () => {
+    state.dragging = false;
+    // Fade sound on leave
+    if (state.sound.enabled && gainNode) {
+        gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2);
+    }
+});
 
 // Touch
 let lastTouchDist = null;
@@ -423,13 +867,25 @@ document.addEventListener('keydown', (e) => {
         case '2': selectPalette('fire'); break;
         case '3': selectPalette('ocean'); break;
         case '4': selectPalette('synthwave'); break;
+        case '5': selectPalette('aurora'); break;
+        case '6': selectPalette('infrared'); break;
+        case 'k': case 'K':
+            document.getElementById('kaleidoToggle').click();
+            break;
+        case 's': case 'S':
+            if (!e.ctrlKey && !e.metaKey) document.getElementById('soundToggle').click();
+            break;
     }
 });
 function selectPalette(name) {
     document.querySelectorAll('.palette-btn').forEach(b => b.classList.remove('active'));
-    document.querySelector(`.palette-btn[data-palette="${name}"]`).classList.add('active');
-    state.palette = name;
-    requestRender(false);
+    const el = document.querySelector(`.palette-btn[data-palette="${name}"]`);
+    if (el) {
+        el.classList.add('active');
+        state.palette = name;
+        requestRender(false);
+        setTimeout(renderPresetThumbnails, 100);
+    }
 }
 
 // ===== Theme =====
@@ -521,16 +977,34 @@ function animMorph() {
     state.c.i = presets[idx].i * (1 - t) + presets[next].i * t;
 }
 
+// ===== Button ripple effect =====
+document.querySelectorAll('.btn').forEach(btn => {
+    btn.addEventListener('mouseenter', (e) => {
+        const rect = btn.getBoundingClientRect();
+        const x = ((e.clientX - rect.left) / rect.width) * 100;
+        const y = ((e.clientY - rect.top) / rect.height) * 100;
+        btn.style.setProperty('--ripple-x', x + '%');
+        btn.style.setProperty('--ripple-y', y + '%');
+    });
+});
+
 // ===== Canvas sizing =====
 function setCanvasDisplay() {
     const container = document.getElementById('canvasContainer');
     const w = container.clientWidth;
     canvas.style.height = Math.round(w * 0.75) + 'px';
+    orbitOverlay.style.height = Math.round(w * 0.75) + 'px';
 }
-window.addEventListener('resize', () => { setCanvasDisplay(); requestRender(false); });
+window.addEventListener('resize', () => {
+    setCanvasDisplay();
+    requestRender(false);
+    if (state.orbit.trails.length > 0) setTimeout(drawOrbitTrails, 100);
+});
 
 // ===== Init =====
 setCanvasDisplay();
-// Render initial preview with default c value
 renderPreview(state.c.r, state.c.i);
 requestRender(false);
+
+// Render preset thumbnails after a short delay
+setTimeout(renderPresetThumbnails, 200);
