@@ -99,6 +99,26 @@
             </div>
         </div>
 
+        <!-- C Parameter -->
+        <div class="panel">
+            <div class="panel-header">
+                <span class="panel-icon">&#119940;</span>
+                <span>Parameter</span>
+            </div>
+            <div class="panel-body">
+                <div class="slider-row">
+                    <label class="slider-label">Real</label>
+                    <input type="range" class="styled-slider" id="cRealSlider" min="-2" max="2" value="-0.745" step="0.001">
+                    <span class="slider-value" id="cRealValue">-0.745</span>
+                </div>
+                <div class="slider-row">
+                    <label class="slider-label">Imag</label>
+                    <input type="range" class="styled-slider" id="cImagSlider" min="-2" max="2" value="0.186" step="0.001">
+                    <span class="slider-value" id="cImagValue">0.186</span>
+                </div>
+            </div>
+        </div>
+
         <!-- Sound Lab -->
         <div class="panel panel-glow-sound" id="soundPanel">
             <div class="panel-header">
@@ -240,6 +260,33 @@
                 <div class="btn-row" style="margin-top:6px">
                     <button class="btn" id="exportHD" data-res="2048">&#8615; 2K</button>
                     <button class="btn btn-play" id="export4K" data-res="4096">&#8615; 4K Export</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Panel -->
+        <div class="panel">
+            <div class="panel-header panel-header-toggle" id="infoToggle">
+                <span class="panel-icon">&#8505;</span>
+                <span>What Am I Seeing?</span>
+                <span class="panel-chevron" id="infoChevron">&#9660;</span>
+            </div>
+            <div class="panel-body info-body" id="infoBody">
+                <div class="info-section">
+                    <strong>Julia Sets</strong>
+                    <p>Each pixel represents a complex number <em>z</em>. We repeatedly apply z = z&sup2; + c and color the pixel by how quickly <em>z</em> escapes to infinity. Points that never escape form the filled Julia set (the dark region).</p>
+                </div>
+                <div class="info-section">
+                    <strong>The c Parameter</strong>
+                    <p>The constant <em>c</em> defines which Julia set you see. Small changes to <em>c</em> can dramatically reshape the fractal. Use the Real/Imag sliders or click on the Mandelbrot set to choose a <em>c</em> value.</p>
+                </div>
+                <div class="info-section">
+                    <strong>The Mandelbrot Set</strong>
+                    <p>The Mandelbrot set is a map of all possible Julia sets. Each point on the Mandelbrot set corresponds to a <em>c</em> value. Points inside the Mandelbrot set produce connected Julia sets; points outside produce dust-like ones.</p>
+                </div>
+                <div class="info-section">
+                    <strong>Colors</strong>
+                    <p>Colors represent escape speed. Smooth coloring uses the fractional iteration count so gradients flow naturally. Areas that never escape are drawn in the palette's base color.</p>
                 </div>
             </div>
         </div>

@@ -267,6 +267,7 @@ function updateUI() {
     cValueDisplay.textContent = `c = ${formatComplex(state.c.r, state.c.i)}`;
     const view = state.views[state.tab];
     zoomDisplay.textContent = `Zoom: ${(1.5 / view.scale).toFixed(1)}x`;
+    syncCSliders();
 }
 
 function pixelToComplex(px, py) {
@@ -634,6 +635,48 @@ function exportFractal(resolution) {
 
 document.getElementById('exportHD').addEventListener('click', () => exportFractal(2048));
 document.getElementById('export4K').addEventListener('click', () => exportFractal(4096));
+
+// ===== C Parameter Sliders =====
+const cRealSlider = document.getElementById('cRealSlider');
+const cImagSlider = document.getElementById('cImagSlider');
+const cRealValue = document.getElementById('cRealValue');
+const cImagValue = document.getElementById('cImagValue');
+
+function syncCSliders() {
+    cRealSlider.value = state.c.r;
+    cImagSlider.value = state.c.i;
+    cRealValue.textContent = state.c.r.toFixed(3);
+    cImagValue.textContent = state.c.i.toFixed(3);
+}
+
+cRealSlider.addEventListener('input', () => {
+    state.c.r = parseFloat(cRealSlider.value);
+    cRealValue.textContent = state.c.r.toFixed(3);
+    if (state.tab !== 'julia') {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector('[data-tab="julia"]').classList.add('active');
+        state.tab = 'julia';
+    }
+    requestRender(true);
+});
+cImagSlider.addEventListener('input', () => {
+    state.c.i = parseFloat(cImagSlider.value);
+    cImagValue.textContent = state.c.i.toFixed(3);
+    if (state.tab !== 'julia') {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector('[data-tab="julia"]').classList.add('active');
+        state.tab = 'julia';
+    }
+    requestRender(true);
+});
+
+// ===== Info Panel Toggle =====
+document.getElementById('infoToggle').addEventListener('click', () => {
+    const body = document.getElementById('infoBody');
+    const chevron = document.getElementById('infoChevron');
+    body.classList.toggle('collapsed');
+    chevron.classList.toggle('collapsed');
+});
 
 // ===== Event Handlers =====
 

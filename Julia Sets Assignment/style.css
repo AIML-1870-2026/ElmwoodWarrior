@@ -558,7 +558,7 @@ body {
 /* ===== Preset Buttons ===== */
 .presets-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     gap: 4px;
 }
 .preset-btn {
@@ -583,6 +583,12 @@ body {
     transform: translateY(-2px) scale(1.02);
 }
 .preset-btn:active { transform: translateY(0) scale(0.97); }
+.preset-btn span:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    min-width: 0;
+}
 .preset-thumb {
     width: 32px;
     height: 24px;
@@ -771,7 +777,7 @@ body {
     }
     .sidebar .panel { flex: 1; min-width: 200px; }
     .palette-grid { grid-template-columns: 1fr 1fr; }
-    .presets-grid { grid-template-columns: 1fr 1fr; }
+    .presets-grid { grid-template-columns: 1fr 1fr 1fr 1fr; }
 }
 @media (max-width: 500px) {
     body { padding: 6px; }
@@ -779,4 +785,59 @@ body {
     .header h1 { font-size: 0.95rem; }
     .header-info { font-size: 0.63rem; gap: 6px; }
     .sidebar .panel { min-width: 100%; }
+}
+
+/* ===== Info Panel ===== */
+.panel-header-toggle {
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s;
+}
+.panel-header-toggle:hover {
+    background: var(--btn-hover);
+}
+.panel-chevron {
+    margin-left: auto;
+    font-size: 0.55rem;
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    color: var(--text-muted);
+}
+.panel-chevron.collapsed {
+    transform: rotate(-90deg);
+}
+.info-body {
+    max-height: 400px;
+    overflow: hidden;
+    transition: max-height 0.4s ease, padding 0.4s ease, opacity 0.3s;
+    opacity: 1;
+}
+.info-body.collapsed {
+    max-height: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    opacity: 0;
+}
+.info-section {
+    margin-bottom: 6px;
+}
+.info-section:last-child {
+    margin-bottom: 0;
+}
+.info-section strong {
+    display: block;
+    font-size: 0.65rem;
+    color: var(--accent-2);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+}
+.info-section p {
+    font-size: 0.65rem;
+    line-height: 1.5;
+    color: var(--text-muted);
+    margin: 0;
+}
+.info-section em {
+    color: var(--accent-3);
+    font-style: italic;
 }
