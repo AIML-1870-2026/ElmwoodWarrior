@@ -70,7 +70,7 @@ body {
     flex-direction: column;
     align-items: center;
     transition: background 0.5s, color 0.5s;
-    padding: 14px 14px 28px;
+    padding: 10px;
     overflow-x: hidden;
     position: relative;
 }
@@ -118,7 +118,7 @@ body {
 /* ===== Header ===== */
 .header {
     width: 100%;
-    max-width: 1400px;
+    max-width: min(1400px, calc(100vw - 20px));
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -180,9 +180,9 @@ body {
 /* ===== Layout ===== */
 .layout {
     width: 100%;
-    max-width: 1400px;
+    max-width: min(1400px, calc(100vw - 20px));
     display: flex;
-    gap: 10px;
+    gap: 8px;
     align-items: flex-start;
     position: relative;
     z-index: 1;
@@ -192,6 +192,8 @@ body {
     min-width: 0;
     display: flex;
     flex-direction: column;
+    position: sticky;
+    top: 10px;
 }
 
 /* ===== Tabs ===== */
@@ -278,21 +280,14 @@ body {
 
 /* ===== Sidebar ===== */
 .sidebar {
-    width: 17vw;
-    min-width: 180px;
-    max-width: 250px;
+    width: 200px;
     flex-shrink: 1;
+    min-width: 0;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    max-height: calc(100vh - 100px);
-    overflow-y: auto;
-    overflow-x: hidden;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border) transparent;
+    gap: 6px;
+    overflow: hidden;
 }
-.sidebar::-webkit-scrollbar { width: 4px; }
-.sidebar::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 2px; }
 
 /* ===== Panel Cards with Animated Border ===== */
 .panel {
@@ -362,10 +357,10 @@ body {
 .panel-header {
     display: flex;
     align-items: center;
-    gap: 7px;
-    padding: 10px 14px;
+    gap: 6px;
+    padding: 7px 10px;
     border-bottom: 1px solid var(--border);
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.8px;
@@ -404,10 +399,10 @@ body {
     font-style: italic;
 }
 .panel-body {
-    padding: 10px 12px;
+    padding: 7px 10px;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
     min-width: 0;
 }
 
@@ -514,13 +509,13 @@ body {
 .palette-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 6px;
+    gap: 4px;
 }
 .palette-btn {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 7px 10px;
+    gap: 6px;
+    padding: 5px 8px;
     border: 1px solid var(--border);
     border-radius: 9px;
     background: var(--btn-bg);
@@ -564,7 +559,7 @@ body {
 .presets-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 5px;
+    gap: 4px;
 }
 .preset-btn {
     display: flex;
@@ -671,12 +666,12 @@ body {
     gap: 8px;
 }
 .slider-label {
-    font-size: 0.65rem;
+    font-size: 0.62rem;
     color: var(--text-muted);
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    min-width: 56px;
+    letter-spacing: 0.3px;
+    min-width: 46px;
 }
 .slider-value {
     font-size: 0.68rem;
@@ -753,28 +748,34 @@ body {
 }
 
 /* ===== Responsive ===== */
-@media (max-width: 1200px) {
-    .sidebar { min-width: 160px; }
+@media (max-width: 1100px) {
+    .sidebar { width: 180px; }
     .palette-grid { grid-template-columns: 1fr; }
     .presets-grid { grid-template-columns: 1fr; }
-    .btn { font-size: 0.65rem; padding: 6px 8px; }
 }
-@media (max-width: 1100px) {
-    .layout { flex-direction: column; }
+@media (max-width: 900px) {
+    .layout {
+        flex-direction: column;
+    }
+    .canvas-area {
+        position: static;
+        order: 0;
+    }
     .sidebar {
         width: 100%;
-        max-height: none;
         flex-direction: row;
         flex-wrap: wrap;
         gap: 8px;
         order: 1;
+        overflow: visible;
     }
-    .canvas-area { order: 0; }
     .sidebar .panel { flex: 1; min-width: 200px; }
+    .palette-grid { grid-template-columns: 1fr 1fr; }
+    .presets-grid { grid-template-columns: 1fr 1fr; }
 }
 @media (max-width: 500px) {
-    body { padding: 8px 6px 20px; }
-    .header { padding: 10px 14px; border-radius: 12px; }
+    body { padding: 6px; }
+    .header { padding: 10px 12px; border-radius: 12px; }
     .header h1 { font-size: 0.95rem; }
     .header-info { font-size: 0.63rem; gap: 6px; }
     .sidebar .panel { min-width: 100%; }
