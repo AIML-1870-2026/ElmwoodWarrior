@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sleep or Suffer — Interactive Perceptron</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     OVERLAYS
+     ═══════════════════════════════════════════════════════════════ -->
+<div id="effects-overlay"></div>
+<div id="vignette-overlay"></div>
+<div id="grain-overlay"></div>
+<div id="darken-overlay"></div>
+
+<div id="crash-overlay">
+  <canvas id="dream-canvas"></canvas>
+  <p class="sleep-text" id="crash-text">You have entered sleep paralysis preview mode...</p>
+  <button class="wake-btn" id="wake-btn">Wake Up</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     CREATE SCENARIO MODAL
+     ═══════════════════════════════════════════════════════════════ -->
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal">
+    <h3>Create Your Own Scenario</h3>
+    <label>Title</label>
+    <input type="text" id="custom-title" placeholder="e.g. Eat the Pizza">
+    <label>Emoji</label>
+    <input type="text" id="custom-emoji" placeholder="e.g. 🍕" maxlength="4">
+    <label>Yes Label (what happens)</label>
+    <input type="text" id="custom-yes" placeholder="e.g. Eat It">
+    <label>No Label</label>
+    <input type="text" id="custom-no" placeholder="e.g. Resist">
+    <label>Threshold Text (when ≥95%)</label>
+    <input type="text" id="custom-threshold-text" placeholder="e.g. You devoured it...">
+
+    <h4 style="margin-top:16px;font-size:0.85rem;">Inputs (3–7)</h4>
+    <div class="modal-inputs-list" id="modal-inputs-list"></div>
+    <button class="train-btn secondary" id="add-input-btn" style="margin-top:8px;">+ Add Input</button>
+
+    <div class="modal-btns">
+      <button class="train-btn secondary" id="modal-cancel">Cancel</button>
+      <button class="train-btn primary" id="modal-save">Create</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════
+     APP
+     ═══════════════════════════════════════════════════════════════ -->
+<div id="app">
+  <!-- HEADER -->
+  <header>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <select class="scenario-select" id="scenario-select"></select>
+      <h1 id="page-title">Sleep or Suffer</h1>
+    </div>
+    <div class="header-btns">
+      <button class="icon-btn" id="create-btn" title="Create Scenario">+</button>
+      <button class="icon-btn" id="help-btn" title="Help">?</button>
+    </div>
+  </header>
+
+  <!-- MAIN -->
+  <div class="main-area">
+    <!-- LEFT SLIDERS -->
+    <div class="slider-col" id="left-sliders"></div>
+
+    <!-- NEURAL NETWORK -->
+    <div class="network-area">
+      <canvas id="network-canvas"></canvas>
+    </div>
+
+    <!-- RIGHT SLIDERS -->
+    <div class="slider-col" id="right-sliders"></div>
+
+    <!-- BIAS -->
+    <div class="bias-bar">
+      <label id="bias-label">Sleep Paralysis Preview</label>
+      <input type="range" id="bias-slider" min="-3" max="3" step="0.1" value="0.3">
+      <span class="mono" id="bias-value">+0.3</span>
+    </div>
+
+    <!-- OUTPUT ROW -->
+    <div class="output-row">
+      <div class="output-card">
+        <div class="output-pct" id="output-pct">0%</div>
+        <div class="output-bar"><div class="output-bar-fill" id="output-bar-fill"></div></div>
+        <div class="output-label" id="output-verdict">Stay Conscious ⚡</div>
+      </div>
+      <div class="activation-card">
+        <h4>Activation Function</h4>
+        <div class="act-radios">
+          <label><input type="radio" name="actfn" value="sigmoid" checked> <span style="color:#a855f7">Sigmoid</span></label>
+          <label><input type="radio" name="actfn" value="step"> <span style="color:#f97316">Step</span></label>
+          <label><input type="radio" name="actfn" value="relu"> <span style="color:#06b6d4">ReLU</span></label>
+        </div>
+        <div class="compare-check">
+          <input type="checkbox" id="compare-all"> <label for="compare-all">Compare all</label>
+        </div>
+      </div>
+      <div class="curve-card">
+        <canvas id="curve-canvas"></canvas>
+        <div class="math-display" id="math-display">z = Σ(w·x) + b → σ(z) = 0.00</div>
+      </div>
+    </div>
+
+    <!-- TAB BAR -->
+    <div class="tab-bar">
+      <button class="tab-btn active" data-tab="boundary">Decision Boundary</button>
+      <button class="tab-btn" data-tab="sensitivity">Sensitivity</button>
+      <button class="tab-btn" data-tab="twoneuron">Two-Neuron Chain</button>
+      <button class="tab-btn" data-tab="training">Training</button>
+    </div>
+
+    <!-- TAB PANELS -->
+    <div class="tab-panels">
+      <!-- Decision Boundary -->
+      <div class="tab-panel active" id="panel-boundary">
+        <div class="db-controls">
+          <label>X-Axis: <select id="db-x"></select></label>
+          <label>Y-Axis: <select id="db-y"></select></label>
+          <span style="font-size:0.75rem;color:var(--text-secondary);">(Other inputs held at current values)</span>
+        </div>
+        <canvas id="db-canvas"></canvas>
+      </div>
+
+      <!-- Sensitivity -->
+      <div class="tab-panel" id="panel-sensitivity">
+        <div class="sens-toggle">
+          <button class="active" id="sens-lines-btn">Lines</button>
+          <button id="sens-bars-btn">Bars</button>
+        </div>
+        <canvas id="sens-canvas"></canvas>
+        <div class="sens-info" id="sens-info"></div>
+      </div>
+
+      <!-- Two-Neuron Chain -->
+      <div class="tab-panel" id="panel-twoneuron">
+        <div class="two-neuron-layout">
+          <div class="neuron-box">
+            <h4>Neuron 1 — "Body Check"</h4>
+            <p style="font-size:0.75rem;color:var(--text-secondary);margin-bottom:8px;">Uses the 5 main inputs above.</p>
+            <div class="n2-output">
+              <span style="font-size:0.7rem;color:var(--text-secondary);">Output (a₁):</span>
+              <span class="mono" id="n1-output" style="font-size:1.2rem;color:var(--accent-purple);">0.00</span>
+            </div>
+          </div>
+          <div class="synapse-area">
+            <span class="synapse-label">w₁₂</span>
+            <canvas id="synapse-canvas"></canvas>
+            <input type="range" class="synapse-weight-slider" id="synapse-weight" min="-2" max="2" step="0.1" value="0.8">
+            <span class="mono synapse-label" id="synapse-val">0.8</span>
+          </div>
+          <div class="neuron-box">
+            <h4>Neuron 2 — "Final Verdict"</h4>
+            <div class="n2-slider">
+              <label>Bed Accessible (0-10)</label>
+              <input type="range" min="0" max="10" value="5" id="n2-bed">
+              <span class="mono" id="n2-bed-val">5</span>
+            </div>
+            <div class="n2-slider">
+              <label>Social Cost (0-10)</label>
+              <input type="range" min="0" max="10" value="3" id="n2-social">
+              <span class="mono" id="n2-social-val">3</span>
+            </div>
+            <div class="n2-slider">
+              <label>Tomorrow Free (0-10)</label>
+              <input type="range" min="0" max="10" value="5" id="n2-tomorrow">
+              <span class="mono" id="n2-tomorrow-val">5</span>
+            </div>
+            <div class="n2-output">
+              <span style="font-size:0.7rem;color:var(--text-secondary);">Neuron 2 Bias:</span>
+              <input type="range" min="-3" max="3" step="0.1" value="-0.5" id="n2-bias" style="width:100%;">
+              <span class="mono" id="n2-bias-val">-0.5</span>
+            </div>
+            <div class="n2-output" style="margin-top:8px;">
+              <span style="font-size:0.7rem;color:var(--text-secondary);">Final Output:</span>
+              <span class="mono" id="n2-final" style="font-size:1.4rem;color:var(--alert-gold);">0.00</span>
+            </div>
+          </div>
+        </div>
+        <div class="n2-math" id="n2-math">z₁ → a₁ → z₂ → output</div>
+      </div>
+
+      <!-- Training -->
+      <div class="tab-panel" id="panel-training">
+        <div class="training-layout">
+          <div class="training-heatmap">
+            <div class="db-controls">
+              <label>X: <select id="train-x"></select></label>
+              <label>Y: <select id="train-y"></select></label>
+            </div>
+            <canvas id="training-canvas"></canvas>
+          </div>
+          <div class="training-controls">
+            <h4 style="font-size:0.85rem;margin-bottom:4px;">Label New Points As:</h4>
+            <div class="train-label-toggle">
+              <button id="label-sleep" class="active-sleep">Sleep</button>
+              <button id="label-awake">Awake</button>
+            </div>
+            <button class="train-btn primary" id="train-step">Step (1 iteration)</button>
+            <button class="train-btn primary" id="train-10">Train 10x</button>
+            <button class="train-btn secondary" id="train-reset">Reset</button>
+            <div class="train-stats">
+              Accuracy: <span id="train-acc">—</span><br>
+              Steps: <span id="train-steps">0</span><br>
+              Points: <span id="train-points">0</span>
+            </div>
+            <div class="train-stats" id="train-milestone"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
