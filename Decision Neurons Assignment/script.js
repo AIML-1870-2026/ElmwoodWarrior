@@ -420,8 +420,8 @@ const MAX_PARTICLES = 300;
 function spawnParticles() {
   const s = state.scenario;
   if (!s) return;
-  const w = networkCanvas.width;
-  const h = networkCanvas.height;
+  const w = networkCanvas._lw || networkCanvas.width;
+  const h = networkCanvas._lh || networkCanvas.height;
 
   s.inputs.forEach((inp, i) => {
     const val = state.inputValues[i];
@@ -458,9 +458,12 @@ function bezier(t, p0, p1, p2) {
 }
 
 function drawNetwork() {
-  const w = networkCanvas.width;
-  const h = networkCanvas.height;
-  nCtx.clearRect(0, 0, w, h);
+  const w = networkCanvas._lw || networkCanvas.width;
+  const h = networkCanvas._lh || networkCanvas.height;
+  nCtx.save();
+  nCtx.setTransform(1, 0, 0, 1, 0, 0);
+  nCtx.clearRect(0, 0, networkCanvas.width, networkCanvas.height);
+  nCtx.restore();
 
   const p = state.probability;
   const t = Date.now() / 1000;
@@ -606,8 +609,8 @@ function drawNetwork() {
 function drawCurve() {
   const canvas = document.getElementById('curve-canvas');
   const ctx = canvas.getContext('2d');
-  const w = canvas.width;
-  const h = canvas.height;
+  const w = canvas._lw || canvas.width;
+  const h = canvas._lh || canvas.height;
   ctx.clearRect(0, 0, w, h);
 
   const pad = 30;
@@ -681,8 +684,8 @@ function drawCurve() {
 function drawDecisionBoundary() {
   const canvas = document.getElementById('db-canvas');
   const ctx = canvas.getContext('2d');
-  const w = canvas.width;
-  const h = canvas.height;
+  const w = canvas._lw || canvas.width;
+  const h = canvas._lh || canvas.height;
   ctx.clearRect(0, 0, w, h);
 
   const s = state.scenario;
@@ -808,8 +811,8 @@ function drawDecisionBoundary() {
 function drawSensitivity() {
   const canvas = document.getElementById('sens-canvas');
   const ctx = canvas.getContext('2d');
-  const w = canvas.width;
-  const h = canvas.height;
+  const w = canvas._lw || canvas.width;
+  const h = canvas._lh || canvas.height;
   ctx.clearRect(0, 0, w, h);
 
   const s = state.scenario;
@@ -942,8 +945,8 @@ function updateTwoNeuron() {
 function drawSynapse(signal, weight) {
   const canvas = document.getElementById('synapse-canvas');
   const ctx = canvas.getContext('2d');
-  const w = canvas.width;
-  const h = canvas.height;
+  const w = canvas._lw || canvas.width;
+  const h = canvas._lh || canvas.height;
   ctx.clearRect(0, 0, w, h);
 
   const thickness = Math.abs(weight) * 4 + 1;
@@ -1046,8 +1049,8 @@ function updateTrainStats() {
 function drawTrainingCanvas() {
   const canvas = document.getElementById('training-canvas');
   const ctx = canvas.getContext('2d');
-  const w = canvas.width;
-  const h = canvas.height;
+  const w = canvas._lw || canvas.width;
+  const h = canvas._lh || canvas.height;
   ctx.clearRect(0, 0, w, h);
 
   const s = state.scenario;
@@ -1136,14 +1139,13 @@ function drawTrainingCanvas() {
 function resizeCanvases() {
   const dpr = window.devicePixelRatio || 1;
 
-  function sizeCanvas(canvas, container) {
-    if (!container) container = canvas.parentElement;
-    const rect = container.getBoundingClientRect();
+  function sizeCanvas(canvas) {
+    const rect = canvas.getBoundingClientRect();
+    if (rect.width === 0 || rect.height === 0) return;
     canvas.width = rect.width * dpr;
     canvas.height = rect.height * dpr;
-    canvas.style.width = rect.width + 'px';
-    canvas.style.height = rect.height + 'px';
-    canvas.getContext('2d').scale(dpr, dpr);
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     canvas._lw = rect.width;
     canvas._lh = rect.height;
   }
@@ -1151,24 +1153,19 @@ function resizeCanvases() {
   sizeCanvas(networkCanvas);
 
   const curveCanvas = document.getElementById('curve-canvas');
-  curveCanvas.width = curveCanvas.parentElement.clientWidth;
-  curveCanvas.height = 120;
+  sizeCanvas(curveCanvas);
 
   const dbCanvas = document.getElementById('db-canvas');
-  dbCanvas.width = Math.min(500, dbCanvas.parentElement.clientWidth);
-  dbCanvas.height = 400;
+  sizeCanvas(dbCanvas);
 
   const sensCanvas = document.getElementById('sens-canvas');
-  sensCanvas.width = Math.min(600, sensCanvas.parentElement.clientWidth);
-  sensCanvas.height = 300;
+  sizeCanvas(sensCanvas);
 
   const synCanvas = document.getElementById('synapse-canvas');
-  synCanvas.width = 80;
-  synCanvas.height = 200;
+  sizeCanvas(synCanvas);
 
   const trainCanvas = document.getElementById('training-canvas');
-  trainCanvas.width = Math.min(400, trainCanvas.parentElement.clientWidth);
-  trainCanvas.height = 350;
+  sizeCanvas(trainCanvas);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1328,6 +1325,8 @@ function setupEvents() {
       document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
       btn.classList.add('active');
       document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+      // Resize canvases after tab switch since hidden tabs have 0 dimensions
+      requestAnimationFrame(() => resizeCanvases());
     });
   });
 
@@ -1387,8 +1386,10 @@ function setupEvents() {
     const px = e.clientX - rect.left;
     const py = e.clientY - rect.top;
     const pad = 40;
-    const pw = canvas.width - pad * 2;
-    const ph = canvas.height - pad * 2;
+    const lw = canvas._lw || rect.width;
+    const lh = canvas._lh || rect.height;
+    const pw = lw - pad * 2;
+    const ph = lh - pad * 2;
     const xNorm = (px - pad) / pw;
     const yNorm = 1 - (py - pad) / ph;
     if (xNorm < 0 || xNorm > 1 || yNorm < 0 || yNorm > 1) return;
