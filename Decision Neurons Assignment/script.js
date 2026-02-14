@@ -287,9 +287,16 @@ function updateUI() {
    ═══════════════════════════════════════════════════════════════ */
 function applyEffects(p) {
   // Only apply blur at very high probability (>85%), and keep it subtle
+  // Blur everything EXCEPT the input sliders so users can still adjust values
   const blurAmount = p > 0.85 ? (p - 0.85) * 20 : 0;
   const sat = p > 0.7 ? 1 - (p - 0.7) * 1.5 : 1;
-  document.getElementById('app').style.filter = blurAmount > 0 ? `blur(${blurAmount}px) saturate(${sat})` : '';
+  const filterVal = blurAmount > 0 ? `blur(${blurAmount}px) saturate(${sat})` : '';
+  document.getElementById('app').style.filter = '';
+  document.querySelector('header').style.filter = filterVal;
+  document.querySelector('.network-area').style.filter = filterVal;
+  document.querySelector('.results-panel').style.filter = filterVal;
+  document.querySelector('.math-strip').style.filter = filterVal;
+  document.querySelector('.tabs-section').style.filter = filterVal;
 
   // Vignette — only at higher probabilities
   const vigSpread = p > 0.5 ? (p - 0.5) * 300 : 0;

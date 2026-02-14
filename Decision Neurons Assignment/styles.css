@@ -114,11 +114,13 @@ header h1 {
   min-height: 420px;
 }
 
-/* Left panel — all input sliders */
+/* Left panel — all input sliders (stays unblurred during sleep effects) */
 .inputs-panel {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  position: relative;
+  z-index: 10;
 }
 .panel-title {
   font-size: 0.7rem;
@@ -282,6 +284,8 @@ input[type="range"]::-moz-range-thumb {
   padding: 12px 24px;
   display: flex; align-items: center; gap: 16px;
   box-shadow: 0 0 15px rgba(138,43,226,0.1);
+  position: relative;
+  z-index: 10;
 }
 .bias-bar label {
   font-size: 0.75rem; font-weight: 600;
