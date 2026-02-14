@@ -37,7 +37,7 @@
     <input type="text" id="custom-no" placeholder="e.g. Resist">
     <label>Threshold Text (when &ge;95%)</label>
     <input type="text" id="custom-threshold-text" placeholder="e.g. You devoured it...">
-    <h4 style="margin-top:16px;font-size:0.85rem;">Inputs (3–7)</h4>
+    <h4 style="margin-top:16px;font-size:0.85rem;">Inputs (3-7)</h4>
     <div class="modal-inputs-list" id="modal-inputs-list"></div>
     <button class="train-btn secondary" id="add-input-btn" style="margin-top:8px;">+ Add Input</button>
     <div class="modal-btns">
@@ -61,52 +61,66 @@
     </div>
   </header>
 
-  <!-- TOP: Network + Sliders -->
-  <div class="top-section">
-    <div class="slider-col" id="left-sliders"></div>
+  <!-- HERO: Inputs | Network | Results -->
+  <div class="hero">
+    <!-- LEFT: All input sliders -->
+    <div class="inputs-panel">
+      <h2 class="panel-title">Inputs</h2>
+      <div class="slider-col" id="left-sliders"></div>
+      <!-- dummy right container kept for JS compatibility -->
+      <div style="display:none" id="right-sliders"></div>
+    </div>
+
+    <!-- CENTER: Network visualization -->
     <div class="network-area">
       <canvas id="network-canvas"></canvas>
     </div>
-    <div class="slider-col" id="right-sliders"></div>
+
+    <!-- RIGHT: Output & Controls -->
+    <div class="results-panel">
+      <h2 class="panel-title">Output</h2>
+
+      <!-- Big output -->
+      <div class="result-block">
+        <div class="output-pct" id="output-pct">0%</div>
+        <div class="output-bar"><div class="output-bar-fill" id="output-bar-fill"></div></div>
+        <div class="output-label" id="output-verdict">Stay Conscious</div>
+      </div>
+
+      <!-- Activation -->
+      <div class="result-block">
+        <h3 class="block-title">Activation Function</h3>
+        <div class="act-radios">
+          <label><input type="radio" name="actfn" value="sigmoid" checked> <span style="color:#ff00ff">Sigmoid</span></label>
+          <label><input type="radio" name="actfn" value="step"> <span style="color:#ffdd00">Step</span></label>
+          <label><input type="radio" name="actfn" value="relu"> <span style="color:#00ffff">ReLU</span></label>
+        </div>
+        <div class="compare-check">
+          <input type="checkbox" id="compare-all"> <label for="compare-all">Compare all</label>
+        </div>
+      </div>
+
+      <!-- Curve -->
+      <div class="result-block curve-block">
+        <canvas id="curve-canvas"></canvas>
+      </div>
+    </div>
   </div>
 
-  <!-- MIDDLE: Compact status strip -->
-  <div class="status-strip">
-    <!-- Bias -->
-    <div class="strip-bias">
-      <label id="bias-label">Sleep Paralysis Preview</label>
-      <input type="range" id="bias-slider" min="-3" max="3" step="0.1" value="0.3">
-      <span class="mono" id="bias-value">+0.3</span>
-    </div>
-    <!-- Output -->
-    <div class="strip-output">
-      <div class="output-pct" id="output-pct">0%</div>
-      <div class="output-bar"><div class="output-bar-fill" id="output-bar-fill"></div></div>
-      <div class="output-label" id="output-verdict">Stay Conscious</div>
-    </div>
-    <!-- Activation + Curve -->
-    <div class="strip-activation">
-      <div class="act-radios">
-        <label><input type="radio" name="actfn" value="sigmoid" checked> <span style="color:#ff00ff">Sigmoid</span></label>
-        <label><input type="radio" name="actfn" value="step"> <span style="color:#ffdd00">Step</span></label>
-        <label><input type="radio" name="actfn" value="relu"> <span style="color:#00ffff">ReLU</span></label>
-      </div>
-      <div class="compare-check">
-        <input type="checkbox" id="compare-all"> <label for="compare-all">Compare all</label>
-      </div>
-    </div>
-    <div class="strip-curve">
-      <canvas id="curve-canvas"></canvas>
-    </div>
+  <!-- BIAS BAR -->
+  <div class="bias-bar">
+    <label id="bias-label">Sleep Paralysis Preview</label>
+    <input type="range" id="bias-slider" min="-3" max="3" step="0.1" value="0.3">
+    <span class="mono" id="bias-value">+0.3</span>
   </div>
 
-  <!-- Math equation line -->
+  <!-- MATH -->
   <div class="math-strip">
     <span class="math-display" id="math-display">z = &Sigma;(w&middot;x) + b &rarr; &sigma;(z) = 0.00</span>
   </div>
 
-  <!-- BOTTOM: Tab section fills remaining space -->
-  <div class="bottom-section">
+  <!-- TABS -->
+  <div class="tabs-section">
     <div class="tab-bar">
       <button class="tab-btn active" data-tab="boundary">Decision Boundary</button>
       <button class="tab-btn" data-tab="sensitivity">Sensitivity</button>
@@ -120,6 +134,7 @@
         <div class="db-controls">
           <label>X-Axis: <select id="db-x"></select></label>
           <label>Y-Axis: <select id="db-y"></select></label>
+          <span class="hint">(Other inputs held at current values)</span>
         </div>
         <canvas id="db-canvas"></canvas>
       </div>
@@ -142,7 +157,7 @@
             <p class="n2-sub">Uses the 5 main inputs above.</p>
             <div class="n2-output">
               <span class="n2-label">Output (a&#x2081;):</span>
-              <span class="mono" id="n1-output">0.00</span>
+              <span class="mono" id="n1-output" style="font-size:1.2rem;color:var(--accent-purple);">0.00</span>
             </div>
           </div>
           <div class="synapse-area">
@@ -173,9 +188,9 @@
               <input type="range" min="-3" max="3" step="0.1" value="-0.5" id="n2-bias" style="width:100%;">
               <span class="mono" id="n2-bias-val">-0.5</span>
             </div>
-            <div class="n2-output" style="margin-top:4px;">
+            <div class="n2-output" style="margin-top:8px;">
               <span class="n2-label">Final Output:</span>
-              <span class="mono" id="n2-final" style="font-size:1.1rem;color:var(--alert-gold);">0.00</span>
+              <span class="mono" id="n2-final" style="font-size:1.4rem;color:var(--alert-gold);">0.00</span>
             </div>
           </div>
         </div>

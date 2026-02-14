@@ -182,7 +182,7 @@ function buildSliders() {
   left.innerHTML = ''; right.innerHTML = '';
   const s = state.scenario;
   s.inputs.forEach((inp, i) => {
-    const target = i < 3 ? left : right;
+    const target = left;
     const card = document.createElement('div');
     card.className = 'slider-card';
     card.innerHTML = `
@@ -1139,6 +1139,7 @@ function drawTrainingCanvas() {
 function resizeCanvases() {
   const dpr = window.devicePixelRatio || 1;
 
+  // DPR-aware sizing for layout-driven canvases
   function sizeCanvas(canvas) {
     const rect = canvas.getBoundingClientRect();
     if (rect.width === 0 || rect.height === 0) return;
@@ -1152,20 +1153,34 @@ function resizeCanvases() {
 
   sizeCanvas(networkCanvas);
 
+  // Curve canvas — sized by CSS
   const curveCanvas = document.getElementById('curve-canvas');
   sizeCanvas(curveCanvas);
 
+  // Fixed-size canvases (explicit CSS width/height)
   const dbCanvas = document.getElementById('db-canvas');
-  sizeCanvas(dbCanvas);
+  dbCanvas.width = Math.min(500, dbCanvas.parentElement.clientWidth);
+  dbCanvas.height = 400;
+  dbCanvas._lw = dbCanvas.width;
+  dbCanvas._lh = dbCanvas.height;
 
   const sensCanvas = document.getElementById('sens-canvas');
-  sizeCanvas(sensCanvas);
+  sensCanvas.width = Math.min(600, sensCanvas.parentElement.clientWidth);
+  sensCanvas.height = 300;
+  sensCanvas._lw = sensCanvas.width;
+  sensCanvas._lh = sensCanvas.height;
 
   const synCanvas = document.getElementById('synapse-canvas');
-  sizeCanvas(synCanvas);
+  synCanvas.width = 80;
+  synCanvas.height = 200;
+  synCanvas._lw = 80;
+  synCanvas._lh = 200;
 
   const trainCanvas = document.getElementById('training-canvas');
-  sizeCanvas(trainCanvas);
+  trainCanvas.width = Math.min(400, trainCanvas.parentElement.clientWidth);
+  trainCanvas.height = 350;
+  trainCanvas._lw = trainCanvas.width;
+  trainCanvas._lh = trainCanvas.height;
 }
 
 /* ═══════════════════════════════════════════════════════════════
