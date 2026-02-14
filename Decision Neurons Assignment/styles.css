@@ -138,8 +138,9 @@ header h1 {
   backdrop-filter: blur(12px);
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 6px 10px;
+  padding: 7px 10px;
   transition: border-color 300ms, box-shadow 300ms;
+  overflow: visible;
 }
 .slider-card:hover {
   border-color: rgba(0,255,255,0.4);
@@ -152,7 +153,7 @@ header h1 {
   margin-bottom: 3px;
 }
 .slider-label {
-  font-size: 0.62rem; font-weight: 600;
+  font-size: 0.72rem; font-weight: 600;
   text-transform: uppercase; letter-spacing: 0.06em;
   color: var(--accent-cyan);
   text-shadow: 0 0 6px rgba(0,255,255,0.3);
@@ -165,7 +166,7 @@ header h1 {
 }
 .slider-val {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.8rem; font-weight: 500;
+  font-size: 0.85rem; font-weight: 500;
   color: var(--accent-pink);
   text-shadow: 0 0 8px rgba(255,0,255,0.4);
   white-space: nowrap;
@@ -173,7 +174,7 @@ header h1 {
 .slider-wrap { position: relative; }
 .weight-badge {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 0.55rem; color: var(--accent-green);
+  font-size: 0.65rem; color: var(--accent-green);
   text-shadow: 0 0 4px rgba(57,255,20,0.4);
   opacity: 0.8; white-space: nowrap;
 }

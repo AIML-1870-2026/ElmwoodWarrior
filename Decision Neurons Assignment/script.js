@@ -429,26 +429,35 @@ function spawnParticles() {
   if (!s) return;
   const w = networkCanvas._lw || networkCanvas.width;
   const h = networkCanvas._lh || networkCanvas.height;
+  const canvasRect = networkCanvas.getBoundingClientRect();
+  const sliderCards = document.querySelectorAll('#left-sliders .slider-card');
 
   s.inputs.forEach((inp, i) => {
     const val = state.inputValues[i];
     const norm = val / inp.range[1];
     const count = Math.floor(norm * 8);
     const targetNode = NODES[REGION_NODES[inp.region]];
-    // Spawn from slider side
-    const isLeft = i < 3;
+
+    // Get the actual vertical position of this slider card relative to the network canvas
+    let startY = h * (0.1 + i * (0.8 / Math.max(s.inputs.length - 1, 1)));
+    if (sliderCards[i]) {
+      const cardRect = sliderCards[i].getBoundingClientRect();
+      const cardCenterY = cardRect.top + cardRect.height / 2;
+      startY = ((cardCenterY - canvasRect.top) / canvasRect.height) * h;
+    }
+
     for (let j = 0; j < count; j++) {
       if (particles.length >= MAX_PARTICLES) return;
-      const startX = isLeft ? 0 : w;
-      const startY = h * (0.15 + (i % 3) * 0.25) + (Math.random() - 0.5) * 30;
+      const startX = 0; // All sliders are on the left
+      const sy = startY + (Math.random() - 0.5) * 20;
       const endX = targetNode.x * w;
       const endY = targetNode.y * h;
       const cpx = (startX + endX) / 2 + (Math.random() - 0.5) * 80;
-      const cpy = (startY + endY) / 2 + (Math.random() - 0.5) * 80;
+      const cpy = (sy + endY) / 2 + (Math.random() - 0.5) * 80;
       particles.push({
         t: 0,
         speed: (0.003 + Math.random() * 0.005) * (1 / (1 + state.probability * 2)),
-        sx: startX, sy: startY,
+        sx: startX, sy: sy,
         cpx, cpy,
         ex: endX, ey: endY,
         color: inp.color,
