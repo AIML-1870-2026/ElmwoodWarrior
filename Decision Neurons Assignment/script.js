@@ -116,6 +116,22 @@ function activate(z, fn) {
   return sigmoid(z);
 }
 
+function heatmapColor(prob) {
+  let r, g, b;
+  if (prob < 0.5) {
+    const t = prob / 0.5;
+    r = Math.round(0 + 255 * t);
+    g = Math.round(255 * (1 - t) * 0.8 + 255 * t);
+    b = Math.round(255);
+  } else {
+    const t = (prob - 0.5) / 0.5;
+    r = Math.round(255);
+    g = Math.round(255 * (1 - t));
+    b = Math.round(255);
+  }
+  return `rgb(${r},${g},${b})`;
+}
+
 /* ═══════════════════════════════════════════════════════════════
    COMPUTE
    ═══════════════════════════════════════════════════════════════ */
@@ -724,23 +740,9 @@ function drawDecisionBoundary() {
       }
       const prob = sigmoid(z);
 
-      // Cyan -> Dark -> Magenta (neon heatmap)
-      let r, g, b;
-      if (prob < 0.5) {
-        const t = prob / 0.5;
-        r = Math.round(0 + 20 * t);
-        g = Math.round(255 * (1 - t) * 0.6);
-        b = Math.round(255 * (1 - t));
-      } else {
-        const t = (prob - 0.5) / 0.5;
-        r = Math.round(20 + 235 * t);
-        g = Math.round(0);
-        b = Math.round(0 + 255 * t);
-      }
-
       const cellW = pw / res;
       const cellH = ph / res;
-      ctx.fillStyle = `rgb(${r},${g},${b})`;
+      ctx.fillStyle = heatmapColor(prob);
       ctx.fillRect(pad + gx * cellW, pad + (res - 1 - gy) * cellH, cellW + 1, cellH + 1);
     }
   }
@@ -1106,22 +1108,9 @@ function drawTrainingCanvas() {
       }
       const prob = sigmoid(z);
 
-      let r, g, b;
-      if (prob < 0.5) {
-        const t = prob / 0.5;
-        r = Math.round(0 + 20 * t);
-        g = Math.round(255 * (1 - t) * 0.6);
-        b = Math.round(255 * (1 - t));
-      } else {
-        const t = (prob - 0.5) / 0.5;
-        r = Math.round(20 + 235 * t);
-        g = Math.round(0);
-        b = Math.round(0 + 255 * t);
-      }
-
       const cellW = pw / res;
       const cellH = ph / res;
-      ctx.fillStyle = `rgb(${r},${g},${b})`;
+      ctx.fillStyle = heatmapColor(prob);
       ctx.fillRect(pad + gx * cellW, pad + (res - 1 - gy) * cellH, cellW + 1, cellH + 1);
     }
   }
