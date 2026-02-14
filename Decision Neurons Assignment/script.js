@@ -1054,9 +1054,21 @@ function getTrainAccuracy() {
 
 function updateTrainStats() {
   const acc = getTrainAccuracy();
+  const s = state.scenario;
   document.getElementById('train-acc').textContent = acc !== null ? (acc * 100).toFixed(0) + '%' : '—';
   document.getElementById('train-steps').textContent = state.trainSteps;
   document.getElementById('train-points').textContent = state.trainingPoints.length;
+  document.getElementById('train-bias-display').textContent = state.trainBias !== undefined ? state.trainBias.toFixed(3) : '—';
+
+  // Show current training weights
+  const weightsEl = document.getElementById('train-weights-display');
+  if (state.trainWeights && s) {
+    weightsEl.innerHTML = s.inputs.map((inp, i) =>
+      `<span style="color:${inp.color}">${inp.name}:</span> <span>${state.trainWeights[i].toFixed(3)}</span>`
+    ).join('<br>');
+  } else {
+    weightsEl.textContent = '';
+  }
 
   if (acc === 1 && state.trainingPoints.length >= 3) {
     document.getElementById('train-milestone').textContent = 'The neuron has learned your patterns!';
