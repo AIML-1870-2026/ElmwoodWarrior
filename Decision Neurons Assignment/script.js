@@ -1178,30 +1178,22 @@ function resizeCanvases() {
   const curveCanvas = document.getElementById('curve-canvas');
   sizeCanvas(curveCanvas);
 
-  // Fixed-size canvases (explicit CSS width/height)
-  const dbCanvas = document.getElementById('db-canvas');
-  dbCanvas.width = Math.min(500, dbCanvas.parentElement.clientWidth);
-  dbCanvas.height = 350;
-  dbCanvas._lw = dbCanvas.width;
-  dbCanvas._lh = dbCanvas.height;
+  // Tab canvases — use visible dimensions, fall back to fixed sizes for hidden tabs
+  function sizeFixedCanvas(id, fallbackW, fallbackH) {
+    const canvas = document.getElementById(id);
+    const rect = canvas.getBoundingClientRect();
+    const w = rect.width > 0 ? Math.round(rect.width) : fallbackW;
+    const h = rect.height > 0 ? Math.round(rect.height) : fallbackH;
+    canvas.width = w;
+    canvas.height = h;
+    canvas._lw = w;
+    canvas._lh = h;
+  }
 
-  const sensCanvas = document.getElementById('sens-canvas');
-  sensCanvas.width = Math.min(600, sensCanvas.parentElement.clientWidth);
-  sensCanvas.height = 280;
-  sensCanvas._lw = sensCanvas.width;
-  sensCanvas._lh = sensCanvas.height;
-
-  const synCanvas = document.getElementById('synapse-canvas');
-  synCanvas.width = 60;
-  synCanvas.height = 160;
-  synCanvas._lw = 60;
-  synCanvas._lh = 160;
-
-  const trainCanvas = document.getElementById('training-canvas');
-  trainCanvas.width = Math.min(400, trainCanvas.parentElement.clientWidth);
-  trainCanvas.height = 320;
-  trainCanvas._lw = trainCanvas.width;
-  trainCanvas._lh = trainCanvas.height;
+  sizeFixedCanvas('db-canvas', 500, 350);
+  sizeFixedCanvas('sens-canvas', 600, 280);
+  sizeFixedCanvas('synapse-canvas', 60, 160);
+  sizeFixedCanvas('training-canvas', 400, 320);
 }
 
 /* ═══════════════════════════════════════════════════════════════
