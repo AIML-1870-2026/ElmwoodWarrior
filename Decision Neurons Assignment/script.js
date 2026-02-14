@@ -286,22 +286,22 @@ function updateUI() {
    FULL-PAGE VISUAL EFFECTS
    ═══════════════════════════════════════════════════════════════ */
 function applyEffects(p) {
-  // Blur + Desaturation on #app
-  const blur = p * 12;
-  const sat = 1 - p * 0.85;
-  document.getElementById('app').style.filter = `blur(${blur * 0.3}px) saturate(${sat})`;
+  // Only apply blur at very high probability (>85%), and keep it subtle
+  const blurAmount = p > 0.85 ? (p - 0.85) * 20 : 0;
+  const sat = p > 0.7 ? 1 - (p - 0.7) * 1.5 : 1;
+  document.getElementById('app').style.filter = blurAmount > 0 ? `blur(${blurAmount}px) saturate(${sat})` : '';
 
-  // Vignette
-  const vigSpread = p * 250;
-  const vigAlpha = p * 0.9;
+  // Vignette — only at higher probabilities
+  const vigSpread = p > 0.5 ? (p - 0.5) * 300 : 0;
+  const vigAlpha = p > 0.5 ? (p - 0.5) * 1.2 : 0;
   document.getElementById('vignette-overlay').style.boxShadow =
-    `inset 0 0 ${vigSpread}px rgba(0,0,0,${vigAlpha})`;
+    vigSpread > 0 ? `inset 0 0 ${vigSpread}px rgba(0,0,0,${vigAlpha})` : 'none';
 
-  // Grain
-  document.getElementById('grain-overlay').style.opacity = p * 0.35;
+  // Grain — only at higher probabilities
+  document.getElementById('grain-overlay').style.opacity = p > 0.6 ? (p - 0.6) * 0.6 : 0;
 
-  // Darken
-  document.getElementById('darken-overlay').style.background = `rgba(5,5,15,${p * 0.75})`;
+  // Darken — only at higher probabilities
+  document.getElementById('darken-overlay').style.background = p > 0.6 ? `rgba(5,5,15,${(p - 0.6) * 1.2})` : 'transparent';
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -336,7 +336,7 @@ function startDreamParticles() {
       r: Math.random() * 3 + 1,
       dx: (Math.random() - 0.5) * 0.3,
       dy: (Math.random() - 0.5) * 0.3,
-      color: ['#c4b5fd','#a78bfa','#818cf8','#60a5fa','#7c3aed'][Math.floor(Math.random() * 5)],
+      color: ['#00ffff','#ff00ff','#39ff14','#ffdd00','#bf5af2'][Math.floor(Math.random() * 5)],
       alpha: Math.random() * 0.5 + 0.1,
     });
   }
@@ -345,7 +345,7 @@ function startDreamParticles() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const t = Date.now() / 6000;
     // sleep wave
-    ctx.strokeStyle = `rgba(124,58,237,${0.08 + Math.sin(t) * 0.04})`;
+    ctx.strokeStyle = `rgba(0,255,255,${0.08 + Math.sin(t) * 0.04})`;
     ctx.lineWidth = 2;
     ctx.beginPath();
     for (let x = 0; x < canvas.width; x += 4) {
@@ -485,18 +485,24 @@ function drawNetwork() {
     nCtx.moveTo(na.x * w, na.y * h);
     nCtx.lineTo(nb.x * w, nb.y * h);
     const alpha = brightness * (0.3 + pulse * 0.2);
-    nCtx.strokeStyle = `rgba(167,139,250,${alpha})`;
+    nCtx.strokeStyle = `rgba(0,255,255,${alpha * 0.6})`;
     nCtx.lineWidth = 1.5 + pulse;
+    nCtx.shadowColor = 'rgba(0,255,255,0.3)';
+    nCtx.shadowBlur = 8;
     nCtx.stroke();
+    nCtx.shadowBlur = 0;
 
     // Pulse dot traveling along edge
     const pulseT = (t / pulseCycle) % 1;
     const px = na.x * w + (nb.x * w - na.x * w) * pulseT;
     const py = na.y * h + (nb.y * h - na.y * h) * pulseT;
     nCtx.beginPath();
-    nCtx.arc(px, py, 2, 0, Math.PI * 2);
-    nCtx.fillStyle = `rgba(34,211,238,${alpha * 0.8})`;
+    nCtx.arc(px, py, 2.5, 0, Math.PI * 2);
+    nCtx.fillStyle = `rgba(255,0,255,${alpha * 0.9})`;
+    nCtx.shadowColor = 'rgba(255,0,255,0.5)';
+    nCtx.shadowBlur = 10;
     nCtx.fill();
+    nCtx.shadowBlur = 0;
   });
 
   // Draw nodes
@@ -508,8 +514,8 @@ function drawNetwork() {
 
     // Glow
     const glow = nCtx.createRadialGradient(nx, ny, 0, nx, ny, r * 3);
-    glow.addColorStop(0, `rgba(167,139,250,${nodeBrightness * 0.4})`);
-    glow.addColorStop(1, 'rgba(167,139,250,0)');
+    glow.addColorStop(0, `rgba(0,255,255,${nodeBrightness * 0.5})`);
+    glow.addColorStop(1, 'rgba(0,255,255,0)');
     nCtx.beginPath();
     nCtx.arc(nx, ny, r * 3, 0, Math.PI * 2);
     nCtx.fillStyle = glow;
@@ -525,23 +531,32 @@ function drawNetwork() {
       nCtx.scale(gateSize, gateSize);
       nCtx.translate(-nx, -ny);
       nCtx.arc(nx, ny, r, 0, Math.PI * 2);
-      nCtx.fillStyle = `rgba(34,211,238,${nodeBrightness})`;
+      nCtx.fillStyle = `rgba(255,0,255,${nodeBrightness})`;
+      nCtx.shadowColor = 'rgba(255,0,255,0.6)';
+      nCtx.shadowBlur = 15;
       nCtx.fill();
-      nCtx.strokeStyle = `rgba(251,191,36,${nodeBrightness})`;
+      nCtx.strokeStyle = `rgba(255,221,0,${nodeBrightness})`;
       nCtx.lineWidth = 2;
       nCtx.stroke();
+      nCtx.shadowBlur = 0;
       nCtx.restore();
       // Label
       nCtx.font = '10px "Space Grotesk"';
-      nCtx.fillStyle = `rgba(251,191,36,${nodeBrightness * 0.8})`;
+      nCtx.fillStyle = `rgba(255,221,0,${nodeBrightness * 0.9})`;
+      nCtx.shadowColor = 'rgba(255,221,0,0.4)';
+      nCtx.shadowBlur = 8;
       nCtx.textAlign = 'center';
       nCtx.fillText('THE GATE', nx, ny + r + 16);
+      nCtx.shadowBlur = 0;
     } else {
-      nCtx.fillStyle = `rgba(232,232,240,${nodeBrightness})`;
+      nCtx.fillStyle = `rgba(0,255,255,${nodeBrightness * 0.8})`;
+      nCtx.shadowColor = 'rgba(0,255,255,0.5)';
+      nCtx.shadowBlur = 10;
       nCtx.fill();
-      nCtx.strokeStyle = `rgba(167,139,250,${nodeBrightness * 0.6})`;
+      nCtx.strokeStyle = `rgba(191,90,242,${nodeBrightness * 0.7})`;
       nCtx.lineWidth = 1.5;
       nCtx.stroke();
+      nCtx.shadowBlur = 0;
     }
   });
 
@@ -556,8 +571,11 @@ function drawNetwork() {
   nCtx.font = '10px "Inter"';
   nCtx.textAlign = 'center';
   labels.forEach(l => {
-    nCtx.fillStyle = `rgba(156,163,175,${brightness * 0.5})`;
+    nCtx.fillStyle = `rgba(136,136,204,${brightness * 0.6})`;
+    nCtx.shadowColor = 'rgba(0,255,255,0.2)';
+    nCtx.shadowBlur = 4;
     nCtx.fillText(l.text, l.x * w, l.y * h);
+    nCtx.shadowBlur = 0;
   });
 
   // Draw particles
@@ -624,8 +642,8 @@ function drawCurve() {
   ctx.setLineDash([]);
 
   const fns = state.compareAll
-    ? [{ fn: 'sigmoid', color: '#a855f7' }, { fn: 'step', color: '#f97316' }, { fn: 'relu', color: '#06b6d4' }]
-    : [{ fn: state.activationFn, color: state.activationFn === 'sigmoid' ? '#a855f7' : state.activationFn === 'step' ? '#f97316' : '#06b6d4' }];
+    ? [{ fn: 'sigmoid', color: '#ff00ff' }, { fn: 'step', color: '#ffdd00' }, { fn: 'relu', color: '#00ffff' }]
+    : [{ fn: state.activationFn, color: state.activationFn === 'sigmoid' ? '#ff00ff' : state.activationFn === 'step' ? '#ffdd00' : '#00ffff' }];
 
   fns.forEach(({ fn, color }) => {
     ctx.beginPath();
@@ -647,11 +665,14 @@ function drawCurve() {
   const markerY = pad + plotH * (1 - state.probability);
   ctx.beginPath();
   ctx.arc(markerX, markerY, 5, 0, Math.PI * 2);
-  ctx.fillStyle = '#fbbf24';
+  ctx.fillStyle = '#39ff14';
+  ctx.shadowColor = '#39ff14';
+  ctx.shadowBlur = 12;
   ctx.fill();
   ctx.strokeStyle = '#fff';
   ctx.lineWidth = 1.5;
   ctx.stroke();
+  ctx.shadowBlur = 0;
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -684,18 +705,18 @@ function drawDecisionBoundary() {
       }
       const prob = sigmoid(z);
 
-      // Blue -> White -> Purple
+      // Cyan -> Dark -> Magenta (neon heatmap)
       let r, g, b;
       if (prob < 0.5) {
         const t = prob / 0.5;
-        r = Math.round(96 + (255 - 96) * t);
-        g = Math.round(165 + (255 - 165) * t);
-        b = Math.round(250 + (255 - 250) * t);
+        r = Math.round(0 + 20 * t);
+        g = Math.round(255 * (1 - t) * 0.6);
+        b = Math.round(255 * (1 - t));
       } else {
         const t = (prob - 0.5) / 0.5;
-        r = Math.round(255 + (124 - 255) * t);
-        g = Math.round(255 + (58 - 255) * t);
-        b = Math.round(255 + (237 - 255) * t);
+        r = Math.round(20 + 235 * t);
+        g = Math.round(0);
+        b = Math.round(0 + 255 * t);
       }
 
       const cellW = pw / res;
@@ -706,10 +727,10 @@ function drawDecisionBoundary() {
   }
 
   // Decision boundary contour (50% line)
-  ctx.strokeStyle = '#fbbf24';
+  ctx.strokeStyle = '#39ff14';
   ctx.lineWidth = 2.5;
-  ctx.shadowColor = '#fbbf24';
-  ctx.shadowBlur = 8;
+  ctx.shadowColor = '#39ff14';
+  ctx.shadowBlur = 12;
   ctx.beginPath();
   let started = false;
   for (let gx = 0; gx < res; gx++) {
@@ -741,7 +762,7 @@ function drawDecisionBoundary() {
   const curPx = pad + curXNorm * pw;
   const curPy = pad + (1 - curYNorm) * ph;
 
-  const probColor = state.probability < 0.5 ? '#60a5fa' : '#a855f7';
+  const probColor = state.probability < 0.5 ? '#00ffff' : '#ff00ff';
   ctx.beginPath();
   ctx.arc(curPx, curPy, 7, 0, Math.PI * 2);
   ctx.fillStyle = probColor;
@@ -932,23 +953,29 @@ function drawSynapse(signal, weight) {
   ctx.beginPath();
   ctx.moveTo(w / 2, 0);
   ctx.lineTo(w / 2, h);
-  ctx.strokeStyle = weight > 0 ? `rgba(167,139,250,${0.3 + signal * 0.5})` : `rgba(249,115,22,${0.3 + signal * 0.5})`;
+  ctx.strokeStyle = weight > 0 ? `rgba(0,255,255,${0.3 + signal * 0.5})` : `rgba(255,0,255,${0.3 + signal * 0.5})`;
+  ctx.shadowColor = weight > 0 ? 'rgba(0,255,255,0.4)' : 'rgba(255,0,255,0.4)';
+  ctx.shadowBlur = 10;
   ctx.lineWidth = thickness;
   ctx.stroke();
+  ctx.shadowBlur = 0;
 
   // Pulse traveling
   const pulseY = (t * 40) % h;
   ctx.beginPath();
   ctx.arc(w / 2, pulseY, thickness + 2, 0, Math.PI * 2);
-  ctx.fillStyle = `rgba(34,211,238,${signal * 0.8})`;
+  ctx.fillStyle = `rgba(57,255,20,${signal * 0.9})`;
+  ctx.shadowColor = 'rgba(57,255,20,0.5)';
+  ctx.shadowBlur = 12;
   ctx.fill();
+  ctx.shadowBlur = 0;
 
   // Arrow
   ctx.beginPath();
   ctx.moveTo(w / 2 - 6, h - 10);
   ctx.lineTo(w / 2, h);
   ctx.lineTo(w / 2 + 6, h - 10);
-  ctx.fillStyle = 'rgba(167,139,250,0.6)';
+  ctx.fillStyle = 'rgba(0,255,255,0.7)';
   ctx.fill();
 }
 
@@ -1047,14 +1074,14 @@ function drawTrainingCanvas() {
       let r, g, b;
       if (prob < 0.5) {
         const t = prob / 0.5;
-        r = Math.round(96 + (255 - 96) * t);
-        g = Math.round(165 + (255 - 165) * t);
-        b = Math.round(250 + (255 - 250) * t);
+        r = Math.round(0 + 20 * t);
+        g = Math.round(255 * (1 - t) * 0.6);
+        b = Math.round(255 * (1 - t));
       } else {
         const t = (prob - 0.5) / 0.5;
-        r = Math.round(255 + (124 - 255) * t);
-        g = Math.round(255 + (58 - 255) * t);
-        b = Math.round(255 + (255 - 255) * t);
+        r = Math.round(20 + 235 * t);
+        g = Math.round(0);
+        b = Math.round(0 + 255 * t);
       }
 
       const cellW = pw / res;
@@ -1070,7 +1097,7 @@ function drawTrainingCanvas() {
     const py = pad + (1 - pt.features[yi]) * ph;
     ctx.beginPath();
     ctx.arc(px, py, 6, 0, Math.PI * 2);
-    ctx.fillStyle = pt.label === 1 ? '#a855f7' : '#60a5fa';
+    ctx.fillStyle = pt.label === 1 ? '#ff00ff' : '#00ffff';
     ctx.fill();
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = 1.5;
