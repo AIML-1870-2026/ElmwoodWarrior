@@ -187,13 +187,12 @@ function buildSliders() {
     const card = document.createElement('div');
     card.className = 'slider-card';
     card.innerHTML = `
-      <div class="slider-label">${inp.name}</div>
-      <div class="slider-desc">${inp.desc}</div>
-      <div class="slider-val" id="sval-${i}">${state.inputValues[i]}${inp.unit === 'hours' ? ' hrs' : '/' + inp.range[1]}</div>
-      <div class="slider-wrap">
-        <input type="range" min="${inp.range[0]}" max="${inp.range[1]}" step="${inp.range[1] > 10 ? 1 : 0.1}" value="${state.inputValues[i]}" data-idx="${i}" class="input-slider" aria-label="${inp.name}">
+      <div class="slider-top">
+        <span class="slider-label">${inp.name}</span>
+        <span class="slider-val" id="sval-${i}">${state.inputValues[i]}${inp.unit === 'hours' ? ' hrs' : '/' + inp.range[1]}</span>
+        <span class="weight-badge">w=${inp.weight >= 0 ? '+' : ''}${inp.weight.toFixed(2)}</span>
       </div>
-      <div class="weight-badge">w = ${inp.weight >= 0 ? '+' : ''}${inp.weight.toFixed(2)}</div>
+      <input type="range" min="${inp.range[0]}" max="${inp.range[1]}" step="${inp.range[1] > 10 ? 1 : 0.1}" value="${state.inputValues[i]}" data-idx="${i}" class="input-slider" aria-label="${inp.name}" title="${inp.desc}">
     `;
     target.appendChild(card);
   });
@@ -1172,25 +1171,25 @@ function resizeCanvases() {
   // Fixed-size canvases (explicit CSS width/height)
   const dbCanvas = document.getElementById('db-canvas');
   dbCanvas.width = Math.min(500, dbCanvas.parentElement.clientWidth);
-  dbCanvas.height = 400;
+  dbCanvas.height = 350;
   dbCanvas._lw = dbCanvas.width;
   dbCanvas._lh = dbCanvas.height;
 
   const sensCanvas = document.getElementById('sens-canvas');
   sensCanvas.width = Math.min(600, sensCanvas.parentElement.clientWidth);
-  sensCanvas.height = 300;
+  sensCanvas.height = 280;
   sensCanvas._lw = sensCanvas.width;
   sensCanvas._lh = sensCanvas.height;
 
   const synCanvas = document.getElementById('synapse-canvas');
-  synCanvas.width = 80;
-  synCanvas.height = 200;
-  synCanvas._lw = 80;
-  synCanvas._lh = 200;
+  synCanvas.width = 60;
+  synCanvas.height = 160;
+  synCanvas._lw = 60;
+  synCanvas._lh = 160;
 
   const trainCanvas = document.getElementById('training-canvas');
   trainCanvas.width = Math.min(400, trainCanvas.parentElement.clientWidth);
-  trainCanvas.height = 350;
+  trainCanvas.height = 320;
   trainCanvas._lw = trainCanvas.width;
   trainCanvas._lh = trainCanvas.height;
 }

@@ -82,23 +82,21 @@
 
       <!-- Big output -->
       <div class="result-block">
-        <div class="output-pct" id="output-pct">0%</div>
+        <div class="output-row">
+          <div class="output-pct" id="output-pct">0%</div>
+          <div class="output-label" id="output-verdict">Stay Conscious</div>
+        </div>
         <div class="output-bar"><div class="output-bar-fill" id="output-bar-fill"></div></div>
-        <div class="output-label" id="output-verdict">Stay Conscious</div>
-        <p class="section-desc">The perceptron's confidence. Above 50% it leans toward "yes." At 95% it triggers the crash screen.</p>
       </div>
 
       <!-- Activation -->
       <div class="result-block">
         <h3 class="block-title">Activation Function</h3>
-        <p class="section-desc">How the raw sum (z) is squashed into a 0-1 probability. Sigmoid is smooth, Step is all-or-nothing, ReLU clips negatives to zero.</p>
         <div class="act-radios">
-          <label><input type="radio" name="actfn" value="sigmoid" checked> <span style="color:#ff00ff">Sigmoid</span></label>
+          <label><input type="radio" name="actfn" value="sigmoid" checked> <span style="color:#ff00ff">Sig</span></label>
           <label><input type="radio" name="actfn" value="step"> <span style="color:#ffdd00">Step</span></label>
           <label><input type="radio" name="actfn" value="relu"> <span style="color:#00ffff">ReLU</span></label>
-        </div>
-        <div class="compare-check">
-          <input type="checkbox" id="compare-all"> <label for="compare-all">Compare all</label>
+          <label class="compare-check"><input type="checkbox" id="compare-all"> All</label>
         </div>
       </div>
 
