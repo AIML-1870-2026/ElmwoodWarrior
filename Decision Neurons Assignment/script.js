@@ -98,6 +98,7 @@ const state = {
   trainYIdx: 0,
   // sensitivity
   sensMode: 'lines',
+  helpOpen: false,
   // decision boundary
   dbXIdx: 2,
   dbYIdx: 0,
@@ -1002,7 +1003,10 @@ function initTraining() {
 }
 
 function trainStep(lr = 0.1) {
-  if (state.trainingPoints.length === 0) return;
+  if (state.trainingPoints.length === 0) {
+    showToast('Click the heatmap to add data points first!');
+    return false;
+  }
   const s = state.scenario;
 
   state.trainingPoints.forEach(pt => {
@@ -1022,6 +1026,7 @@ function trainStep(lr = 0.1) {
 
   state.trainSteps++;
   updateTrainStats();
+  return true;
 }
 
 function getTrainAccuracy() {
@@ -1422,14 +1427,50 @@ function setupEvents() {
       return state.inputValues[i] / inp.range[1];
     });
     state.trainingPoints.push({ features, label: state.trainLabel });
+    const hint = document.getElementById('train-empty-hint');
+    if (hint) hint.classList.add('hidden');
     updateTrainStats();
+    showToast(`Point added (${state.trainLabel === 1 ? state.scenario.yesLabel : state.scenario.noLabel}) — ${state.trainingPoints.length} total`);
   });
 
-  document.getElementById('train-step').addEventListener('click', () => trainStep(0.5));
-  document.getElementById('train-10').addEventListener('click', () => {
-    for (let i = 0; i < 10; i++) trainStep(0.5);
+  document.getElementById('train-step').addEventListener('click', () => {
+    if (trainStep(0.5)) {
+      const acc = getTrainAccuracy();
+      showToast(`Trained 1 step — Accuracy: ${(acc * 100).toFixed(0)}%`);
+    }
   });
-  document.getElementById('train-reset').addEventListener('click', initTraining);
+  document.getElementById('train-10').addEventListener('click', () => {
+    if (state.trainingPoints.length === 0) {
+      showToast('Click the heatmap to add data points first!');
+      return;
+    }
+    for (let i = 0; i < 10; i++) trainStep(0.5);
+    const acc = getTrainAccuracy();
+    showToast(`Trained 10 steps — Accuracy: ${(acc * 100).toFixed(0)}%`);
+  });
+  document.getElementById('train-reset').addEventListener('click', () => {
+    initTraining();
+    const hint = document.getElementById('train-empty-hint');
+    if (hint) hint.classList.remove('hidden');
+    showToast('Training reset — weights restored to defaults');
+  });
+  document.getElementById('train-apply').addEventListener('click', () => {
+    if (state.trainingPoints.length === 0) {
+      showToast('Train the perceptron first before applying weights!');
+      return;
+    }
+    const s = state.scenario;
+    for (let i = 0; i < s.inputs.length; i++) {
+      s.inputs[i].weight = state.trainWeights[i];
+    }
+    state.bias = state.trainBias;
+    document.getElementById('bias-slider').value = state.trainBias;
+    document.getElementById('bias-value').textContent = (state.trainBias >= 0 ? '+' : '') + state.trainBias.toFixed(1);
+    buildSliders();
+    computeProbability();
+    updateUI();
+    showToast('Learned weights applied to the main perceptron!');
+  });
 
   // Create modal
   document.getElementById('create-btn').addEventListener('click', openCreateModal);
@@ -1441,7 +1482,46 @@ function setupEvents() {
 
   // Help
   document.getElementById('help-btn').addEventListener('click', () => {
-    showToast('Adjust sliders to see how a perceptron makes decisions!');
+    state.helpOpen = !state.helpOpen;
+    let overlay = document.getElementById('help-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'help-overlay';
+      overlay.innerHTML = `
+        <div class="help-card">
+          <h3>How This Works</h3>
+          <p>A <strong>perceptron</strong> is the simplest neural network — one neuron that takes weighted inputs, adds a bias, and passes the sum through an activation function to make a yes/no decision.</p>
+          <h4>Left Panel — Inputs</h4>
+          <p>Each slider is an input to the neuron. The <em>weight</em> (w) shown below each slider controls how much that input matters. Drag sliders to change the neuron's decision.</p>
+          <h4>Center — Network Visualization</h4>
+          <p>The brain map shows signals flowing through neural regions. Particles flow faster as probability increases. At 95%, the neuron "crashes" (falls asleep).</p>
+          <h4>Right Panel — Output</h4>
+          <p>The percentage is the neuron's output after activation. The activation function (Sigmoid, Step, ReLU) determines how the raw sum is converted to a probability.</p>
+          <h4>Bias Slider</h4>
+          <p>The bias shifts the decision boundary. Positive bias makes "yes" more likely; negative makes "no" more likely.</p>
+          <h4>Tabs</h4>
+          <ul>
+            <li><strong>Decision Boundary</strong> — 2D heatmap of how two inputs affect the output</li>
+            <li><strong>Sensitivity</strong> — Which inputs influence the decision the most</li>
+            <li><strong>Two-Neuron Chain</strong> — Chain two neurons to see how networks form</li>
+            <li><strong>Training</strong> — Click to place labeled data, then train the neuron to learn a boundary</li>
+          </ul>
+          <button class="train-btn primary" id="help-close">Got It</button>
+        </div>`;
+      document.body.appendChild(overlay);
+      document.getElementById('help-close').addEventListener('click', () => {
+        overlay.classList.remove('open');
+        state.helpOpen = false;
+      });
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+          overlay.classList.remove('open');
+          state.helpOpen = false;
+        }
+      });
+    }
+    if (state.helpOpen) overlay.classList.add('open');
+    else overlay.classList.remove('open');
   });
 
   // Resize

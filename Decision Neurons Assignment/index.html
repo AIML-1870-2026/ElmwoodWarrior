@@ -85,11 +85,13 @@
         <div class="output-pct" id="output-pct">0%</div>
         <div class="output-bar"><div class="output-bar-fill" id="output-bar-fill"></div></div>
         <div class="output-label" id="output-verdict">Stay Conscious</div>
+        <p class="section-desc">The perceptron's confidence. Above 50% it leans toward "yes." At 95% it triggers the crash screen.</p>
       </div>
 
       <!-- Activation -->
       <div class="result-block">
         <h3 class="block-title">Activation Function</h3>
+        <p class="section-desc">How the raw sum (z) is squashed into a 0-1 probability. Sigmoid is smooth, Step is all-or-nothing, ReLU clips negatives to zero.</p>
         <div class="act-radios">
           <label><input type="radio" name="actfn" value="sigmoid" checked> <span style="color:#ff00ff">Sigmoid</span></label>
           <label><input type="radio" name="actfn" value="step"> <span style="color:#ffdd00">Step</span></label>
@@ -131,6 +133,7 @@
     <div class="tab-panels">
       <!-- Decision Boundary -->
       <div class="tab-panel active" id="panel-boundary">
+        <p class="tab-desc">This heatmap shows how changing two inputs affects the output. <strong>Cyan = low probability</strong>, <strong>magenta = high</strong>. The green line is the 50% decision boundary — the dividing line between "yes" and "no." The dot shows where your current slider values sit.</p>
         <div class="db-controls">
           <label>X-Axis: <select id="db-x"></select></label>
           <label>Y-Axis: <select id="db-y"></select></label>
@@ -141,6 +144,7 @@
 
       <!-- Sensitivity -->
       <div class="tab-panel" id="panel-sensitivity">
+        <p class="tab-desc">How much does each input matter? <strong>Lines view</strong> sweeps each input from 0&ndash;100% while holding others fixed, showing its individual effect on the output. <strong>Bars view</strong> ranks inputs by their weight (influence). Steeper curves = more sensitive inputs.</p>
         <div class="sens-toggle">
           <button class="active" id="sens-lines-btn">Lines</button>
           <button id="sens-bars-btn">Bars</button>
@@ -151,6 +155,7 @@
 
       <!-- Two-Neuron Chain -->
       <div class="tab-panel" id="panel-twoneuron">
+        <p class="tab-desc">What happens when you chain two neurons together? Neuron 1 takes your main inputs and produces an output. That output feeds into Neuron 2 along with new inputs, creating a simple <strong>neural network</strong>. Adjust the synapse weight (w&#x2081;&#x2082;) to control how much Neuron 1 influences Neuron 2.</p>
         <div class="two-neuron-layout">
           <div class="neuron-box">
             <h4>Neuron 1 — "Body Check"</h4>
@@ -199,13 +204,17 @@
 
       <!-- Training -->
       <div class="tab-panel" id="panel-training">
+        <p class="tab-desc">Teach the perceptron by example! <strong>Step 1:</strong> Choose a label (Sleep or Awake). <strong>Step 2:</strong> Click the heatmap to place data points. <strong>Step 3:</strong> Hit Train to run gradient descent &mdash; watch the boundary shift to fit your data. Red rings = misclassified points.</p>
         <div class="training-layout">
           <div class="training-heatmap">
             <div class="db-controls">
               <label>X: <select id="train-x"></select></label>
               <label>Y: <select id="train-y"></select></label>
             </div>
-            <canvas id="training-canvas"></canvas>
+            <div class="train-canvas-wrap">
+              <canvas id="training-canvas"></canvas>
+              <div class="train-empty-hint" id="train-empty-hint">Click here to add data points</div>
+            </div>
           </div>
           <div class="training-controls">
             <h4>Label New Points As:</h4>
@@ -216,6 +225,7 @@
             <button class="train-btn primary" id="train-step">Step (1 iteration)</button>
             <button class="train-btn primary" id="train-10">Train 10x</button>
             <button class="train-btn secondary" id="train-reset">Reset</button>
+            <button class="train-btn secondary" id="train-apply">Apply Weights to Main</button>
             <div class="train-stats">
               Accuracy: <span id="train-acc">&mdash;</span><br>
               Steps: <span id="train-steps">0</span><br>
