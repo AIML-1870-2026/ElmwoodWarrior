@@ -43,12 +43,12 @@ html, body {
   height: 12px;
   border-radius: 50%;
   background: var(--accent);
-  box-shadow: 0 0 12px var(--accent-glow), 0 0 24px var(--accent-glow);
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 12px var(--accent-glow), 0 0 24px var(--accent-glow), 0 0 0 1px rgba(0, 0, 0, 0.3);
   pointer-events: none;
   z-index: 10000;
   transform: translate(-50%, -50%);
   transition: width 0.15s, height 0.15s, background 0.3s;
-  mix-blend-mode: screen;
 }
 
 #cursor-trail {
@@ -60,9 +60,8 @@ html, body {
   pointer-events: none;
   z-index: 9999;
   transform: translate(-50%, -50%);
-  opacity: 0.3;
+  opacity: 0.4;
   transition: transform 0.08s, opacity 0.3s;
-  mix-blend-mode: screen;
 }
 
 /* ---------- Toast ---------- */

@@ -288,10 +288,21 @@ function animateCursor() {
 animateCursor();
 
 function updateCursorColor() {
-  const hex = getCurrentHex().substring(0, 7);
+  const [r, g, b] = getCurrentRgb();
+  const hex = rgbToHex(r, g, b);
+  const lum = getRelativeLuminance(r, g, b);
+  const isDark = lum < 0.15;
   els.cursorOrb.style.background = hex;
-  els.cursorOrb.style.boxShadow = `0 0 12px ${hex}80, 0 0 24px ${hex}40`;
-  els.cursorTrail.style.background = hex + '60';
+  // Dark colors get a white border + white glow; light colors get a dark border
+  if (isDark) {
+    els.cursorOrb.style.borderColor = 'rgba(255, 255, 255, 0.9)';
+    els.cursorOrb.style.boxShadow = `0 0 10px rgba(255,255,255,0.5), 0 0 20px rgba(255,255,255,0.25)`;
+    els.cursorTrail.style.background = 'rgba(255, 255, 255, 0.15)';
+  } else {
+    els.cursorOrb.style.borderColor = 'rgba(255, 255, 255, 0.8)';
+    els.cursorOrb.style.boxShadow = `0 0 12px ${hex}80, 0 0 24px ${hex}40, 0 0 0 1px rgba(0,0,0,0.3)`;
+    els.cursorTrail.style.background = hex + '40';
+  }
 }
 
 // ====== TOAST ======
