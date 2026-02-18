@@ -6,7 +6,8 @@
       "Bash(git push:*)",
       "Bash(dir:*)",
       "Bash(wc:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "WebFetch(domain:aiml-1870-2026.github.io)"
     ]
   }
 }
