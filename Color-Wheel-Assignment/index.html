@@ -212,7 +212,10 @@
               <input type="number" id="custom-n" min="2" max="12" value="5" class="small-input">
             </div>
           </div>
-          <button id="generate-palette-btn" class="primary-btn">Generate Palette</button>
+          <div class="palette-btn-row">
+            <button id="generate-palette-btn" class="primary-btn">Generate Palette</button>
+            <button id="random-palette-btn" class="primary-btn random-palette-btn">Random Palette</button>
+          </div>
 
           <!-- Accessible Mode Toggle -->
           <div class="accessible-mode-row">
@@ -269,6 +272,14 @@
           <div id="contrast-matrix-section" class="hidden">
             <button id="toggle-matrix-btn" class="small-btn">Show Contrast Matrix</button>
             <div id="contrast-matrix" class="contrast-matrix hidden"></div>
+          </div>
+
+          <!-- Palette History -->
+          <div class="palette-history-section">
+            <h3 class="panel-title palette-history-title">Palette History</h3>
+            <p class="palette-history-subtitle">Previously generated palettes. Click to restore.</p>
+            <div id="palette-history-list" class="palette-history-list"></div>
+            <button id="clear-palette-history-btn" class="small-btn" style="margin-top:8px;">Clear Palette History</button>
           </div>
         </div>
       </div>

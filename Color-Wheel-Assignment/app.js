@@ -20,6 +20,7 @@ const state = {
   palette: [],
   paletteType: 'complementary',
   lockedSwatches: new Set(),
+  paletteHistory: JSON.parse(localStorage.getItem('chromatica-palette-history') || '[]'),
   accessibleMode: false,
   accessibleBg: '#ffffff',
   wcagLevel: 'aa',
@@ -262,6 +263,9 @@ const els = {
   cvdSimCanvas: $('#cvd-sim-canvas'),
   historySwatches: $('#history-swatches'),
   clearHistoryBtn: $('#clear-history-btn'),
+  randomPaletteBtn: $('#random-palette-btn'),
+  paletteHistoryList: $('#palette-history-list'),
+  clearPaletteHistoryBtn: $('#clear-palette-history-btn'),
 };
 
 // ====== CUSTOM CURSOR ======
@@ -431,6 +435,8 @@ document.addEventListener('mouseup', () => { wheelDragging = false; });
 // ====== 3D TORUS (Three.js) ======
 let threeScene, threeCamera, threeRenderer, threeControls, torusMesh;
 let threeInitialized = false;
+let torusIndicator = null; // sphere mesh that sits on the torus surface
+let THREE_REF = null; // store THREE module reference
 
 async function initThree() {
   if (threeInitialized) return;
@@ -531,6 +537,22 @@ async function initThree() {
   torusMesh = new THREE.Mesh(geometry, material);
   threeScene.add(torusMesh);
 
+  THREE_REF = THREE;
+
+  // Torus indicator sphere (child of torus so it rotates with it)
+  const indicatorGeo = new THREE.SphereGeometry(0.07, 16, 16);
+  const indicatorMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+  torusIndicator = new THREE.Mesh(indicatorGeo, indicatorMat);
+  torusIndicator.visible = false;
+
+  // Outer ring for visibility
+  const ringGeo = new THREE.RingGeometry(0.09, 0.12, 24);
+  const ringMat = new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+  const indicatorRing = new THREE.Mesh(ringGeo, ringMat);
+  torusIndicator.add(indicatorRing);
+
+  torusMesh.add(torusIndicator);
+
   // Raycasting
   const raycaster = new THREE.Raycaster();
   const mouse = new THREE.Vector2();
@@ -558,6 +580,7 @@ async function initThree() {
 
       updateAll();
       addToHistory();
+      updateTorusIndicator();
     }
   });
 
@@ -953,6 +976,7 @@ function generatePalette() {
   }
 
   renderPalette();
+  savePaletteToHistory();
 }
 
 function renderPalette() {
@@ -1492,6 +1516,173 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+// ====== TORUS INDICATOR ======
+function updateTorusIndicator() {
+  if (!torusIndicator || !torusMesh) return;
+
+  const R = 2.0; // major radius (must match TorusGeometry)
+  const r = 0.75; // tube radius
+
+  const hueNorm = state.hue / 360;
+  const lNorm = state.lightness / 100;
+
+  // From the shader: lightness = 0.5 + 0.5 * sin(phi)
+  // So sin(phi) = 2 * lNorm - 1
+  const sinPhi = Math.max(-1, Math.min(1, 2 * lNorm - 1));
+  const phi = Math.asin(sinPhi);
+
+  // theta around the major circle (UV x maps to hue)
+  const theta = hueNorm * 2 * Math.PI;
+
+  // Position on torus surface (Three.js TorusGeometry parametric form)
+  const x = (R + r * Math.cos(phi)) * Math.cos(theta);
+  const y = (R + r * Math.cos(phi)) * Math.sin(theta);
+  const z = r * Math.sin(phi);
+
+  // Normal direction (outward from tube center)
+  const cx = R * Math.cos(theta);
+  const cy = R * Math.sin(theta);
+  const nx = x - cx;
+  const ny = y - cy;
+  const nz = z;
+  const nLen = Math.sqrt(nx * nx + ny * ny + nz * nz);
+
+  // Offset slightly above surface
+  const offset = 0.12;
+  torusIndicator.position.set(
+    x + (nx / nLen) * offset,
+    y + (ny / nLen) * offset,
+    z + (nz / nLen) * offset
+  );
+
+  // Orient the ring to face outward
+  if (THREE_REF) {
+    const lookTarget = new THREE_REF.Vector3(
+      x + nx / nLen,
+      y + ny / nLen,
+      z + nz / nLen
+    );
+    torusIndicator.lookAt(lookTarget);
+  }
+
+  // Color the indicator to match the current color
+  const [cr, cg, cb] = getCurrentRgb();
+  const hex = rgbToHex(cr, cg, cb);
+  torusIndicator.material.color.set(hex);
+
+  // Make ring contrast with indicator color
+  const textCol = textColorForBg(cr, cg, cb);
+  torusIndicator.children[0].material.color.set(textCol);
+
+  torusIndicator.visible = true;
+}
+
+// ====== RANDOM PALETTE GENERATOR ======
+els.randomPaletteBtn.addEventListener('click', () => {
+  const types = ['complementary', 'analogous', 'triadic', 'split-complementary', 'tetradic', 'monochromatic', 'double-split'];
+  const randomType = types[Math.floor(Math.random() * types.length)];
+
+  // Random base color
+  state.hue = Math.floor(Math.random() * 360);
+  state.saturation = 50 + Math.floor(Math.random() * 50);
+  state.lightness = 30 + Math.floor(Math.random() * 40);
+
+  els.paletteType.value = randomType;
+  els.lightnessSlider.value = state.lightness;
+  els.lightnessValue.textContent = state.lightness + '%';
+
+  drawWheel();
+  updateAll();
+  generatePalette();
+  showToast(`Random ${randomType} palette!`);
+});
+
+// ====== PALETTE HISTORY ======
+function savePaletteToHistory() {
+  if (state.palette.length === 0) return;
+
+  const entry = {
+    type: els.paletteType.value,
+    colors: state.palette.map(c => typeof c === 'string' ? c : c.hex),
+    timestamp: Date.now(),
+  };
+
+  // Don't duplicate the same palette
+  const lastEntry = state.paletteHistory[0];
+  if (lastEntry && JSON.stringify(lastEntry.colors) === JSON.stringify(entry.colors)) return;
+
+  state.paletteHistory.unshift(entry);
+  if (state.paletteHistory.length > 20) state.paletteHistory.pop();
+  localStorage.setItem('chromatica-palette-history', JSON.stringify(state.paletteHistory));
+  renderPaletteHistory();
+}
+
+function renderPaletteHistory() {
+  if (!els.paletteHistoryList) return;
+  els.paletteHistoryList.innerHTML = '';
+
+  if (state.paletteHistory.length === 0) {
+    els.paletteHistoryList.innerHTML = '<p style="font-size:12px;color:var(--text-dim);font-style:italic;">No palettes generated yet.</p>';
+    return;
+  }
+
+  state.paletteHistory.forEach((entry, idx) => {
+    const row = document.createElement('div');
+    row.className = 'palette-history-entry';
+
+    const colorsDiv = document.createElement('div');
+    colorsDiv.className = 'palette-history-colors';
+
+    entry.colors.forEach(hex => {
+      const dot = document.createElement('div');
+      dot.className = 'palette-history-dot';
+      dot.style.background = hex;
+      dot.title = hex.toUpperCase();
+      colorsDiv.appendChild(dot);
+    });
+
+    const typeLabel = document.createElement('span');
+    typeLabel.className = 'palette-history-type';
+    typeLabel.textContent = entry.type;
+
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'palette-history-delete';
+    deleteBtn.textContent = '\u00d7';
+    deleteBtn.title = 'Remove';
+    deleteBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      state.paletteHistory.splice(idx, 1);
+      localStorage.setItem('chromatica-palette-history', JSON.stringify(state.paletteHistory));
+      renderPaletteHistory();
+      showToast('Palette removed');
+    });
+
+    row.appendChild(colorsDiv);
+    row.appendChild(typeLabel);
+    row.appendChild(deleteBtn);
+
+    // Click to restore
+    row.addEventListener('click', () => {
+      state.palette = entry.colors.map(hex => {
+        const [h, s, l] = rgbToHsl(...hexToRgb(hex));
+        return { hex, h, s, l, adjusted: false };
+      });
+      els.paletteType.value = entry.type;
+      renderPalette();
+      showToast(`Restored ${entry.type} palette`);
+    });
+
+    els.paletteHistoryList.appendChild(row);
+  });
+}
+
+els.clearPaletteHistoryBtn.addEventListener('click', () => {
+  state.paletteHistory = [];
+  localStorage.removeItem('chromatica-palette-history');
+  renderPaletteHistory();
+  showToast('Palette history cleared');
+});
+
 // ====== MASTER UPDATE ======
 function updateAll() {
   updateColorDisplay();
@@ -1509,6 +1700,8 @@ function updateAll() {
   els.checkerFgHex.value = state.checkerFg.toUpperCase();
   updateChecker();
 
+  // Update torus indicator position
+  updateTorusIndicator();
 }
 
 // ====== INIT ======
@@ -1518,6 +1711,7 @@ async function init() {
   renderHistory();
   renderQuickHarmonies();
   updateChecker();
+  renderPaletteHistory();
 
   // Set initial mode label
   $$('.mode-label').forEach(l => {

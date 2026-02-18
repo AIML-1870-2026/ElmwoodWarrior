@@ -1244,6 +1244,116 @@ body.cvd-deuteranopia  { filter: url(#filter-deuteranopia); }
 body.cvd-tritanopia    { filter: url(#filter-tritanopia); }
 body.cvd-achromatopsia { filter: url(#filter-achromatopsia); }
 
+/* ---------- Palette Button Row ---------- */
+.palette-btn-row {
+  display: flex;
+  gap: 8px;
+}
+
+.palette-btn-row .primary-btn {
+  flex: 1;
+  margin-top: 10px;
+}
+
+.random-palette-btn {
+  background: linear-gradient(135deg, #ff7eb3, #7e7eff, #7effb2) !important;
+  box-shadow: 0 0 20px rgba(255, 126, 179, 0.3) !important;
+}
+
+.random-palette-btn:hover {
+  box-shadow: 0 0 32px rgba(255, 126, 179, 0.5) !important;
+}
+
+/* ---------- Palette History ---------- */
+.palette-history-section {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-glow);
+}
+
+.palette-history-title {
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.palette-history-subtitle {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 12px;
+}
+
+.palette-history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.palette-history-entry {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--radius-sm);
+  cursor: none;
+  transition: all var(--transition);
+}
+
+.palette-history-entry:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: var(--accent);
+  transform: translateX(4px);
+}
+
+.palette-history-colors {
+  display: flex;
+  gap: 3px;
+  flex: 1;
+}
+
+.palette-history-dot {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: transform 0.15s;
+}
+
+.palette-history-dot:hover {
+  transform: scale(1.2);
+}
+
+.palette-history-type {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  min-width: 60px;
+  text-align: right;
+}
+
+.palette-history-delete {
+  background: transparent;
+  border: none;
+  color: var(--text-dim);
+  font-size: 14px;
+  cursor: none;
+  padding: 2px 6px;
+  border-radius: 4px;
+  opacity: 0;
+  transition: all var(--transition);
+}
+
+.palette-history-entry:hover .palette-history-delete {
+  opacity: 1;
+}
+
+.palette-history-delete:hover {
+  color: #ff6666;
+}
+
 /* Responsive */
 @media (max-width: 900px) {
   .visualizer-layout {
