@@ -287,86 +287,100 @@
 
     <!-- ==================== ACCESSIBILITY TAB ==================== -->
     <section class="tab-content" id="tab-accessibility">
-      <div class="accessibility-layout">
-        <!-- Contrast Checker -->
-        <div class="panel contrast-checker-panel">
-          <h3 class="panel-title">WCAG Contrast Checker</h3>
-          <div class="checker-wells">
-            <div class="checker-well-group">
-              <label>Foreground</label>
-              <input type="color" id="checker-fg" value="#000000" class="color-input-large">
-              <input type="text" id="checker-fg-hex" class="hex-input" value="#000000">
+      <div class="accessibility-layout-v2">
+        <!-- Top: Compact Contrast Checker -->
+        <div class="panel contrast-checker-compact">
+          <div class="checker-top-row">
+            <h3 class="panel-title" style="margin-bottom:0;">Contrast Checker</h3>
+            <div class="checker-ratio-compact" id="checker-ratio">21:1</div>
+          </div>
+          <div class="checker-inline">
+            <div class="checker-colors-row">
+              <div class="checker-well-inline">
+                <label>FG</label>
+                <input type="color" id="checker-fg" value="#000000" class="color-input-compact">
+                <input type="text" id="checker-fg-hex" class="hex-input-compact" value="#000000">
+              </div>
+              <button id="checker-swap-btn" class="swap-btn-compact" title="Swap colors">&#8596;</button>
+              <div class="checker-well-inline">
+                <label>BG</label>
+                <input type="color" id="checker-bg" value="#ffffff" class="color-input-compact">
+                <input type="text" id="checker-bg-hex" class="hex-input-compact" value="#FFFFFF">
+              </div>
             </div>
-            <button id="checker-swap-btn" class="swap-btn" title="Swap colors">&#8596;</button>
-            <div class="checker-well-group">
-              <label>Background</label>
-              <input type="color" id="checker-bg" value="#ffffff" class="color-input-large">
-              <input type="text" id="checker-bg-hex" class="hex-input" value="#FFFFFF">
+            <div class="checker-badges-row">
+              <span class="badge-compact pass" id="ck-normal-aa">AA</span>
+              <span class="badge-compact pass" id="ck-normal-aaa">AAA</span>
+              <span class="badge-compact pass" id="ck-large-aa">Lg AA</span>
+              <span class="badge-compact pass" id="ck-large-aaa">Lg AAA</span>
+              <span class="badge-compact pass" id="ck-ui">UI</span>
             </div>
           </div>
-          <div class="checker-ratio" id="checker-ratio">21:1</div>
-          <div class="checker-matrix">
-            <div class="checker-row"><span>Normal Text AA (≥4.5:1)</span><span class="badge pass" id="ck-normal-aa">✓ Pass</span></div>
-            <div class="checker-row"><span>Normal Text AAA (≥7:1)</span><span class="badge pass" id="ck-normal-aaa">✓ Pass</span></div>
-            <div class="checker-row"><span>Large Text AA (≥3:1)</span><span class="badge pass" id="ck-large-aa">✓ Pass</span></div>
-            <div class="checker-row"><span>Large Text AAA (≥4.5:1)</span><span class="badge pass" id="ck-large-aaa">✓ Pass</span></div>
-            <div class="checker-row"><span>UI Components (≥3:1)</span><span class="badge pass" id="ck-ui">✓ Pass</span></div>
+          <div class="checker-bottom-row">
+            <div class="preview-zone-compact" id="preview-zone">
+              <span class="preview-lg">Aa Large</span>
+              <span class="preview-sm">Aa Normal</span>
+            </div>
+            <button id="find-passing-btn" class="small-btn">Fix Contrast</button>
           </div>
-          <div class="preview-zone" id="preview-zone">
-            <p class="preview-large">The quick brown fox jumps over the lazy dog (24px)</p>
-            <p class="preview-normal">The quick brown fox jumps over the lazy dog (16px)</p>
-            <p class="preview-small">The quick brown fox jumps over the lazy dog (12px)</p>
-          </div>
-          <button id="find-passing-btn" class="primary-btn">Find Passing Color</button>
         </div>
 
-        <!-- CVD Simulator -->
-        <div class="panel cvd-panel">
-          <h3 class="panel-title">Color Blindness Simulator</h3>
-          <div class="cvd-buttons">
-            <button class="cvd-btn active" data-cvd="normal">Normal</button>
-            <button class="cvd-btn" data-cvd="protanopia">Protanopia
-              <span class="cvd-info" title="Red receptors absent — ~1% of males">?</span>
-            </button>
-            <button class="cvd-btn" data-cvd="deuteranopia">Deuteranopia
-              <span class="cvd-info" title="Green receptors absent — ~1% of males">?</span>
-            </button>
-            <button class="cvd-btn" data-cvd="tritanopia">Tritanopia
-              <span class="cvd-info" title="Blue receptors absent — ~0.01%">?</span>
-            </button>
-            <button class="cvd-btn" data-cvd="achromatopsia">Achromatopsia
-              <span class="cvd-info" title="No color perception — extremely rare">?</span>
-            </button>
+        <!-- Bottom: CVD Simulator -->
+        <div class="panel cvd-panel-v2">
+          <div class="cvd-header-row">
+            <h3 class="panel-title" style="margin-bottom:0;">Color Vision Simulation</h3>
+            <div class="cvd-label" id="cvd-label"><span id="cvd-mode-name">Normal Vision</span> applied to page</div>
           </div>
-          <div class="cvd-label hidden" id="cvd-label">Viewing as: <span id="cvd-mode-name">Normal</span></div>
-
-          <!-- Compare mode -->
-          <label class="toggle-label">
-            <input type="checkbox" id="cvd-compare-toggle">
-            <span class="toggle-switch"></span>
-            Compare Side-by-Side
-          </label>
-          <div id="cvd-compare" class="cvd-compare hidden">
-            <div class="cvd-compare-side">
-              <span class="cvd-compare-label">Normal</span>
-              <canvas id="cvd-normal-canvas" width="180" height="180"></canvas>
+          <div class="cvd-grid-area">
+            <!-- Toggle list -->
+            <div class="cvd-toggle-list">
+              <label class="cvd-toggle-row active" data-cvd="normal">
+                <span class="cvd-toggle-name">Normal</span>
+                <button class="cvd-toggle-btn active" data-cvd="normal" title="Apply to page">Off</button>
+              </label>
+              <label class="cvd-toggle-row" data-cvd="protanopia">
+                <span class="cvd-toggle-name">Protanopia <span class="cvd-stat">~1% males</span></span>
+                <button class="cvd-toggle-btn" data-cvd="protanopia" title="Apply to page">Off</button>
+              </label>
+              <label class="cvd-toggle-row" data-cvd="deuteranopia">
+                <span class="cvd-toggle-name">Deuteranopia <span class="cvd-stat">~1% males</span></span>
+                <button class="cvd-toggle-btn" data-cvd="deuteranopia" title="Apply to page">Off</button>
+              </label>
+              <label class="cvd-toggle-row" data-cvd="tritanopia">
+                <span class="cvd-toggle-name">Tritanopia <span class="cvd-stat">~0.01%</span></span>
+                <button class="cvd-toggle-btn" data-cvd="tritanopia" title="Apply to page">Off</button>
+              </label>
+              <label class="cvd-toggle-row" data-cvd="achromatopsia">
+                <span class="cvd-toggle-name">Achromatopsia <span class="cvd-stat">rare</span></span>
+                <button class="cvd-toggle-btn" data-cvd="achromatopsia" title="Apply to page">Off</button>
+              </label>
             </div>
-            <div class="cvd-divider"></div>
-            <div class="cvd-compare-side">
-              <span class="cvd-compare-label">Simulated</span>
-              <canvas id="cvd-sim-canvas" width="180" height="180"></canvas>
+            <!-- All wheels grid -->
+            <div class="cvd-wheels-grid">
+              <div class="cvd-wheel-cell">
+                <canvas id="cvd-canvas-normal" width="140" height="140"></canvas>
+                <span class="cvd-wheel-label">Normal</span>
+              </div>
+              <div class="cvd-wheel-cell">
+                <canvas id="cvd-canvas-protanopia" width="140" height="140"></canvas>
+                <span class="cvd-wheel-label">Protanopia</span>
+              </div>
+              <div class="cvd-wheel-cell">
+                <canvas id="cvd-canvas-deuteranopia" width="140" height="140"></canvas>
+                <span class="cvd-wheel-label">Deuteranopia</span>
+              </div>
+              <div class="cvd-wheel-cell">
+                <canvas id="cvd-canvas-tritanopia" width="140" height="140"></canvas>
+                <span class="cvd-wheel-label">Tritanopia</span>
+              </div>
+              <div class="cvd-wheel-cell">
+                <canvas id="cvd-canvas-achromatopsia" width="140" height="140"></canvas>
+                <span class="cvd-wheel-label">Achromatopsia</span>
+              </div>
             </div>
           </div>
-
-          <!-- Design Tips -->
-          <div class="design-tips">
-            <h4>Design Tips</h4>
-            <ul>
-              <li>Use shape and pattern in addition to color for meaning</li>
-              <li>Avoid red-green combinations for critical UI states</li>
-              <li>Ensure luminance contrast even without hue contrast</li>
-              <li>Test your palette with all simulation modes</li>
-            </ul>
+          <div class="design-tips-compact">
+            Use shape + pattern alongside color &bull; Avoid red-green for critical UI &bull; Ensure luminance contrast between elements
           </div>
         </div>
       </div>

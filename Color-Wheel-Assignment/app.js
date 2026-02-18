@@ -257,10 +257,6 @@ const els = {
   findPassingBtn: $('#find-passing-btn'),
   cvdLabel: $('#cvd-label'),
   cvdModeName: $('#cvd-mode-name'),
-  cvdCompareToggle: $('#cvd-compare-toggle'),
-  cvdCompare: $('#cvd-compare'),
-  cvdNormalCanvas: $('#cvd-normal-canvas'),
-  cvdSimCanvas: $('#cvd-sim-canvas'),
   historySwatches: $('#history-swatches'),
   clearHistoryBtn: $('#clear-history-btn'),
   randomPaletteBtn: $('#random-palette-btn'),
@@ -337,6 +333,9 @@ els.tabs.forEach(tab => {
     $(`#tab-${tab.dataset.tab}`).classList.add('active');
     if (tab.dataset.tab === 'palettes') {
       renderQuickHarmonies();
+    }
+    if (tab.dataset.tab === 'accessibility') {
+      drawAllCvdWheels();
     }
   });
 });
@@ -1222,15 +1221,15 @@ function updateChecker() {
   els.checkerRatio.textContent = ratio.toFixed(2) + ':1';
   els.checkerRatio.style.color = ratio >= 4.5 ? '#4dff91' : ratio >= 3 ? '#ffc800' : '#ff6666';
 
-  function setBadge(el, pass) {
-    el.className = 'badge ' + (pass ? 'pass' : 'fail');
-    el.textContent = pass ? '✓ Pass' : '✗ Fail';
+  function setBadge(el, pass, label) {
+    el.className = 'badge-compact ' + (pass ? 'pass' : 'fail');
+    el.textContent = label;
   }
-  setBadge($('#ck-normal-aa'), ratio >= 4.5);
-  setBadge($('#ck-normal-aaa'), ratio >= 7);
-  setBadge($('#ck-large-aa'), ratio >= 3);
-  setBadge($('#ck-large-aaa'), ratio >= 4.5);
-  setBadge($('#ck-ui'), ratio >= 3);
+  setBadge($('#ck-normal-aa'), ratio >= 4.5, 'AA');
+  setBadge($('#ck-normal-aaa'), ratio >= 7, 'AAA');
+  setBadge($('#ck-large-aa'), ratio >= 3, 'Lg AA');
+  setBadge($('#ck-large-aaa'), ratio >= 4.5, 'Lg AAA');
+  setBadge($('#ck-ui'), ratio >= 3, 'UI');
 
   // Preview zone
   els.previewZone.style.background = state.checkerBg;
@@ -1290,39 +1289,49 @@ els.findPassingBtn.addEventListener('click', () => {
 // ====== CVD SIMULATOR ======
 function applyCvdBodyFilter() {
   document.body.classList.remove('cvd-protanopia', 'cvd-deuteranopia', 'cvd-tritanopia', 'cvd-achromatopsia');
-  // Only apply the CSS body filter when compare mode is OFF
-  if (state.cvdMode !== 'normal' && !els.cvdCompareToggle.checked) {
+  if (state.cvdMode !== 'normal') {
     document.body.classList.add('cvd-' + state.cvdMode);
   }
 }
 
-$$('.cvd-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    $$('.cvd-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    state.cvdMode = btn.dataset.cvd;
+// CVD toggle buttons
+$$('.cvd-toggle-btn').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const mode = btn.dataset.cvd;
+
+    // If clicking the already-active mode, turn it off (back to normal)
+    if (state.cvdMode === mode && mode !== 'normal') {
+      state.cvdMode = 'normal';
+    } else {
+      state.cvdMode = mode;
+    }
+
+    // Update all toggle buttons and rows
+    $$('.cvd-toggle-btn').forEach(b => {
+      const isActive = b.dataset.cvd === state.cvdMode;
+      b.classList.toggle('active', isActive);
+      b.textContent = isActive ? 'On' : 'Off';
+    });
+    $$('.cvd-toggle-row').forEach(row => {
+      row.classList.toggle('active', row.dataset.cvd === state.cvdMode);
+    });
+
+    // Update label
+    const modeNames = { normal: 'Normal Vision', protanopia: 'Protanopia', deuteranopia: 'Deuteranopia', tritanopia: 'Tritanopia', achromatopsia: 'Achromatopsia' };
+    els.cvdModeName.textContent = modeNames[state.cvdMode] || 'Normal Vision';
 
     applyCvdBodyFilter();
-
-    if (state.cvdMode !== 'normal') {
-      els.cvdLabel.classList.remove('hidden');
-      els.cvdModeName.textContent = btn.textContent.trim().split('\n')[0].trim();
-    } else {
-      els.cvdLabel.classList.add('hidden');
-    }
-
-    // Update compare canvases if visible
-    if (els.cvdCompareToggle.checked) {
-      drawCvdCompare();
-    }
   });
 });
 
-els.cvdCompareToggle.addEventListener('change', () => {
-  els.cvdCompare.classList.toggle('hidden', !els.cvdCompareToggle.checked);
-  // Remove/restore body filter based on compare mode
-  applyCvdBodyFilter();
-  if (els.cvdCompareToggle.checked) drawCvdCompare();
+// Clicking the row also toggles
+$$('.cvd-toggle-row').forEach(row => {
+  row.addEventListener('click', () => {
+    const btn = row.querySelector('.cvd-toggle-btn');
+    if (btn) btn.click();
+  });
 });
 
 // CVD simulation matrices
@@ -1375,12 +1384,15 @@ function simulateCvd(r, g, b, matrix) {
   ];
 }
 
-function drawCvdCompare() {
-  const size = 180;
+function drawAllCvdWheels() {
+  const modes = ['normal', 'protanopia', 'deuteranopia', 'tritanopia', 'achromatopsia'];
+  const size = 140;
   const cx = size / 2;
   const outerR = cx - 2;
 
-  [els.cvdNormalCanvas, els.cvdSimCanvas].forEach((canvas, isSimulated) => {
+  modes.forEach(mode => {
+    const canvas = $(`#cvd-canvas-${mode}`);
+    if (!canvas) return;
     const ctx = canvas.getContext('2d');
     const imageData = ctx.createImageData(size, size);
     const data = imageData.data;
@@ -1396,8 +1408,8 @@ function drawCvdCompare() {
         const sat = (dist / outerR) * 100;
         let [r, g, b] = hslToRgb(angle, sat, 50);
 
-        if (isSimulated && state.cvdMode !== 'normal' && cvdMatrices[state.cvdMode]) {
-          [r, g, b] = simulateCvd(r, g, b, cvdMatrices[state.cvdMode]);
+        if (mode !== 'normal' && cvdMatrices[mode]) {
+          [r, g, b] = simulateCvd(r, g, b, cvdMatrices[mode]);
         }
 
         const idx = (y * size + x) * 4;
@@ -1723,6 +1735,11 @@ async function init() {
   renderQuickHarmonies();
   updateChecker();
   renderPaletteHistory();
+  drawAllCvdWheels();
+
+  // Set initial CVD toggle state
+  const normalToggle = $('.cvd-toggle-btn[data-cvd="normal"]');
+  if (normalToggle) normalToggle.textContent = 'On';
 
   // Set initial mode label
   $$('.mode-label').forEach(l => {
