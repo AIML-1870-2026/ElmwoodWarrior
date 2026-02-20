@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Readable — Color Contrast Explorer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Particle canvas background -->
+    <canvas id="particles"></canvas>
+    <!-- Confetti canvas overlay -->
+    <canvas id="confetti"></canvas>
+
+    <!-- Auto-roast overlay -->
+    <div id="auto-roast-overlay" class="hidden">
+        <div id="auto-roast-bubble">
+            <span id="auto-roast-msg"></span>
+        </div>
+    </div>
+
+    <div id="app">
+        <!-- Header Bar -->
+        <header>
+            <h1>READABLE</h1>
+            <div id="stats-bar">
+                <div class="stat glow-box">
+                    <span class="stat-label">Contrast</span>
+                    <span id="contrast-ratio" class="stat-value big">21.00:1</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">BG Lum</span>
+                    <span id="bg-luminance" class="stat-value">1.0000</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Text Lum</span>
+                    <span id="text-luminance" class="stat-value">0.0000</span>
+                </div>
+                <div class="badge" id="badge-normal">
+                    <span class="badge-threshold">AA 4.5:1</span>
+                    <span class="badge-status pass" id="badge-normal-status">PASS</span>
+                </div>
+                <div class="badge" id="badge-large">
+                    <span class="badge-threshold">AA Lg 3:1</span>
+                    <span class="badge-status pass" id="badge-large-status">PASS</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Grid -->
+        <div id="grid">
+            <!-- Left: Preview -->
+            <section id="preview-section">
+                <div id="text-display">
+                    <p>The quick brown fox jumps over the lazy dog. Typography is the art of arranging type to make written language legible, readable, and appealing. Good contrast between text and background is essential for accessibility.</p>
+                    <p>WCAG recommends a minimum contrast ratio of 4.5:1 for normal text and 3:1 for large text. These thresholds exist because millions of people experience some form of color vision deficiency.</p>
+                </div>
+                <div id="roast-area">
+                    <button id="roast-btn" disabled>Roast My Colors</button>
+                    <span id="roast-text"></span>
+                </div>
+            </section>
+
+            <!-- Right: Controls -->
+            <div id="controls-column">
+                <!-- Color Controls -->
+                <div id="color-controls-row">
+                    <div class="color-panel" id="bg-controls">
+                        <div class="panel-header">
+                            <span class="panel-title">BG</span>
+                            <span class="hex-display" id="bg-hex" title="Click to copy">#FFFFFF</span>
+                            <div class="color-preview-swatch" id="bg-swatch"></div>
+                        </div>
+                        <div class="slider-group">
+                            <label><span class="ch r">R</span><input type="range" min="0" max="255" value="255" class="slider r" id="bg-r-slider"><input type="number" min="0" max="255" value="255" class="num-input" id="bg-r-num"></label>
+                            <label><span class="ch g">G</span><input type="range" min="0" max="255" value="255" class="slider g" id="bg-g-slider"><input type="number" min="0" max="255" value="255" class="num-input" id="bg-g-num"></label>
+                            <label><span class="ch b">B</span><input type="range" min="0" max="255" value="255" class="slider b" id="bg-b-slider"><input type="number" min="0" max="255" value="255" class="num-input" id="bg-b-num"></label>
+                        </div>
+                    </div>
+                    <!-- Swap Button -->
+                    <button id="swap-btn" title="Swap BG ↔ Text">⇄</button>
+                    <div class="color-panel" id="text-controls">
+                        <div class="panel-header">
+                            <span class="panel-title">Text</span>
+                            <span class="hex-display" id="text-hex" title="Click to copy">#000000</span>
+                            <div class="color-preview-swatch" id="text-swatch"></div>
+                        </div>
+                        <div class="slider-group">
+                            <label><span class="ch r">R</span><input type="range" min="0" max="255" value="0" class="slider r" id="text-r-slider"><input type="number" min="0" max="255" value="0" class="num-input" id="text-r-num"></label>
+                            <label><span class="ch g">G</span><input type="range" min="0" max="255" value="0" class="slider g" id="text-g-slider"><input type="number" min="0" max="255" value="0" class="num-input" id="text-g-num"></label>
+                            <label><span class="ch b">B</span><input type="range" min="0" max="255" value="0" class="slider b" id="text-b-slider"><input type="number" min="0" max="255" value="0" class="num-input" id="text-b-num"></label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Size + Presets side by side -->
+                <div id="mid-row">
+                    <div id="size-box" class="ctrl-box">
+                        <span class="panel-title">Size</span>
+                        <div class="size-controls">
+                            <input type="range" min="8" max="72" value="16" class="slider" id="size-slider">
+                            <input type="number" min="8" max="72" value="16" class="num-input" id="size-num">
+                            <span class="size-unit">px</span>
+                        </div>
+                    </div>
+                    <div id="presets-box" class="ctrl-box">
+                        <span class="panel-title">Presets</span>
+                        <div id="preset-buttons"></div>
+                    </div>
+                </div>
+
+                <!-- Vision Sim -->
+                <div id="vision-row" class="ctrl-box">
+                    <span class="panel-title">Vision Sim</span>
+                    <div id="vision-radios">
+                        <label class="pill"><input type="radio" name="vision" value="normal" checked><span>Normal</span></label>
+                        <label class="pill"><input type="radio" name="vision" value="protanopia"><span>Protanopia</span></label>
+                        <label class="pill"><input type="radio" name="vision" value="deuteranopia"><span>Deuteranopia</span></label>
+                        <label class="pill"><input type="radio" name="vision" value="tritanopia"><span>Tritanopia</span></label>
+                        <label class="pill"><input type="radio" name="vision" value="monochromacy"><span>Mono</span></label>
+                    </div>
+                    <p id="vision-lock-notice" class="hidden">Controls locked during simulation.</p>
+                </div>
+
+                <!-- Guess the Ratio -->
+                <div id="guess-row" class="ctrl-box">
+                    <div id="guess-header">
+                        <span class="panel-title">Guess the Ratio</span>
+                        <span id="guess-streak" class="hidden">🔥 <span id="streak-num">0</span></span>
+                    </div>
+                    <div id="guess-inline">
+                        <button id="guess-start">New Round</button>
+                        <div id="guess-buttons" class="hidden">
+                            <button id="guess-pass" class="guess-btn pass-btn">PASS</button>
+                            <button id="guess-fail" class="guess-btn fail-btn">FAIL</button>
+                        </div>
+                        <button id="guess-end" class="hidden">End Game</button>
+                        <span id="guess-score">Score: <span id="score-correct">0</span>/<span id="score-total">0</span></span>
+                    </div>
+                    <div id="guess-result" class="hidden"></div>
+                    <div id="guess-hint" class="hint-text">Press <kbd>N</kbd> new round · <kbd>P</kbd> pass · <kbd>F</kbd> fail · <kbd>E</kbd> end game</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
