@@ -25,7 +25,11 @@ function createCardElement(card, dealDelay = 0) {
     el.classList.add('face-down');
   }
 
-  if (dealDelay >= 0) {
+  // Slide-in animation for cards dealt during gameplay (hit, double, dealer draw)
+  if (card.isNew) {
+    el.classList.add('slide-in');
+    card.isNew = false;
+  } else if (dealDelay >= 0) {
     el.classList.add('dealing');
     el.style.animationDelay = `${dealDelay}ms`;
   }
@@ -302,6 +306,13 @@ function toggleHint() {
   }
 }
 
+function hideHint() {
+  hintVisible = false;
+  const el = document.getElementById('hint-display');
+  el.classList.remove('visible');
+  el.textContent = '';
+}
+
 // === MODALS ===
 function showInsuranceModal() {
   const overlay = document.getElementById('modal-overlay');
@@ -458,6 +469,7 @@ function initUI() {
     btn.classList.toggle('active', showCountDisplay);
     renderCountDisplay();
   });
+  document.getElementById('btn-free-money').addEventListener('click', addFreeMoney);
   document.getElementById('btn-settings').addEventListener('click', showSettingsModal);
 
   // Keyboard shortcuts

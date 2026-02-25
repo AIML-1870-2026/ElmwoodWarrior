@@ -232,13 +232,15 @@ async function afterInsurance() {
 }
 
 // === PLAYER ACTIONS ===
-function playerHit() {
-  if (GameState.phase !== 'PLAYER_TURN') return;
+let actionLock = false;
+
+async function playerHit() {
+  if (GameState.phase !== 'PLAYER_TURN' || actionLock) return;
+  actionLock = true;
+  hideHint();
   const hand = GameState.playerHands[GameState.activeHandIndex];
-  const card = drawCard(false);
-  hand.cards.push(card);
-  audioManager.play('card-deal');
-  renderAll();
+
+  await dealNewCard(hand.cards, false);
 
   if (isBust(hand.cards)) {
     audioManager.play('bust');
@@ -249,30 +251,31 @@ function playerHit() {
     hand.stood = true;
     advanceHand();
   }
+  actionLock = false;
 }
 
 function playerStand() {
-  if (GameState.phase !== 'PLAYER_TURN') return;
+  if (GameState.phase !== 'PLAYER_TURN' || actionLock) return;
+  hideHint();
   const hand = GameState.playerHands[GameState.activeHandIndex];
   hand.stood = true;
   advanceHand();
 }
 
-function playerDouble() {
-  if (GameState.phase !== 'PLAYER_TURN') return;
+async function playerDouble() {
+  if (GameState.phase !== 'PLAYER_TURN' || actionLock) return;
+  actionLock = true;
+  hideHint();
   const hand = GameState.playerHands[GameState.activeHandIndex];
-  if (hand.cards.length !== 2) return;
-  if (GameState.balance < hand.bet) return;
+  if (hand.cards.length !== 2) { actionLock = false; return; }
+  if (GameState.balance < hand.bet) { actionLock = false; return; }
 
   GameState.balance -= hand.bet;
   hand.bet *= 2;
   hand.doubled = true;
   saveBalance();
 
-  const card = drawCard(false);
-  hand.cards.push(card);
-  audioManager.play('card-deal');
-  renderAll();
+  await dealNewCard(hand.cards, false);
 
   if (isBust(hand.cards)) {
     audioManager.play('bust');
@@ -282,10 +285,12 @@ function playerDouble() {
 
   hand.stood = true;
   advanceHand();
+  actionLock = false;
 }
 
 function playerSplit() {
   if (GameState.phase !== 'PLAYER_TURN') return;
+  hideHint();
   const hand = GameState.playerHands[GameState.activeHandIndex];
   if (!isPair(hand.cards)) return;
   if (GameState.playerHands.length >= 4) return;
@@ -360,11 +365,8 @@ async function startDealerTurn() {
   }
 
   while (shouldDealerHit(GameState.dealerHand, GameState.hitSoft17)) {
-    await delay(600);
-    const card = drawCard(false);
-    GameState.dealerHand.push(card);
-    audioManager.play('card-deal');
-    renderAll();
+    await delay(300);
+    await dealNewCard(GameState.dealerHand, false);
   }
 
   await delay(400);
@@ -489,6 +491,13 @@ function endRound() {
   }, 2200);
 }
 
+function addFreeMoney() {
+  GameState.balance += 1000;
+  saveBalance();
+  showMessage('+$1,000 free chips!');
+  renderAll();
+}
+
 function rebuy() {
   GameState.balance = 1000;
   saveBalance();
@@ -501,4 +510,29 @@ function rebuy() {
 
 function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// === ANIMATED CARD DEAL (for hit/double/dealer draws) ===
+async function dealNewCard(handArray, faceDown = false) {
+  const card = drawCard(faceDown);
+  if (!faceDown) {
+    card.faceDown = true;
+    card.pendingReveal = true;
+  }
+  card.isNew = true;
+  handArray.push(card);
+  audioManager.play('card-deal');
+  renderAll();
+
+  if (card.pendingReveal) {
+    await delay(350);
+    card.faceDown = false;
+    card.justRevealed = true;
+    card.pendingReveal = false;
+    audioManager.play('card-flip');
+    renderAll();
+    await delay(350);
+  }
+
+  return card;
 }

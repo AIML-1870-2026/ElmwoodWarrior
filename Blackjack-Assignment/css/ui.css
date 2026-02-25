@@ -67,6 +67,18 @@
   color: var(--gold-light);
 }
 
+.hud-btn-money {
+  background: rgba(45, 158, 79, 0.12);
+  border-color: rgba(45, 158, 79, 0.3);
+  color: var(--success);
+}
+
+.hud-btn-money:hover {
+  background: rgba(45, 158, 79, 0.25);
+  border-color: var(--success);
+  color: #4cdf70;
+}
+
 /* === Chip Tray (Vertical on left side) === */
 #chip-section {
   display: flex;
