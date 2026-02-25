@@ -159,7 +159,7 @@ async function startDeal() {
   }
 
   GameState.phase = 'PLAYER_TURN';
-  showMessage('Your turn — Hit or Stand?');
+  clearMessage();
   renderAll();
 }
 
@@ -227,7 +227,7 @@ async function afterInsurance() {
   }
 
   GameState.phase = 'PLAYER_TURN';
-  showMessage('Your turn — Hit or Stand?');
+  clearMessage();
   renderAll();
 }
 
