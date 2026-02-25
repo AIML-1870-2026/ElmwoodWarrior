@@ -1,0 +1,12 @@
+/* Particle Canvas Layer */
+#particle-canvas-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 200;
+}
+
+#particle-canvas {
+  width: 100%;
+  height: 100%;
+}

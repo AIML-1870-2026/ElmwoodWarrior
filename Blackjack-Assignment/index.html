@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Blackjack</title>
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/theme.css">
+  <link rel="stylesheet" href="css/table.css">
+  <link rel="stylesheet" href="css/cards.css">
+  <link rel="stylesheet" href="css/ui.css">
+  <link rel="stylesheet" href="css/particles.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Spotlight overlay -->
+    <div class="table-spotlight"></div>
+
+    <!-- HUD Header -->
+    <header id="hud">
+      <div class="hud-group">
+        <div class="hud-item" id="hud-balance">
+          <span class="hud-icon">💰</span>
+          <div class="hud-stack">
+            <span class="hud-label">Balance</span>
+            <span class="hud-value">$1,000</span>
+          </div>
+        </div>
+        <div class="hud-item" id="hud-bet">
+          <span class="hud-icon">🎯</span>
+          <div class="hud-stack">
+            <span class="hud-label">Current Bet</span>
+            <span class="hud-value">$0</span>
+          </div>
+        </div>
+        <div class="hud-item" id="hud-hand">
+          <span class="hud-icon">🃏</span>
+          <div class="hud-stack">
+            <span class="hud-label">Hand</span>
+            <span class="hud-value">#0</span>
+          </div>
+        </div>
+      </div>
+      <div class="hud-actions">
+        <button class="hud-btn" id="btn-sound" aria-label="Toggle sound" title="Toggle Sound">🔊</button>
+        <button class="hud-btn" id="btn-count" aria-label="Toggle card counting display" title="Show Card Count (Hi-Lo)">♠ Count</button>
+        <button class="hud-btn" id="btn-settings" aria-label="Open settings" title="Game Settings">⚙ Settings</button>
+      </div>
+    </header>
+
+    <!-- Table -->
+    <main id="table">
+      <!-- Dealer Zone -->
+      <section id="zone-dealer">
+        <span id="dealer-label">Dealer</span>
+        <div id="dealer-hand" class="hand-container"></div>
+        <div id="dealer-score" class="score-badge"></div>
+        <div id="dealer-hint"></div>
+      </section>
+
+      <!-- Info Zone -->
+      <section id="zone-info">
+        <div id="result-banner" class="result-banner hidden"></div>
+        <div id="message-box">Place your bet to begin</div>
+        <div id="count-display"></div>
+        <div id="hint-display"></div>
+      </section>
+
+      <!-- Shoe Indicator -->
+      <div id="shoe-indicator" title="Cards remaining in shoe">
+        <span class="shoe-label">Shoe</span>
+        <div class="shoe-bar">
+          <div class="shoe-fill" style="width: 100%"></div>
+        </div>
+      </div>
+
+      <!-- Player Zone -->
+      <section id="zone-player">
+        <span id="player-label">Player</span>
+        <div id="player-hands">
+          <div class="hand-wrapper active-hand">
+            <div class="hand-container" id="hand-0"></div>
+          </div>
+        </div>
+        <div id="player-score" class="score-badge"></div>
+      </section>
+    </main>
+
+    <!-- Left Side Panel - Chip Tray -->
+    <aside id="side-chips" class="side-panel side-left">
+      <div id="chip-section">
+        <div id="chip-tray">
+          <button class="chip chip-1" data-value="1" aria-label="Bet $1" title="Add $1 to bet">
+            <span class="chip-value">$1</span>
+          </button>
+          <button class="chip chip-5" data-value="5" aria-label="Bet $5" title="Add $5 to bet">
+            <span class="chip-value">$5</span>
+          </button>
+          <button class="chip chip-25" data-value="25" aria-label="Bet $25" title="Add $25 to bet">
+            <span class="chip-value">$25</span>
+          </button>
+          <button class="chip chip-100" data-value="100" aria-label="Bet $100" title="Add $100 to bet">
+            <span class="chip-value">$100</span>
+          </button>
+          <button class="chip chip-500" data-value="500" aria-label="Bet $500" title="Add $500 to bet">
+            <span class="chip-value">$500</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Right Side Panel - Deal & Bet Controls -->
+    <aside id="side-deal" class="side-panel side-right">
+      <button class="action-btn deal-btn" id="btn-deal" aria-label="Deal cards" title="Deal cards (Enter / Space)">
+        <span class="btn-label">Deal</span>
+        <span class="btn-hint">ENTER</span>
+      </button>
+      <div id="bet-actions">
+        <button class="bet-btn" id="btn-clear" aria-label="Clear bet" title="Remove your bet">✕ Clear</button>
+        <button class="bet-btn" id="btn-repeat" aria-label="Repeat last bet" title="Place same bet as last hand">↻ Repeat</button>
+      </div>
+    </aside>
+
+    <!-- Bottom Action Bar -->
+    <footer id="action-bar">
+      <div id="action-buttons">
+        <button class="action-btn hit-btn" id="btn-hit" style="display:none" aria-label="Hit" title="Draw another card (H)">
+          <span class="btn-label">Hit</span>
+          <span class="btn-hint">H</span>
+        </button>
+        <button class="action-btn stand-btn" id="btn-stand" style="display:none" aria-label="Stand" title="Keep your hand (S)">
+          <span class="btn-label">Stand</span>
+          <span class="btn-hint">S</span>
+        </button>
+        <button class="action-btn double-btn" id="btn-double" style="display:none" aria-label="Double down" title="Double your bet, get one card (D)">
+          <span class="btn-label">Double</span>
+          <span class="btn-hint">D</span>
+        </button>
+        <button class="action-btn split-btn" id="btn-split" style="display:none" aria-label="Split hand" title="Split into two hands (P)">
+          <span class="btn-label">Split</span>
+          <span class="btn-hint">P</span>
+        </button>
+        <button class="action-btn hint-btn" id="btn-hint" style="display:none" aria-label="Get strategy hint" title="Basic strategy suggestion">
+          <span class="btn-label">Hint</span>
+        </button>
+      </div>
+    </footer>
+
+    <!-- Particle Canvas -->
+    <div id="particle-canvas-container">
+      <canvas id="particle-canvas"></canvas>
+    </div>
+
+    <!-- Modal Overlay -->
+    <div id="modal-overlay">
+      <div id="modal-content"></div>
+    </div>
+  </div>
+
+  <!-- JavaScript (order matters: dependencies first) -->
+  <script src="js/deck.js"></script>
+  <script src="js/hand.js"></script>
+  <script src="js/dealer.js"></script>
+  <script src="js/counting.js"></script>
+  <script src="js/strategy.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/particles.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/ui.js"></script>
+</body>
+</html>
