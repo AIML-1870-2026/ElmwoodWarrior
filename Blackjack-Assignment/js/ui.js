@@ -2,6 +2,7 @@
 
 let showCountDisplay = false;
 let hintVisible = false;
+let lastDisplayedBalance = null;
 
 // === CARD RENDERING ===
 function createCardElement(card, dealDelay = 0) {
@@ -55,6 +56,7 @@ function renderAll() {
   renderCountDisplay();
   renderShoeIndicator();
   renderDealerHint();
+  updateStreakBodyClass();
 }
 
 // === HUD ===
@@ -63,7 +65,16 @@ function renderHUD() {
   const betEl = document.querySelector('#hud-bet .hud-value');
   const handEl = document.querySelector('#hud-hand .hud-value');
 
-  if (balanceEl) balanceEl.textContent = `$${GameState.balance.toLocaleString()}`;
+  if (balanceEl) {
+    const newBalance = GameState.balance;
+    // Animate balance changes
+    if (lastDisplayedBalance !== null && lastDisplayedBalance !== newBalance) {
+      animateBalanceChange(balanceEl, lastDisplayedBalance, newBalance);
+    } else {
+      balanceEl.textContent = `$${newBalance.toLocaleString()}`;
+    }
+    lastDisplayedBalance = newBalance;
+  }
   if (betEl) {
     const betAmount = GameState.currentBet || GameState.lastBet;
     betEl.textContent = GameState.phase === 'BETTING'
@@ -71,6 +82,43 @@ function renderHUD() {
       : `$${betAmount.toLocaleString()}`;
   }
   if (handEl) handEl.textContent = `#${GameState.handNumber}`;
+
+  // Update achievement button counter
+  const achBtn = document.getElementById('btn-achievements');
+  if (achBtn) {
+    const count = Achievements.getUnlockedCount();
+    const total = Achievements.getTotal();
+    achBtn.textContent = `🏆 ${count}/${total}`;
+  }
+}
+
+// Animate balance counting up/down
+function animateBalanceChange(el, from, to) {
+  const diff = to - from;
+  const duration = 600;
+  const steps = 20;
+  const stepTime = duration / steps;
+  let step = 0;
+
+  // Add visual class
+  el.classList.remove('balance-up', 'balance-down');
+  el.classList.add(diff > 0 ? 'balance-up' : 'balance-down');
+
+  const interval = setInterval(() => {
+    step++;
+    const progress = step / steps;
+    const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+    const current = Math.round(from + diff * eased);
+    el.textContent = `$${current.toLocaleString()}`;
+
+    if (step >= steps) {
+      clearInterval(interval);
+      el.textContent = `$${to.toLocaleString()}`;
+      setTimeout(() => {
+        el.classList.remove('balance-up', 'balance-down');
+      }, 400);
+    }
+  }, stepTime);
 }
 
 // === DEALER HAND ===
@@ -191,6 +239,13 @@ function renderControls() {
   btnDeal.style.display = phase === 'BETTING' ? '' : 'none';
   btnDeal.disabled = GameState.currentBet <= 0 && GameState.lastBet <= 0;
 
+  // Pulse deal button when bet is placed
+  if (phase === 'BETTING' && GameState.currentBet > 0) {
+    btnDeal.classList.add('pulse-glow');
+  } else {
+    btnDeal.classList.remove('pulse-glow');
+  }
+
   const inPlayerTurn = phase === 'PLAYER_TURN';
   btnHit.style.display = inPlayerTurn ? '' : 'none';
   btnStand.style.display = inPlayerTurn ? '' : 'none';
@@ -215,6 +270,46 @@ function renderControls() {
     } else {
       dealLabel.textContent = 'Deal';
     }
+  }
+}
+
+// === STREAK METER ===
+function renderStreakMeter() {
+  const meter = document.getElementById('streak-meter');
+  if (!meter) return;
+
+  const tier = StreakSystem.getCurrentTier();
+  const streak = StreakSystem.winStreak;
+  const progress = StreakSystem.getProgress();
+
+  const streakCount = meter.querySelector('.streak-count');
+  const tierName = meter.querySelector('.streak-tier-name');
+  const multiplier = meter.querySelector('.streak-multiplier');
+  const fill = meter.querySelector('.streak-fill');
+
+  if (streakCount) streakCount.textContent = streak;
+  if (tierName) tierName.textContent = tier.name;
+  if (multiplier) {
+    multiplier.textContent = tier.multiplier > 1 ? `${tier.multiplier}x` : '';
+  }
+  if (fill) fill.style.width = `${progress * 100}%`;
+
+  // Show/hide based on streak
+  if (streak > 0) {
+    meter.classList.add('active');
+    meter.className = `streak-meter active ${tier.cssClass}`;
+  } else {
+    meter.className = 'streak-meter';
+  }
+}
+
+function updateStreakBodyClass() {
+  const app = document.getElementById('app');
+  // Remove old streak classes
+  app.classList.remove('streak-warm', 'streak-hot', 'streak-fire', 'streak-unstoppable');
+  const tier = StreakSystem.getCurrentTier();
+  if (tier.cssClass) {
+    app.classList.add(tier.cssClass);
   }
 }
 
@@ -311,6 +406,130 @@ function hideHint() {
   const el = document.getElementById('hint-display');
   el.classList.remove('visible');
   el.textContent = '';
+}
+
+// === GAMBLE UI ===
+function showGambleUI(winnings, chainCount) {
+  const container = document.getElementById('gamble-container');
+  if (!container) return;
+
+  const potential = winnings * 2;
+  const chainLabel = chainCount > 0 ? ` (${Math.pow(2, chainCount)}x original!)` : '';
+
+  container.innerHTML = `
+    <div class="gamble-panel">
+      <div class="gamble-title">DOUBLE OR NOTHING?</div>
+      <div class="gamble-stakes">
+        <span class="gamble-current">Current: <strong>$${winnings.toLocaleString()}</strong>${chainLabel}</span>
+        <span class="gamble-potential">Potential: <strong>$${potential.toLocaleString()}</strong></span>
+      </div>
+      <div class="gamble-card-area" id="gamble-card-area">
+        <div class="gamble-hint">Red wins, Black loses</div>
+      </div>
+      <div class="gamble-chain">
+        ${Array.from({length: GambleSystem.maxChain}, (_, i) =>
+          `<div class="chain-dot ${i < chainCount ? 'filled' : ''}">${i < chainCount ? '✓' : (i + 1)}</div>`
+        ).join('')}
+      </div>
+      <div class="gamble-buttons">
+        <button class="action-btn gamble-btn pulse-glow" onclick="GambleSystem.doGamble()">
+          <span class="btn-label">GAMBLE</span>
+        </button>
+        <button class="action-btn collect-btn" onclick="GambleSystem.collect()">
+          <span class="btn-label">COLLECT $${winnings.toLocaleString()}</span>
+        </button>
+      </div>
+    </div>
+  `;
+  container.classList.add('visible');
+}
+
+function renderGambleCard(card) {
+  const area = document.getElementById('gamble-card-area');
+  if (!area) return;
+
+  const isRed = card.suit === 'hearts' || card.suit === 'diamonds';
+  const suitSymbols = { hearts: '♥', diamonds: '♦', clubs: '♣', spades: '♠' };
+
+  if (card.faceDown) {
+    area.innerHTML = `
+      <div class="gamble-card face-down">
+        <div class="gamble-card-inner">
+          <div class="gamble-card-back">?</div>
+        </div>
+      </div>
+    `;
+  } else {
+    area.innerHTML = `
+      <div class="gamble-card ${isRed ? 'red' : 'black'} flip-reveal">
+        <div class="gamble-card-inner">
+          <div class="gamble-card-front">
+            <span class="gamble-card-value">${card.value}</span>
+            <span class="gamble-card-suit">${suitSymbols[card.suit]}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+}
+
+function showGambleResult(won, amount, maxChain) {
+  const area = document.getElementById('gamble-card-area');
+  if (!area) return;
+
+  if (won) {
+    area.innerHTML += `<div class="gamble-result win">DOUBLED! $${amount.toLocaleString()}${maxChain ? ' MAX!' : ''}</div>`;
+  } else {
+    area.innerHTML += `<div class="gamble-result lose">LOST!</div>`;
+  }
+}
+
+function hideGambleUI() {
+  const container = document.getElementById('gamble-container');
+  if (container) {
+    container.classList.remove('visible');
+    container.innerHTML = '';
+  }
+}
+
+// === ACHIEVEMENT MODAL ===
+function showAchievementsModal() {
+  const overlay = document.getElementById('modal-overlay');
+  const content = document.getElementById('modal-content');
+
+  const unlocked = Achievements.getUnlockedCount();
+  const total = Achievements.getTotal();
+
+  const cards = AchievementDefs.map(def => {
+    const isUnlocked = Achievements.isUnlocked(def.id);
+    const progress = !isUnlocked ? Achievements.getProgress(def.id) : null;
+    const progressBar = progress
+      ? `<div class="ach-progress"><div class="ach-progress-fill" style="width:${Math.min(100, (progress.current / progress.target) * 100)}%"></div><span>${progress.current}/${progress.target}</span></div>`
+      : '';
+
+    return `
+      <div class="ach-card ${isUnlocked ? 'unlocked' : 'locked'}">
+        <div class="ach-icon">${isUnlocked ? def.icon : '?'}</div>
+        <div class="ach-info">
+          <div class="ach-name">${isUnlocked ? def.name : '???'}</div>
+          <div class="ach-desc">${def.desc}</div>
+          ${progressBar}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  content.innerHTML = `
+    <div class="modal achievements-modal">
+      <h2>Achievements</h2>
+      <div class="ach-summary">${unlocked} / ${total} Unlocked</div>
+      <div class="ach-grid">${cards}</div>
+      <div style="margin-top: 20px; text-align: center;">
+        <button class="modal-btn modal-btn-no" onclick="hideModal()">Close</button>
+      </div>
+    </div>
+  `;
+  overlay.classList.add('visible');
 }
 
 // === MODALS ===
@@ -471,10 +690,25 @@ function initUI() {
   });
   document.getElementById('btn-free-money').addEventListener('click', addFreeMoney);
   document.getElementById('btn-settings').addEventListener('click', showSettingsModal);
+  document.getElementById('btn-achievements').addEventListener('click', showAchievementsModal);
 
   // Keyboard shortcuts
   document.addEventListener('keydown', (e) => {
     if (document.getElementById('modal-overlay').classList.contains('visible')) return;
+
+    // Gamble phase shortcuts
+    if (GameState.phase === 'GAMBLE' && GambleSystem.active) {
+      if (e.key.toLowerCase() === 'g') {
+        e.preventDefault();
+        GambleSystem.doGamble();
+        return;
+      }
+      if (e.key.toLowerCase() === 'c' || e.key === 'Escape') {
+        e.preventDefault();
+        GambleSystem.collect();
+        return;
+      }
+    }
 
     switch (e.key.toLowerCase()) {
       case 'h':

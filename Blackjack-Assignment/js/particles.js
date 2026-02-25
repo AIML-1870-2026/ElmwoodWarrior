@@ -46,17 +46,28 @@ class Particle {
   constructor({ x, y, colors, type }) {
     this.x = x;
     this.y = y;
-    this.vx = (Math.random() - 0.5) * 12;
-    this.vy = (Math.random() * -14) - 2;
-    this.gravity = 0.4;
     this.color = colors[Math.floor(Math.random() * colors.length)];
-    this.size = Math.random() * 10 + 4;
-    this.rotation = Math.random() * 360;
-    this.rotationSpeed = (Math.random() - 0.5) * 12;
-    this.life = 1.0;
-    this.decay = Math.random() * 0.015 + 0.008;
     this.type = type;
+    this.rotation = Math.random() * 360;
     this.alive = true;
+
+    if (type === 'dust') {
+      this.vx = (Math.random() - 0.5) * 1.5;
+      this.vy = -(Math.random() * 1.5 + 0.3);
+      this.gravity = 0;
+      this.size = Math.random() * 3 + 1;
+      this.rotationSpeed = (Math.random() - 0.5) * 2;
+      this.life = 1.0;
+      this.decay = Math.random() * 0.005 + 0.003;
+    } else {
+      this.vx = (Math.random() - 0.5) * 12;
+      this.vy = (Math.random() * -14) - 2;
+      this.gravity = 0.4;
+      this.size = Math.random() * 10 + 4;
+      this.rotationSpeed = (Math.random() - 0.5) * 12;
+      this.life = 1.0;
+      this.decay = Math.random() * 0.015 + 0.008;
+    }
   }
 
   update() {
@@ -98,6 +109,18 @@ class Particle {
       ctx.lineWidth = 1;
       ctx.setLineDash([2, 2]);
       ctx.stroke();
+    } else if (this.type === 'dust') {
+      ctx.fillStyle = this.color;
+      ctx.beginPath();
+      ctx.arc(0, 0, this.size, 0, Math.PI * 2);
+      ctx.fill();
+    } else if (this.type === 'flame') {
+      ctx.fillStyle = this.color;
+      ctx.beginPath();
+      ctx.moveTo(0, -this.size);
+      ctx.quadraticCurveTo(this.size * 0.6, -this.size * 0.3, 0, this.size * 0.5);
+      ctx.quadraticCurveTo(-this.size * 0.6, -this.size * 0.3, 0, -this.size);
+      ctx.fill();
     }
 
     ctx.restore();
@@ -109,6 +132,26 @@ let particleSystem;
 function initParticles() {
   const canvas = document.getElementById('particle-canvas');
   particleSystem = new ParticleSystem(canvas);
+  startAmbientDust();
+}
+
+// Ambient floating dust particles - always running
+let ambientInterval;
+function startAmbientDust() {
+  if (ambientInterval) return;
+  ambientInterval = setInterval(() => {
+    if (!particleSystem) return;
+    // Spawn a few subtle dust particles
+    for (let i = 0; i < 2; i++) {
+      particleSystem.particles.push(new Particle({
+        x: Math.random() * particleSystem.canvas.width,
+        y: particleSystem.canvas.height + 10,
+        colors: ['rgba(201,168,76,0.4)', 'rgba(255,255,255,0.2)', 'rgba(240,208,128,0.3)'],
+        type: 'dust',
+      }));
+    }
+    if (!particleSystem.running) particleSystem.loop();
+  }, 400);
 }
 
 function triggerWinEffect() {
@@ -148,6 +191,42 @@ function triggerPushEffect() {
     count: 20,
     colors: ['#aaa', '#ccc', '#888'],
     type: 'sparkle'
+  });
+}
+
+function triggerGambleWinEffect() {
+  if (!particleSystem) return;
+  particleSystem.burst({
+    count: 80,
+    colors: ['#ffd700', '#f0d080', '#ff6b35', '#ffaa00'],
+    type: 'sparkle'
+  });
+  particleSystem.burst({
+    count: 40,
+    colors: ['#2d9e4f', '#4caf50', '#66bb6a'],
+    type: 'confetti'
+  });
+  document.getElementById('app').classList.add('win-flash');
+  setTimeout(() => document.getElementById('app').classList.remove('win-flash'), 500);
+}
+
+function triggerGambleLoseEffect() {
+  if (!particleSystem) return;
+  particleSystem.burst({
+    count: 30,
+    colors: ['#333', '#555', '#222', '#444'],
+    type: 'confetti'
+  });
+  document.getElementById('app').classList.add('bust-flash');
+  setTimeout(() => document.getElementById('app').classList.remove('bust-flash'), 400);
+}
+
+function triggerStreakUpEffect() {
+  if (!particleSystem) return;
+  particleSystem.burst({
+    count: 50,
+    colors: ['#ff4500', '#ff6b35', '#ff8c00', '#ffd700', '#ffaa00'],
+    type: 'flame'
   });
 }
 

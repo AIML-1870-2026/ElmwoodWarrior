@@ -27,9 +27,14 @@ function initGame() {
     GameState.balance = parseInt(saved);
   }
 
+  // Init subsystems
+  StreakSystem.init();
+  Achievements.init();
+
   reshuffleShoe();
   GameState.phase = 'BETTING';
   renderAll();
+  renderStreakMeter();
 }
 
 function reshuffleShoe() {
@@ -434,32 +439,75 @@ function endRound() {
   }
 
   // Insurance payout
+  let insuranceWon = false;
   if (GameState.insuranceBet > 0) {
     if (dealerBJ) {
       totalWinnings += GameState.insuranceBet * 3;
+      insuranceWon = true;
     }
   }
-
-  GameState.balance += totalWinnings;
-  saveBalance();
 
   const hasWin = results.some(r => r.result === 'WIN' || r.result === 'BLACKJACK');
   const hasBJ = results.some(r => r.result === 'BLACKJACK');
   const allLost = results.every(r => r.result === 'LOSE' || r.result === 'BUST');
   const hasPush = results.some(r => r.result === 'PUSH');
-
+  const hasDouble = results.some(r => r.hand.doubled);
+  const hasSplit = GameState.playerHands.length > 1;
+  const splitBothWon = hasSplit && results.length >= 2 &&
+    results.every(r => r.result === 'WIN' || r.result === 'BLACKJACK');
   const totalBetsIn = results.reduce((sum, r) => sum + r.hand.bet, 0);
+
+  // === STREAK SYSTEM ===
+  const streakResult = StreakSystem.update(hasWin || hasBJ, hasPush && !allLost, allLost);
+
+  // Apply streak multiplier bonus to net winnings
+  let streakBonus = 0;
+  if ((hasWin || hasBJ) && streakResult.tier.multiplier > 1) {
+    const netWin = totalWinnings - totalBetsIn;
+    streakBonus = Math.floor(netWin * (streakResult.tier.multiplier - 1));
+    totalWinnings += streakBonus;
+  }
+
+  // Streak tier up effects
+  if (streakResult.tierUp && streakResult.tierChanged) {
+    audioManager.play('streak-up');
+    triggerStreakUpEffect();
+  }
+
+  GameState.balance += totalWinnings;
+  saveBalance();
+
+  // === ACHIEVEMENTS ===
+  Achievements.checkAll({
+    hasWin: hasWin || hasBJ,
+    hasBJ,
+    hasPush: hasPush && !allLost,
+    allLost,
+    hasDouble,
+    hasSplit,
+    splitBothWon,
+    insuranceWon,
+    balance: GameState.balance,
+    streak: StreakSystem.winStreak,
+    betAmount: totalBetsIn,
+    isBroke: GameState.balance <= 0,
+  });
+
+  // Build display message
+  let winMsg = streakBonus > 0
+    ? `+$${(totalWinnings - streakBonus).toLocaleString()} (+$${streakBonus.toLocaleString()} streak bonus!)`
+    : `+$${totalWinnings.toLocaleString()}`;
 
   if (hasBJ) {
     GameState.lastResult = 'blackjack';
     showResultBanner('BLACKJACK!', 'blackjack');
-    showMessage(`+$${totalWinnings.toLocaleString()}`);
+    showMessage(winMsg);
     audioManager.play('blackjack');
     triggerBlackjackEffect();
   } else if (hasWin) {
     GameState.lastResult = 'win';
     showResultBanner('You Win!', 'win');
-    showMessage(`+$${totalWinnings.toLocaleString()}`);
+    showMessage(winMsg);
     audioManager.play('win');
     triggerWinEffect();
   } else if (hasPush && !allLost) {
@@ -477,18 +525,29 @@ function endRound() {
 
   GameState.currentBet = 0;
   renderAll();
+  renderStreakMeter();
 
-  if (GameState.balance <= 0) {
-    setTimeout(() => showRebuyModal(), 1500);
-  }
+  // === DOUBLE OR NOTHING ===
+  const netProfit = totalWinnings - totalBetsIn;
+  const canGamble = (hasWin || hasBJ) && netProfit > 0;
 
-  setTimeout(() => {
-    GameState.phase = 'BETTING';
-    if (GameState.balance > 0) {
-      showMessage('Place your bet or press ENTER to re-deal');
+  if (canGamble) {
+    setTimeout(() => {
+      GameState.phase = 'GAMBLE';
+      GambleSystem.offer(netProfit);
+    }, 2200);
+  } else {
+    if (GameState.balance <= 0) {
+      setTimeout(() => showRebuyModal(), 1500);
     }
-    renderAll();
-  }, 2200);
+    setTimeout(() => {
+      GameState.phase = 'BETTING';
+      if (GameState.balance > 0) {
+        showMessage('Place your bet or press ENTER to re-deal');
+      }
+      renderAll();
+    }, 2200);
+  }
 }
 
 function addFreeMoney() {

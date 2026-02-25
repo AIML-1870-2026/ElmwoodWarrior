@@ -42,6 +42,12 @@
   --warning:          #f0a030;
   --info:             #4a90d9;
 
+  /* Streak Colors */
+  --streak-warm:        #d4a520;
+  --streak-hot:         #ff6b35;
+  --streak-fire:        #ff4500;
+  --streak-unstoppable: #ffd700;
+
   /* Sizing */
   --radius-sm: 6px;
   --radius-md: 10px;

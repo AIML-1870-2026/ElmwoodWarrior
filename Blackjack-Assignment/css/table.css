@@ -10,6 +10,13 @@
   background:
     radial-gradient(ellipse 80% 50% at 50% 20%, rgba(30, 20, 10, 0.6) 0%, transparent 60%),
     var(--bg-dark);
+  animation: bg-ambient 20s ease-in-out infinite;
+}
+
+@keyframes bg-ambient {
+  0%, 100% { background-color: #080810; }
+  33% { background-color: #0a0812; }
+  66% { background-color: #080a10; }
 }
 
 .table-spotlight {
@@ -20,6 +27,16 @@
   position: absolute;
   inset: 0;
   z-index: 0;
+}
+
+/* Vignette overlay */
+#app::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 99;
+  background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.4) 100%);
 }
 
 /* === HUD Header === */
