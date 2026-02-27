@@ -345,15 +345,10 @@ const UI = {
             // Score
             ctx.fillStyle = '#ffffff';
             ctx.font = 'bold 28px "Orbitron", sans-serif';
-            ctx.fillText('SCORE', CANVAS_W / 2, CANVAS_H / 2 - 10);
+            ctx.fillText('SCORE', CANVAS_W / 2, CANVAS_H / 2 - 20);
             ctx.fillStyle = '#00ffff';
             ctx.font = 'bold 44px "Orbitron", sans-serif';
-            ctx.fillText(this.finalScore.toLocaleString(), CANVAS_W / 2, CANVAS_H / 2 + 40);
-
-            // Accuracy
-            ctx.fillStyle = '#aaaacc';
-            ctx.font = '18px "Orbitron", sans-serif';
-            ctx.fillText('BEAT ACCURACY: ' + this.finalAccuracy.toFixed(1) + '%', CANVAS_W / 2, CANVAS_H / 2 + 75);
+            ctx.fillText(this.finalScore.toLocaleString(), CANVAS_W / 2, CANVAS_H / 2 + 30);
 
             // New high score
             if (this.isNewHighScore) {
@@ -361,7 +356,7 @@ const UI = {
                 ctx.font = 'bold 22px "Orbitron", sans-serif';
                 ctx.shadowColor = '#ffd700';
                 ctx.shadowBlur = 10;
-                ctx.fillText('NEW HIGH SCORE!', CANVAS_W / 2, CANVAS_H / 2 + 110);
+                ctx.fillText('NEW HIGH SCORE!', CANVAS_W / 2, CANVAS_H / 2 + 70);
                 ctx.shadowBlur = 0;
             }
 
@@ -380,13 +375,13 @@ const UI = {
             // Label
             ctx.fillStyle = '#ff66cc';
             ctx.font = '16px "Orbitron", sans-serif';
-            ctx.fillText('NAME YOUR GHOST', CANVAS_W / 2, CANVAS_H / 2 + 120);
+            ctx.fillText('NAME YOUR GHOST', CANVAS_W / 2, CANVAS_H / 2 + 110);
 
             // Input box background
             const boxW = 280;
             const boxH = 36;
             const boxX = CANVAS_W / 2 - boxW / 2;
-            const boxY = CANVAS_H / 2 + 132;
+            const boxY = CANVAS_H / 2 + 120;
             ctx.fillStyle = 'rgba(0,0,0,0.6)';
             ctx.fillRect(boxX, boxY, boxW, boxH);
             ctx.strokeStyle = '#ff66cc';
@@ -424,8 +419,8 @@ const UI = {
                 ctx.textAlign = 'center';
                 ctx.fillStyle = '#888899';
                 ctx.font = '18px "Orbitron", sans-serif';
-                ctx.fillText('PRESS ENTER OR SPACE TO RESTART', CANVAS_W / 2, CANVAS_H / 2 + 190);
-                ctx.fillText('ESC FOR TITLE', CANVAS_W / 2, CANVAS_H / 2 + 220);
+                ctx.fillText('PRESS ENTER OR SPACE TO RESTART', CANVAS_W / 2, CANVAS_H / 2 + 180);
+                ctx.fillText('ESC FOR TITLE', CANVAS_W / 2, CANVAS_H / 2 + 210);
             }
         }
     },
