@@ -18,7 +18,8 @@ const UI = {
     ghostMenuAction: 'list', // list, rename
     renameBuffer: '',
     titleSelection: 0,
-    titleOptions: ['START', 'GHOSTS'],
+    titleOptions: ['START', 'PRACTICE', 'GHOSTS'],
+    levelSelectSelection: 0,
     finalScore: 0,
     finalAccuracy: 0,
     isNewHighScore: false,
@@ -98,11 +99,13 @@ const UI = {
             this.titleSelection = (this.titleSelection - 1 + this.titleOptions.length) % this.titleOptions.length;
             AudioEngine.playMenuSelect();
         }
-        if (Input.isEnter() || Input.isJumpJust()) {
+        if (Input.isEnter() || Input.justPressed['Space']) {
             AudioEngine.ensureContext();
             if (this.titleSelection === 0) {
                 return 'start';
             } else if (this.titleSelection === 1) {
+                return 'practice';
+            } else if (this.titleSelection === 2) {
                 this.screen = 'ghosts';
                 this.ghostMenuSelection = 0;
                 return 'ghosts';
@@ -112,7 +115,7 @@ const UI = {
     },
 
     // ─── HUD ───
-    drawHUD(ctx, score, gameTime, tier, multiplier, combo) {
+    drawHUD(ctx, score, gameTime, tier, multiplier, combo, practiceMode) {
         const theme = ThemeManager.getTheme();
         const minutes = Math.floor(gameTime / 60000);
         const seconds = Math.floor((gameTime % 60000) / 1000);
@@ -129,6 +132,16 @@ const UI = {
         ctx.fillStyle = '#ffffff';
         ctx.font = '16px "Orbitron", sans-serif';
         ctx.fillText(theme.name + ' T' + tier, CANVAS_W / 2, 28);
+
+        // Practice mode label
+        if (practiceMode) {
+            ctx.fillStyle = '#ff8800';
+            ctx.font = 'bold 14px "Orbitron", sans-serif';
+            ctx.shadowColor = '#ff8800';
+            ctx.shadowBlur = 8;
+            ctx.fillText('PRACTICE MODE', CANVAS_W / 2, 52);
+            ctx.shadowBlur = 0;
+        }
 
         // Time
         ctx.textAlign = 'right';
@@ -158,7 +171,7 @@ const UI = {
                 ctx.textAlign = 'center';
                 ctx.fillStyle = '#ff4444';
                 ctx.font = '14px "Orbitron", sans-serif';
-                ctx.fillText('BOSS IN ' + Math.ceil(bossIn / 1000) + 's', CANVAS_W / 2, 52);
+                ctx.fillText('BOSS IN ' + Math.ceil(bossIn / 1000) + 's', CANVAS_W / 2, practiceMode ? 70 : 52);
             }
         }
     },
@@ -207,7 +220,7 @@ const UI = {
     },
 
     // ─── Death Sequence ───
-    startDeath(score, accuracy) {
+    startDeath(score, accuracy, practiceMode) {
         this.screen = 'dead';
         this.deathSequenceTimer = 0;
         this.deathFlashAlpha = 0;
@@ -221,7 +234,8 @@ const UI = {
         this.deathNameCursorBlink = 0;
         this.finalScore = Math.floor(score);
         this.finalAccuracy = accuracy;
-        this.isNewHighScore = score > Storage.getHighScore();
+        this.isPracticeMode = !!practiceMode;
+        this.isNewHighScore = !practiceMode && score > Storage.getHighScore();
         if (this.isNewHighScore) {
             Storage.setHighScore(Math.floor(score));
         }
@@ -280,10 +294,14 @@ const UI = {
         // Text appears at 1200ms
         if (t >= 1200) this.deathTextShown = true;
         if (t >= 1800) this.deathScoreShown = true;
-        // Name input appears at 2800ms
+        // Name input appears at 2800ms (skip in practice mode)
         if (t >= 2800 && !this.deathNameDone) {
-            this.deathNameInput = true;
-            this.deathNameCursorBlink += dt;
+            if (this.isPracticeMode) {
+                this.deathNameDone = true;
+            } else {
+                this.deathNameInput = true;
+                this.deathNameCursorBlink += dt;
+            }
         }
         // Restart shown after name is done (or after timeout)
         if (this.deathNameDone || t >= 3000 && !this.deathNameInput) {
@@ -350,8 +368,12 @@ const UI = {
             ctx.font = 'bold 44px "Orbitron", sans-serif';
             ctx.fillText(this.finalScore.toLocaleString(), CANVAS_W / 2, CANVAS_H / 2 + 30);
 
-            // New high score
-            if (this.isNewHighScore) {
+            // Practice mode label or new high score
+            if (this.isPracticeMode) {
+                ctx.fillStyle = '#ff8800';
+                ctx.font = 'bold 20px "Orbitron", sans-serif';
+                ctx.fillText('PRACTICE RUN - NO SCORE RECORDED', CANVAS_W / 2, CANVAS_H / 2 + 70);
+            } else if (this.isNewHighScore) {
                 ctx.fillStyle = '#ffd700';
                 ctx.font = 'bold 22px "Orbitron", sans-serif';
                 ctx.shadowColor = '#ffd700';
@@ -433,6 +455,107 @@ const UI = {
         return null;
     },
 
+    // ─── Level Select (Practice Mode) ───
+    drawLevelSelect(ctx) {
+        ctx.fillStyle = '#050510';
+        ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+
+        // Grid lines
+        ctx.strokeStyle = 'rgba(255,136,0,0.04)';
+        ctx.lineWidth = 1;
+        for (let y = 0; y < CANVAS_H; y += 30) {
+            ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(CANVAS_W, y); ctx.stroke();
+        }
+
+        // Title
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#ff8800';
+        ctx.font = 'bold 36px "Orbitron", sans-serif';
+        ctx.shadowColor = '#ff8800';
+        ctx.shadowBlur = 15;
+        ctx.fillText('PRACTICE MODE', CANVAS_W / 2, 80);
+        ctx.shadowBlur = 0;
+
+        ctx.fillStyle = '#888899';
+        ctx.font = '14px "Orbitron", sans-serif';
+        ctx.fillText('SELECT A TIER TO PRACTICE  -  SCORES WILL NOT BE RECORDED', CANVAS_W / 2, 115);
+
+        const tierNames = ['MEGA CITY', 'MID DISTRICT', 'OUTSKIRTS', 'WASTELAND', 'DEEP FOREST'];
+        const tierColors = ['#ff00ff', '#6644ff', '#44aa66', '#66aa33', '#33cc33'];
+        const tierDescs = [
+            'Easy intro patterns - ground obstacles',
+            'Aerial threats introduced - drones & flying cars',
+            'Complex combos - mixed ground & air',
+            'High intensity - rapid fire patterns',
+            'Endgame chaos - maximum difficulty'
+        ];
+
+        for (let i = 0; i < 5; i++) {
+            const selected = i === this.levelSelectSelection;
+            const y = 170 + i * 85;
+
+            // Background card
+            ctx.fillStyle = selected ? 'rgba(255,136,0,0.12)' : 'rgba(255,255,255,0.02)';
+            ctx.fillRect(180, y, CANVAS_W - 360, 70);
+            if (selected) {
+                ctx.strokeStyle = '#ff8800';
+                ctx.lineWidth = 1.5;
+                ctx.strokeRect(180, y, CANVAS_W - 360, 70);
+            }
+
+            // Tier number
+            ctx.textAlign = 'left';
+            ctx.fillStyle = selected ? tierColors[i] : '#555566';
+            ctx.font = 'bold 28px "Orbitron", sans-serif';
+            if (selected) {
+                ctx.shadowColor = tierColors[i];
+                ctx.shadowBlur = 8;
+            }
+            ctx.fillText('T' + (i + 1), 210, y + 35);
+            ctx.shadowBlur = 0;
+
+            // Tier name
+            ctx.fillStyle = selected ? '#ffffff' : '#777788';
+            ctx.font = 'bold 20px "Orbitron", sans-serif';
+            ctx.fillText(tierNames[i], 280, y + 30);
+
+            // Description
+            ctx.fillStyle = selected ? '#aaaacc' : '#555566';
+            ctx.font = '13px "Orbitron", sans-serif';
+            ctx.fillText(tierDescs[i], 280, y + 52);
+
+            // Difficulty dots
+            ctx.textAlign = 'right';
+            for (let d = 0; d < 5; d++) {
+                ctx.fillStyle = d <= i ? (selected ? tierColors[i] : '#555566') : 'rgba(255,255,255,0.05)';
+                ctx.fillRect(CANVAS_W - 210 + d * 18, y + 28, 10, 10);
+            }
+        }
+
+        // Controls
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#444466';
+        ctx.font = '14px "Orbitron", sans-serif';
+        ctx.fillText('UP/DOWN = SELECT    ENTER/SPACE = START    ESC = BACK', CANVAS_W / 2, CANVAS_H - 40);
+
+        // Handle input
+        if (Input.justPressed['ArrowDown']) {
+            this.levelSelectSelection = (this.levelSelectSelection + 1) % 5;
+            AudioEngine.playMenuSelect();
+        }
+        if (Input.justPressed['ArrowUp']) {
+            this.levelSelectSelection = (this.levelSelectSelection - 1 + 5) % 5;
+            AudioEngine.playMenuSelect();
+        }
+        if (Input.isEnter() || Input.justPressed['Space']) {
+            return 'tier:' + (this.levelSelectSelection + 1);
+        }
+        if (Input.justPressed['Escape']) {
+            return 'title';
+        }
+        return null;
+    },
+
     // ─── Ghost Management Screen ───
     drawGhosts(ctx) {
         ctx.fillStyle = '#050510';
@@ -474,8 +597,7 @@ const UI = {
                 ctx.fillText('Score: ' + (g.score || 0).toLocaleString(), 220, y + 48);
 
                 ctx.textAlign = 'right';
-                ctx.fillText(g.date || '', CANVAS_W - 220, y + 25);
-                ctx.fillText('Accuracy: ' + (g.beat_accuracy || 0).toFixed(1) + '%', CANVAS_W - 220, y + 48);
+                ctx.fillText(g.date || '', CANVAS_W - 220, y + 35);
             }
         }
 

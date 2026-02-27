@@ -3,7 +3,7 @@
 const Game = {
     canvas: null,
     ctx: null,
-    state: 'title', // title, playing, paused, dead, ghosts
+    state: 'title', // title, playing, paused, dead, ghosts, levelselect
     gameTime: 0,
     score: 0,
     rhythmBonus: 0,
@@ -12,6 +12,8 @@ const Game = {
     totalJumps: 0,
     rhythmHits: 0,
     running: false,
+    practiceMode: false,
+    practiceTier: 1,
 
     init() {
         this.canvas = document.getElementById('gameCanvas');
@@ -47,18 +49,24 @@ const Game = {
         this.canvas.style.height = h + 'px';
     },
 
-    startGame() {
+    startGame(practice, tier) {
         this.state = 'playing';
         this.gameTime = 0;
         this.score = 0;
         this.rhythmBonus = 0;
-        this.tier = 1;
         this.totalJumps = 0;
         this.rhythmHits = 0;
+        this.practiceMode = !!practice;
+        this.practiceTier = tier || 1;
+        this.tier = this.practiceMode ? this.practiceTier : 1;
 
         Player.init();
         ObstaclePool.init();
         ThemeManager.init();
+        if (this.practiceMode) {
+            ThemeManager.setTier(this.practiceTier);
+            ThemeManager.transitionProgress = 1;
+        }
         Parallax.init();
         RhythmEngine.init();
         Particles.clear();
@@ -66,8 +74,13 @@ const Game = {
         BossManager.active = false;
         BossManager.showingWarning = false;
 
-        GhostSystem.startRecording();
-        GhostSystem.loadGhostsForPlayback();
+        if (!this.practiceMode) {
+            GhostSystem.startRecording();
+            GhostSystem.loadGhostsForPlayback();
+        } else {
+            GhostSystem.recording = false;
+            GhostSystem.playbackGhosts = [];
+        }
 
         AudioEngine.ensureContext();
         AudioEngine.startMusic(128);
@@ -120,11 +133,13 @@ const Game = {
     _updateGameplay(dt) {
         this.gameTime += dt;
 
-        // Tier update
-        const newTier = Math.min(5, Math.floor(this.gameTime / 60000) + 1);
-        if (newTier !== this.tier) {
-            this.tier = newTier;
-            ThemeManager.setTier(newTier);
+        // Tier update (locked in practice mode)
+        if (!this.practiceMode) {
+            const newTier = Math.min(5, Math.floor(this.gameTime / 60000) + 1);
+            if (newTier !== this.tier) {
+                this.tier = newTier;
+                ThemeManager.setTier(newTier);
+            }
         }
 
         // Update systems
@@ -135,9 +150,11 @@ const Game = {
         EnvParticles.update(dt, this.tier, ObstaclePool.getSpeed(this.tier));
         Particles.update(dt);
 
-        // Ghost recording
-        GhostSystem.recordFrame(dt, this.gameTime);
-        GhostSystem.updatePlayback(this.gameTime);
+        // Ghost recording (disabled in practice mode)
+        if (!this.practiceMode) {
+            GhostSystem.recordFrame(dt, this.gameTime);
+            GhostSystem.updatePlayback(this.gameTime);
+        }
 
         // Jump rhythm rating
         if (Input.isJumpJust() && Player.grounded) {
@@ -149,8 +166,8 @@ const Game = {
             }
         }
 
-        // Boss check
-        if (BossManager.shouldTrigger(this.gameTime)) {
+        // Boss check (disabled in practice mode)
+        if (!this.practiceMode && BossManager.shouldTrigger(this.gameTime)) {
             const minute = Math.floor(this.gameTime / 60000) + 1;
             BossManager.startWarning(minute - 1);
         }
@@ -201,11 +218,14 @@ const Game = {
         ScreenShake.trigger(12, 800);
         Particles.deathExplosion(Player.x, Player.y - Player.h / 2);
 
-        GhostSystem.stopRecording();
         const accuracy = this.totalJumps > 0 ? (this.rhythmHits / this.totalJumps * 100) : 0;
-        GhostSystem.saveGhost(this.score, this.tier, accuracy);
 
-        UI.startDeath(this.score, accuracy);
+        if (!this.practiceMode) {
+            GhostSystem.stopRecording();
+            GhostSystem.saveGhost(this.score, this.tier, accuracy);
+        }
+
+        UI.startDeath(this.score, accuracy, this.practiceMode);
     },
 
     _render() {
@@ -225,6 +245,10 @@ const Game = {
                     this.startGame();
                 } else if (titleAction === 'ghosts') {
                     this.state = 'ghosts';
+                } else if (titleAction === 'practice') {
+                    this.state = 'levelselect';
+                    UI.screen = 'levelselect';
+                    UI.levelSelectSelection = 0;
                 }
                 break;
 
@@ -240,7 +264,7 @@ const Game = {
                     UI.screen = 'playing';
                     AudioEngine.startMusic(RhythmEngine.bpm);
                 } else if (pauseAction === 'restart') {
-                    this.startGame();
+                    this.startGame(this.practiceMode, this.practiceTier);
                 } else if (pauseAction === 'quit') {
                     this.state = 'title';
                     UI.screen = 'title';
@@ -253,11 +277,22 @@ const Game = {
                 UI.drawDeath(ctx);
                 const deathAction = UI.handleDeathInput();
                 if (deathAction === 'restart') {
-                    this.startGame();
+                    this.startGame(this.practiceMode, this.practiceTier);
                 } else if (deathAction === 'quit') {
                     this.state = 'title';
                     UI.screen = 'title';
                     UI.init();
+                }
+                break;
+
+            case 'levelselect':
+                const lsAction = UI.drawLevelSelect(ctx);
+                if (lsAction === 'title') {
+                    this.state = 'title';
+                    UI.screen = 'title';
+                } else if (lsAction && lsAction.startsWith('tier:')) {
+                    const tier = parseInt(lsAction.split(':')[1]);
+                    this.startGame(true, tier);
                 }
                 break;
 
@@ -298,7 +333,7 @@ const Game = {
         // Rhythm feedback
         RhythmEngine.drawRating(ctx);
         // HUD
-        UI.drawHUD(ctx, this.score, this.gameTime, this.tier, RhythmEngine.multiplier, RhythmEngine.combo);
+        UI.drawHUD(ctx, this.score, this.gameTime, this.tier, RhythmEngine.multiplier, RhythmEngine.combo, this.practiceMode);
     }
 };
 
