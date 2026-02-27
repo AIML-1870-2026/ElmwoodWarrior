@@ -297,8 +297,6 @@ const Game = {
 
         // Rhythm feedback
         RhythmEngine.drawRating(ctx);
-        RhythmEngine.drawRhythmBar(ctx);
-
         // HUD
         UI.drawHUD(ctx, this.score, this.gameTime, this.tier, RhythmEngine.multiplier, RhythmEngine.combo);
     }
