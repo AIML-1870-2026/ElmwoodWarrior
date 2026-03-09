@@ -103,7 +103,7 @@ export class BattleScene extends Phaser.Scene {
 
         // Player HP bar
         this.playerHpBar = new HealthBar(this, 60, height * 0.58, 360, 28, this.player.maxHp, 0x44cc44);
-        this.playerHpBar.setLabel('Elmwood Warrior');
+        this.playerHpBar.setLabel('Health');
         this.playerHpBar.setValue(this.player.hp, this.player.maxHp);
 
         // Player Stamina bar
