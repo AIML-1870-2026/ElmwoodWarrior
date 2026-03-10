@@ -5,6 +5,7 @@ const DEFAULTS = {
     highContrast: false,
     animSpeed: 1,      // 0=slow, 1=normal, 2=fast
     screenShake: true,
+    fullscreen: false,
     devMode: false
 };
 
@@ -38,8 +39,8 @@ export class SettingsScene extends Phaser.Scene {
             strokeThickness: 6
         }).setOrigin(0.5);
 
-        const startY = 150;
-        const rowH = 110;
+        const startY = 130;
+        const rowH = 90;
         let row = 0;
 
         // Text Size
@@ -71,6 +72,15 @@ export class SettingsScene extends Phaser.Scene {
             this.settings.screenShake, (val) => {
                 this.settings.screenShake = val;
                 this.applyAndSave();
+            });
+        row++;
+
+        // Fullscreen
+        this.createToggleOption(width, startY + rowH * row, 'Fullscreen',
+            this.settings.fullscreen, (val) => {
+                this.settings.fullscreen = val;
+                this.applyAndSave();
+                this.toggleFullscreen(val);
             });
         row++;
 
@@ -173,6 +183,17 @@ export class SettingsScene extends Phaser.Scene {
         });
     }
 
+    toggleFullscreen(enabled) {
+        if (enabled) {
+            const el = this.game.canvas.parentElement || document.documentElement;
+            const requestFs = el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen;
+            if (requestFs) requestFs.call(el);
+        } else {
+            const exitFs = document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen;
+            if (exitFs && document.fullscreenElement) exitFs.call(document);
+        }
+    }
+
     applyAndSave() {
         this.game.registry.set('settings', this.settings);
         localStorage.setItem(SETTINGS_KEY, JSON.stringify(this.settings));
@@ -202,6 +223,10 @@ export class SettingsScene extends Phaser.Scene {
 
     static isScreenShakeEnabled() {
         return SettingsScene.loadSettings().screenShake;
+    }
+
+    static isFullscreen() {
+        return SettingsScene.loadSettings().fullscreen;
     }
 
     static isDevMode() {
