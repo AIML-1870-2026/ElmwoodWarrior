@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weather Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <!-- Ambient Background -->
+  <div id="ambient-bg" class="ambient-bg ambient-clear ambient-day">
+    <div class="particles" id="particles"></div>
+  </div>
+
+  <div class="app-container">
+    <!-- Header -->
+    <header class="header">
+      <h1 class="logo">Weather<span class="logo-accent">Dashboard</span></h1>
+      <div class="unit-toggle" role="group" aria-label="Temperature unit">
+        <button id="btn-imperial" class="unit-btn active" aria-pressed="true" onclick="toggleUnits('imperial')">°F</button>
+        <button id="btn-metric" class="unit-btn" aria-pressed="false" onclick="toggleUnits('metric')">°C</button>
+      </div>
+    </header>
+
+    <!-- Search -->
+    <section class="search-section">
+      <div class="search-bar">
+        <label for="search-input" class="sr-only">Search city</label>
+        <input type="text" id="search-input" placeholder="Search any city..." aria-label="City search" autocomplete="off">
+        <button id="search-btn" aria-label="Search">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+        </button>
+        <button id="geo-btn" aria-label="Use my location" title="Use my location">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>
+          </svg>
+        </button>
+      </div>
+      <div id="recent-searches" class="recent-searches"></div>
+    </section>
+
+    <!-- Error -->
+    <div id="error-msg" class="error-msg" role="alert" aria-live="assertive"></div>
+
+    <!-- Loading -->
+    <div id="loading" class="loading hidden">
+      <div class="spinner"></div>
+      <p>Fetching weather data...</p>
+    </div>
+
+    <!-- Weather Content -->
+    <main id="weather-content" class="weather-content hidden">
+      <!-- Current Weather -->
+      <section class="current-weather">
+        <div class="current-main glass-card">
+          <div class="current-header">
+            <div>
+              <h2 id="city-name" class="city-name"></h2>
+              <p id="current-date" class="current-date"></p>
+            </div>
+            <img id="current-icon" class="current-icon" src="" alt="" loading="lazy">
+          </div>
+          <div class="temp-display">
+            <span id="current-temp" class="current-temp"></span>
+            <span id="temp-unit" class="temp-unit"></span>
+          </div>
+          <p id="current-desc" class="current-desc"></p>
+          <p id="feels-like" class="feels-like"></p>
+          <div class="high-low">
+            <span id="temp-high" class="temp-high"></span>
+            <span class="hl-divider">/</span>
+            <span id="temp-low" class="temp-low"></span>
+          </div>
+        </div>
+
+        <div class="current-details glass-card">
+          <h3 class="details-title">Details</h3>
+          <div class="detail-grid">
+            <div class="detail-item">
+              <span class="detail-label">Humidity</span>
+              <div class="detail-value-row">
+                <span id="humidity" class="detail-value"></span>
+                <div class="humidity-bar">
+                  <div id="humidity-fill" class="humidity-fill"></div>
+                </div>
+              </div>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Wind</span>
+              <span id="wind" class="detail-value"></span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Pressure</span>
+              <span id="pressure" class="detail-value"></span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Visibility</span>
+              <span id="visibility" class="detail-value"></span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Sunrise</span>
+              <span id="sunrise" class="detail-value"></span>
+            </div>
+            <div class="detail-item">
+              <span class="detail-label">Sunset</span>
+              <span id="sunset" class="detail-value"></span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Outfit Advisor -->
+      <section id="outfit-section" class="outfit-section glass-card">
+        <h3 class="outfit-title">What to Wear</h3>
+        <p id="outfit-advice" class="outfit-advice"></p>
+      </section>
+
+      <!-- 4-Day Forecast -->
+      <section class="forecast-section">
+        <h3 class="forecast-title">4-Day Forecast</h3>
+        <div id="forecast-cards" class="forecast-cards"></div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>Powered by <a href="https://openweathermap.org/" target="_blank" rel="noopener">OpenWeatherMap</a></p>
+    </footer>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
