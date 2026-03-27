@@ -198,6 +198,21 @@ function processWeatherData(currentData, forecastData) {
   searchInput.value = currentCity;
   addRecentSearch(currentCity);
 
+  // If guess mode is on, show guess challenge first
+  if (guessMode) {
+    pendingWeatherReveal = { currentData, forecastData };
+    weatherContent.classList.add("hidden");
+    updateAmbientBackground(currentData);
+    updateAmbientSound(currentData);
+    showGuessChallenge(currentCity);
+    return;
+  }
+
+  document.getElementById("temp-guess-section").classList.add("hidden");
+  finishWeatherRender(currentData, forecastData);
+}
+
+function finishWeatherRender(currentData, forecastData) {
   renderWeatherMood(currentData);
   renderCurrentWeather(currentData);
   renderSunArc(currentData);
@@ -208,6 +223,8 @@ function processWeatherData(currentData, forecastData) {
   updateMap(currentData.coord.lat, currentData.coord.lon, currentData.name);
   updateAmbientBackground(currentData);
   updateAmbientSound(currentData);
+  updateFavButton();
+  startTrivia(currentData);
 
   weatherContent.classList.remove("hidden");
 
@@ -777,75 +794,155 @@ function updateAmbientSound(data) {
   if (audioCtx.state === "suspended") audioCtx.resume();
 
   const weatherId = data.weather[0].id;
+  const isNight = data.weather[0].icon.endsWith("n");
 
-  if (weatherId >= 200 && weatherId < 600) {
-    // Rain sound
-    createRainSound();
-    if (weatherId < 300) createThunderSound();
+  if (weatherId >= 200 && weatherId < 300) {
+    createRainSound(0.14, 600, 1.2);  // heavy, dark rain
+    createThunderSound();
+  } else if (weatherId >= 300 && weatherId < 400) {
+    createRainSound(0.08, 1200, 0.3);  // light drizzle — higher freq, quieter
+  } else if (weatherId >= 500 && weatherId < 600) {
+    const intensity = weatherId >= 502 ? 0.16 : 0.10;
+    createRainSound(intensity, 800, 0.7);
   } else if (weatherId >= 600 && weatherId < 700) {
-    createWindSound(0.08);
+    createWindSound(0.06, 300, 0.15);  // soft snowy wind
+    createSnowSound();
   } else if (weatherId >= 700 && weatherId < 800) {
-    createWindSound(0.05);
+    createWindSound(0.04, 250, 0.1);   // eerie fog
+    createFogDrone();
+  } else if (weatherId >= 801) {
+    createWindSound(0.04, 350, 0.2);   // light wind for clouds
+    createNaturePad(isNight);
   } else {
-    // Clear/clouds — gentle ambient
-    createAmbientTone();
+    // Clear sky
+    createNaturePad(isNight);
+    if (isNight) createCricketSound();
+    else createBirdSound();
   }
 }
 
-function createRainSound() {
-  const bufferSize = audioCtx.sampleRate * 2;
-  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-  const data = buffer.getChannelData(0);
-  for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * 0.5;
+function createRainSound(vol, centerFreq, q) {
+  const bufferSize = audioCtx.sampleRate * 4;
+  const buffer = audioCtx.createBuffer(2, bufferSize, audioCtx.sampleRate);
+  // Shaped noise — more natural than raw white noise
+  for (let ch = 0; ch < 2; ch++) {
+    const channelData = buffer.getChannelData(ch);
+    let prev = 0;
+    for (let i = 0; i < bufferSize; i++) {
+      const white = Math.random() * 2 - 1;
+      // Brown-ish noise with occasional patter spikes (raindrop hits)
+      prev = prev * 0.97 + white * 0.03;
+      const spike = Math.random() > 0.997 ? (Math.random() * 0.8) : 0;
+      channelData[i] = (prev * 15 + spike) * 0.5;
+    }
+  }
 
   const source = audioCtx.createBufferSource();
   source.buffer = buffer;
   source.loop = true;
 
-  const filter = audioCtx.createBiquadFilter();
-  filter.type = "bandpass";
-  filter.frequency.value = 800;
-  filter.Q.value = 0.5;
+  const bandpass = audioCtx.createBiquadFilter();
+  bandpass.type = "bandpass";
+  bandpass.frequency.value = centerFreq;
+  bandpass.Q.value = q;
+
+  // Second layer — higher freq for rain patter texture
+  const hipass = audioCtx.createBiquadFilter();
+  hipass.type = "highshelf";
+  hipass.frequency.value = 2500;
+  hipass.gain.value = -6;
 
   const gain = audioCtx.createGain();
   gain.gain.value = 0;
-  gain.gain.linearRampToValueAtTime(0.12, audioCtx.currentTime + 2);
+  gain.gain.linearRampToValueAtTime(vol, audioCtx.currentTime + 3);
 
-  source.connect(filter).connect(gain).connect(audioCtx.destination);
+  source.connect(bandpass).connect(hipass).connect(gain).connect(audioCtx.destination);
   source.start();
   activeNodes.push({ source, gain });
+
+  // Add a second brighter layer for detail
+  const buffer2 = audioCtx.createBuffer(1, audioCtx.sampleRate * 2, audioCtx.sampleRate);
+  const d2 = buffer2.getChannelData(0);
+  for (let i = 0; i < d2.length; i++) d2[i] = (Math.random() * 2 - 1) * 0.3;
+
+  const src2 = audioCtx.createBufferSource();
+  src2.buffer = buffer2;
+  src2.loop = true;
+
+  const hp2 = audioCtx.createBiquadFilter();
+  hp2.type = "highpass";
+  hp2.frequency.value = 3000;
+
+  const g2 = audioCtx.createGain();
+  g2.gain.value = 0;
+  g2.gain.linearRampToValueAtTime(vol * 0.3, audioCtx.currentTime + 3);
+
+  src2.connect(hp2).connect(g2).connect(audioCtx.destination);
+  src2.start();
+  activeNodes.push({ source: src2, gain: g2 });
 }
 
 function createThunderSound() {
+  let thunderTimer = null;
   function rumble() {
     if (!soundEnabled) return;
+
+    // Low sub-bass rumble
     const osc = audioCtx.createOscillator();
     osc.type = "sawtooth";
-    osc.frequency.value = 40 + Math.random() * 30;
+    osc.frequency.setValueAtTime(50 + Math.random() * 30, audioCtx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(20, audioCtx.currentTime + 3);
 
     const gain = audioCtx.createGain();
     gain.gain.setValueAtTime(0, audioCtx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.15, audioCtx.currentTime + 0.1);
-    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 2.5);
+    gain.gain.linearRampToValueAtTime(0.12 + Math.random() * 0.08, audioCtx.currentTime + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 3);
 
     const filter = audioCtx.createBiquadFilter();
     filter.type = "lowpass";
-    filter.frequency.value = 150;
+    filter.frequency.setValueAtTime(200, audioCtx.currentTime);
+    filter.frequency.exponentialRampToValueAtTime(60, audioCtx.currentTime + 2.5);
+
+    // Crackle burst
+    const crackleLen = audioCtx.sampleRate * 0.3;
+    const crackleBuf = audioCtx.createBuffer(1, crackleLen, audioCtx.sampleRate);
+    const cd = crackleBuf.getChannelData(0);
+    for (let i = 0; i < crackleLen; i++) {
+      const env = Math.exp(-i / (crackleLen * 0.1));
+      cd[i] = (Math.random() * 2 - 1) * env;
+    }
+    const crackleSrc = audioCtx.createBufferSource();
+    crackleSrc.buffer = crackleBuf;
+    const crackleGain = audioCtx.createGain();
+    crackleGain.gain.value = 0.06;
+    const crackleFilter = audioCtx.createBiquadFilter();
+    crackleFilter.type = "bandpass";
+    crackleFilter.frequency.value = 2000;
+    crackleFilter.Q.value = 0.5;
+    crackleSrc.connect(crackleFilter).connect(crackleGain).connect(audioCtx.destination);
+    crackleSrc.start();
 
     osc.connect(filter).connect(gain).connect(audioCtx.destination);
     osc.start();
-    osc.stop(audioCtx.currentTime + 3);
+    osc.stop(audioCtx.currentTime + 4);
 
-    setTimeout(rumble, 5000 + Math.random() * 10000);
+    thunderTimer = setTimeout(rumble, 4000 + Math.random() * 12000);
   }
-  setTimeout(rumble, 2000);
+  thunderTimer = setTimeout(rumble, 1500 + Math.random() * 3000);
+  activeNodes.push({ _timer: thunderTimer });
 }
 
-function createWindSound(vol) {
-  const bufferSize = audioCtx.sampleRate * 2;
-  const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-  const data = buffer.getChannelData(0);
-  for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1);
+function createWindSound(vol, freq, lfoDepth) {
+  const bufferSize = audioCtx.sampleRate * 4;
+  const buffer = audioCtx.createBuffer(2, bufferSize, audioCtx.sampleRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = buffer.getChannelData(ch);
+    let prev = 0;
+    for (let i = 0; i < bufferSize; i++) {
+      prev = prev * 0.98 + (Math.random() * 2 - 1) * 0.02;
+      d[i] = prev * 20;
+    }
+  }
 
   const source = audioCtx.createBufferSource();
   source.buffer = buffer;
@@ -853,52 +950,227 @@ function createWindSound(vol) {
 
   const filter = audioCtx.createBiquadFilter();
   filter.type = "lowpass";
-  filter.frequency.value = 400;
+  filter.frequency.value = freq;
+
+  // Slow LFO modulates filter for "gusting" effect
+  const lfo = audioCtx.createOscillator();
+  lfo.frequency.value = 0.12 + Math.random() * 0.15;
+  const lfoGain = audioCtx.createGain();
+  lfoGain.gain.value = freq * lfoDepth;
+  lfo.connect(lfoGain).connect(filter.frequency);
+  lfo.start();
+
+  // Second LFO for volume swells
+  const volLfo = audioCtx.createOscillator();
+  volLfo.frequency.value = 0.08 + Math.random() * 0.06;
+  const volLfoGain = audioCtx.createGain();
+  volLfoGain.gain.value = vol * 0.4;
+  const gain = audioCtx.createGain();
+  gain.gain.value = 0;
+  gain.gain.linearRampToValueAtTime(vol, audioCtx.currentTime + 3);
+  volLfo.connect(volLfoGain).connect(gain.gain);
+  volLfo.start();
+
+  source.connect(filter).connect(gain).connect(audioCtx.destination);
+  source.start();
+  activeNodes.push({ source, gain, lfo, extra: volLfo });
+}
+
+function createSnowSound() {
+  // Gentle high-frequency sparkle — like tiny ice crystals
+  const bufLen = audioCtx.sampleRate * 3;
+  const buf = audioCtx.createBuffer(1, bufLen, audioCtx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < bufLen; i++) {
+    // Sparse tiny clicks
+    d[i] = Math.random() > 0.998 ? (Math.random() * 0.4 - 0.2) : 0;
+  }
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf;
+  src.loop = true;
+
+  const hp = audioCtx.createBiquadFilter();
+  hp.type = "highpass";
+  hp.frequency.value = 4000;
+
+  const reverb = audioCtx.createBiquadFilter();
+  reverb.type = "peaking";
+  reverb.frequency.value = 6000;
+  reverb.gain.value = 8;
+  reverb.Q.value = 0.5;
+
+  const g = audioCtx.createGain();
+  g.gain.value = 0;
+  g.gain.linearRampToValueAtTime(0.08, audioCtx.currentTime + 4);
+
+  src.connect(hp).connect(reverb).connect(g).connect(audioCtx.destination);
+  src.start();
+  activeNodes.push({ source: src, gain: g });
+}
+
+function createFogDrone() {
+  // Low, evolving drone for misty/foggy atmosphere
+  const osc1 = audioCtx.createOscillator();
+  osc1.type = "sine";
+  osc1.frequency.value = 80;
+  const osc2 = audioCtx.createOscillator();
+  osc2.type = "sine";
+  osc2.frequency.value = 80.7; // slight detune for beating
 
   const lfo = audioCtx.createOscillator();
-  lfo.frequency.value = 0.3;
+  lfo.frequency.value = 0.05;
   const lfoGain = audioCtx.createGain();
-  lfoGain.gain.value = 100;
-  lfo.connect(lfoGain).connect(filter.frequency);
+  lfoGain.gain.value = 3;
+  lfo.connect(lfoGain).connect(osc1.frequency);
+  lfo.connect(lfoGain).connect(osc2.frequency);
   lfo.start();
 
   const gain = audioCtx.createGain();
   gain.gain.value = 0;
-  gain.gain.linearRampToValueAtTime(vol, audioCtx.currentTime + 2);
+  gain.gain.linearRampToValueAtTime(0.04, audioCtx.currentTime + 5);
 
-  source.connect(filter).connect(gain).connect(audioCtx.destination);
-  source.start();
-  activeNodes.push({ source, gain, lfo });
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = "lowpass";
+  filter.frequency.value = 200;
+
+  osc1.connect(filter);
+  osc2.connect(filter);
+  filter.connect(gain).connect(audioCtx.destination);
+  osc1.start();
+  osc2.start();
+  activeNodes.push({ source: osc1, gain, extra: osc2, lfo });
 }
 
-function createAmbientTone() {
-  const osc = audioCtx.createOscillator();
-  osc.type = "sine";
-  osc.frequency.value = 220;
+function createNaturePad(isNight) {
+  // Evolving ambient pad — warm major chord feel for day, cool minor for night
+  const baseFreqs = isNight
+    ? [130.81, 155.56, 196.00, 261.63]   // C3, Eb3, G3, C4 (Cm)
+    : [130.81, 164.81, 196.00, 261.63];   // C3, E3, G3, C4 (Cmaj)
 
-  const osc2 = audioCtx.createOscillator();
-  osc2.type = "sine";
-  osc2.frequency.value = 277.18;
+  const master = audioCtx.createGain();
+  master.gain.value = 0;
+  master.gain.linearRampToValueAtTime(0.025, audioCtx.currentTime + 4);
 
-  const gain = audioCtx.createGain();
-  gain.gain.value = 0;
-  gain.gain.linearRampToValueAtTime(0.03, audioCtx.currentTime + 3);
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = "lowpass";
+  filter.frequency.value = 600;
+  // Slowly open and close the filter
+  const filterLfo = audioCtx.createOscillator();
+  filterLfo.frequency.value = 0.03;
+  const filterLfoGain = audioCtx.createGain();
+  filterLfoGain.gain.value = 200;
+  filterLfo.connect(filterLfoGain).connect(filter.frequency);
+  filterLfo.start();
 
-  osc.connect(gain).connect(audioCtx.destination);
-  osc2.connect(gain);
-  osc.start();
-  osc2.start();
-  activeNodes.push({ source: osc, gain, extra: osc2 });
+  filter.connect(master).connect(audioCtx.destination);
+
+  const oscs = baseFreqs.map((freq) => {
+    const osc = audioCtx.createOscillator();
+    osc.type = "sine";
+    osc.frequency.value = freq;
+    // Subtle slow vibrato per voice
+    const vib = audioCtx.createOscillator();
+    vib.frequency.value = 0.1 + Math.random() * 0.15;
+    const vibGain = audioCtx.createGain();
+    vibGain.gain.value = 1.5;
+    vib.connect(vibGain).connect(osc.frequency);
+    vib.start();
+
+    osc.connect(filter);
+    osc.start();
+    return { osc, vib };
+  });
+
+  activeNodes.push({
+    source: oscs[0].osc,
+    gain: master,
+    lfo: filterLfo,
+    extra: oscs.map(o => o.osc).concat(oscs.map(o => o.vib)),
+  });
+}
+
+function createBirdSound() {
+  // Synthetic birdsong — short chirps at random intervals
+  let birdTimer = null;
+  function chirp() {
+    if (!soundEnabled) return;
+    const t = audioCtx.currentTime;
+
+    // Each chirp is 2-4 rapid notes
+    const noteCount = 2 + Math.floor(Math.random() * 3);
+    for (let n = 0; n < noteCount; n++) {
+      const osc = audioCtx.createOscillator();
+      osc.type = "sine";
+      const baseFreq = 2000 + Math.random() * 2500;
+      const noteTime = t + n * (0.06 + Math.random() * 0.04);
+      osc.frequency.setValueAtTime(baseFreq, noteTime);
+      osc.frequency.exponentialRampToValueAtTime(baseFreq * (0.8 + Math.random() * 0.5), noteTime + 0.08);
+
+      const g = audioCtx.createGain();
+      g.gain.setValueAtTime(0, noteTime);
+      g.gain.linearRampToValueAtTime(0.03 + Math.random() * 0.02, noteTime + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.001, noteTime + 0.08 + Math.random() * 0.04);
+
+      osc.connect(g).connect(audioCtx.destination);
+      osc.start(noteTime);
+      osc.stop(noteTime + 0.15);
+    }
+
+    birdTimer = setTimeout(chirp, 2000 + Math.random() * 6000);
+  }
+  birdTimer = setTimeout(chirp, 500 + Math.random() * 2000);
+  activeNodes.push({ _timer: birdTimer });
+}
+
+function createCricketSound() {
+  // Synthetic crickets — rhythmic chirring
+  let cricketTimer = null;
+  function chirr() {
+    if (!soundEnabled) return;
+    const t = audioCtx.currentTime;
+    const chirpCount = 3 + Math.floor(Math.random() * 4);
+
+    for (let n = 0; n < chirpCount; n++) {
+      const noteTime = t + n * 0.07;
+
+      const bufLen = Math.floor(audioCtx.sampleRate * 0.05);
+      const buf = audioCtx.createBuffer(1, bufLen, audioCtx.sampleRate);
+      const d = buf.getChannelData(0);
+      const freq = 4500 + Math.random() * 1000;
+      for (let i = 0; i < bufLen; i++) {
+        const env = Math.sin(Math.PI * i / bufLen);
+        d[i] = Math.sin(2 * Math.PI * freq * i / audioCtx.sampleRate) * env * 0.15;
+      }
+      const src = audioCtx.createBufferSource();
+      src.buffer = buf;
+
+      const g = audioCtx.createGain();
+      g.gain.value = 0.04;
+
+      src.connect(g).connect(audioCtx.destination);
+      src.start(noteTime);
+    }
+
+    cricketTimer = setTimeout(chirr, 800 + Math.random() * 2500);
+  }
+  cricketTimer = setTimeout(chirr, 300 + Math.random() * 1000);
+  activeNodes.push({ _timer: cricketTimer });
 }
 
 function stopAllSounds() {
   activeNodes.forEach((node) => {
     try {
+      // Clear any scheduled timers (thunder, birds, crickets)
+      if (node._timer) clearTimeout(node._timer);
       if (node.gain) node.gain.gain.linearRampToValueAtTime(0, (audioCtx?.currentTime || 0) + 0.5);
       setTimeout(() => {
         try { node.source?.stop(); } catch (e) {}
         try { node.lfo?.stop(); } catch (e) {}
-        try { node.extra?.stop(); } catch (e) {}
+        if (Array.isArray(node.extra)) {
+          node.extra.forEach((x) => { try { x.stop(); } catch (e) {} });
+        } else if (node.extra) {
+          try { node.extra.stop(); } catch (e) {}
+        }
       }, 600);
     } catch (e) {}
   });
@@ -1146,3 +1418,421 @@ function animateNumber(elementId, target) {
   }
   requestAnimationFrame(step);
 }
+
+// ================================================================
+// ===== INTERACTIVE FEATURES =====================================
+// ================================================================
+
+// ===== Temperature Guess Game =====
+let guessMode = JSON.parse(localStorage.getItem("weather-guess-mode") || "false");
+let guessStreak = parseInt(localStorage.getItem("weather-guess-streak") || "0");
+let guessBestStreak = parseInt(localStorage.getItem("weather-guess-best") || "0");
+let guessTotalScore = parseInt(localStorage.getItem("weather-guess-score") || "0");
+let pendingWeatherReveal = null;
+
+function initGuessMode() {
+  const toggleBtn = document.getElementById("guess-mode-toggle");
+  toggleBtn.addEventListener("click", () => {
+    guessMode = !guessMode;
+    localStorage.setItem("weather-guess-mode", JSON.stringify(guessMode));
+    toggleBtn.classList.toggle("active", guessMode);
+    showToast(guessMode ? "Guess Game ON — guess the temp before each search!" : "Guess Game OFF");
+  });
+  toggleBtn.classList.toggle("active", guessMode);
+
+  const slider = document.getElementById("temp-guess-slider");
+  const valueDisplay = document.getElementById("temp-guess-value");
+  slider.addEventListener("input", () => {
+    valueDisplay.textContent = slider.value;
+    // Color the number based on temperature
+    const val = parseInt(slider.value);
+    if (currentUnits === "metric") {
+      valueDisplay.style.color = val < 0 ? "#93c5fd" : val < 15 ? "#60a5fa" : val < 25 ? "#fbbf24" : val < 35 ? "#f97316" : "#ef4444";
+    } else {
+      valueDisplay.style.color = val < 32 ? "#93c5fd" : val < 60 ? "#60a5fa" : val < 80 ? "#fbbf24" : val < 95 ? "#f97316" : "#ef4444";
+    }
+  });
+
+  document.getElementById("temp-guess-submit").addEventListener("click", submitGuess);
+  document.getElementById("temp-guess-reveal").addEventListener("click", revealWeatherAfterGuess);
+}
+
+function showGuessChallenge(cityName) {
+  const section = document.getElementById("temp-guess-section");
+  const slider = document.getElementById("temp-guess-slider");
+  const resultDiv = document.getElementById("temp-guess-result");
+  const controls = document.querySelector(".temp-guess-controls");
+
+  document.getElementById("guess-city-name").textContent = cityName;
+  document.getElementById("temp-guess-unit").textContent = currentUnits === "metric" ? "°C" : "°F";
+
+  // Set sensible slider range based on units
+  if (currentUnits === "metric") {
+    slider.min = -40; slider.max = 50; slider.value = 15;
+  } else {
+    slider.min = -40; slider.max = 120; slider.value = 70;
+  }
+  document.getElementById("temp-guess-value").textContent = slider.value;
+  document.getElementById("temp-guess-value").style.color = "";
+
+  resultDiv.classList.add("hidden");
+  controls.style.display = "";
+  section.classList.remove("hidden");
+
+  // Update streak displays
+  document.getElementById("guess-streak").textContent = guessStreak;
+  document.getElementById("guess-best-streak").textContent = guessBestStreak;
+  document.getElementById("guess-total-score").textContent = guessTotalScore;
+}
+
+function submitGuess() {
+  if (!pendingWeatherReveal) return;
+  const guess = parseInt(document.getElementById("temp-guess-slider").value);
+  const actual = Math.round(pendingWeatherReveal.currentData.main.temp);
+  const diff = Math.abs(guess - actual);
+  const unit = currentUnits === "metric" ? "°C" : "°F";
+
+  // Score: 100 points for exact, decreasing
+  let points = Math.max(0, 100 - diff * 5);
+  let accuracy, cssClass, message;
+
+  if (diff === 0) {
+    accuracy = "PERFECT!"; cssClass = "perfect"; message = "Incredible — you nailed it exactly!";
+    points = 150; // Bonus for perfect
+  } else if (diff <= 3) {
+    accuracy = "Amazing!"; cssClass = "perfect"; message = `Only ${diff}° off — you're a weather wizard!`;
+  } else if (diff <= 8) {
+    accuracy = "Pretty Close!"; cssClass = "close"; message = `${diff}° off — solid intuition!`;
+  } else if (diff <= 15) {
+    accuracy = "Not Bad!"; cssClass = "close"; message = `${diff}° off — getting warmer... or cooler.`;
+  } else {
+    accuracy = "Way Off!"; cssClass = "far"; message = `${diff}° off — ${guess > actual ? "too hot!" : "too cold!"}`;
+  }
+
+  // Update streak
+  if (diff <= 8) {
+    guessStreak++;
+  } else {
+    guessStreak = 0;
+  }
+  if (guessStreak > guessBestStreak) guessBestStreak = guessStreak;
+  guessTotalScore += points;
+
+  localStorage.setItem("weather-guess-streak", guessStreak);
+  localStorage.setItem("weather-guess-best", guessBestStreak);
+  localStorage.setItem("weather-guess-score", guessTotalScore);
+
+  // Show result
+  const accuracyEl = document.getElementById("temp-guess-accuracy");
+  accuracyEl.textContent = `${accuracy} ${message}`;
+  accuracyEl.className = `temp-guess-accuracy ${cssClass}`;
+
+  document.getElementById("guess-yours").textContent = `${guess}${unit}`;
+  document.getElementById("guess-actual").textContent = `${actual}${unit}`;
+  document.getElementById("guess-streak").textContent = guessStreak;
+  document.getElementById("guess-best-streak").textContent = guessBestStreak;
+  document.getElementById("guess-total-score").textContent = guessTotalScore;
+
+  // Animate points toast
+  if (points > 0) showToast(`+${points} points!`);
+
+  document.querySelector(".temp-guess-controls").style.display = "none";
+  document.getElementById("temp-guess-result").classList.remove("hidden");
+}
+
+function revealWeatherAfterGuess() {
+  if (!pendingWeatherReveal) return;
+  const { currentData, forecastData } = pendingWeatherReveal;
+  pendingWeatherReveal = null;
+  document.getElementById("temp-guess-section").classList.add("hidden");
+  finishWeatherRender(currentData, forecastData);
+}
+
+// ===== Favorite Cities =====
+function getFavorites() {
+  try { return JSON.parse(localStorage.getItem("weather-favorites") || "[]"); } catch { return []; }
+}
+
+function saveFavorites(favs) {
+  localStorage.setItem("weather-favorites", JSON.stringify(favs));
+}
+
+function toggleFavorite(city) {
+  let favs = getFavorites();
+  const idx = favs.findIndex((f) => f.toLowerCase() === city.toLowerCase());
+  if (idx >= 0) {
+    favs.splice(idx, 1);
+    showToast(`${city} removed from favorites`);
+  } else {
+    favs.unshift(city);
+    if (favs.length > 12) favs = favs.slice(0, 12);
+    showToast(`${city} added to favorites!`);
+  }
+  saveFavorites(favs);
+  renderFavorites();
+  updateFavButton();
+}
+
+function isFavorite(city) {
+  return getFavorites().some((f) => f.toLowerCase() === city.toLowerCase());
+}
+
+function renderFavorites() {
+  const container = document.getElementById("favorite-cities");
+  const favs = getFavorites();
+  if (!favs.length) { container.innerHTML = ""; return; }
+  container.innerHTML = favs.map((city) =>
+    `<div class="fav-chip" onclick="fetchWeather('${city.replace(/'/g, "\\'")}')">
+      <span class="fav-star">★</span>
+      <span>${city}</span>
+      <button class="fav-remove" onclick="event.stopPropagation();toggleFavorite('${city.replace(/'/g, "\\'")}')" aria-label="Remove ${city} from favorites">×</button>
+    </div>`
+  ).join("");
+}
+
+function updateFavButton() {
+  const btn = document.getElementById("fav-btn");
+  const icon = document.getElementById("fav-star-icon");
+  if (!currentCity) return;
+  const isFav = isFavorite(currentCity);
+  btn.classList.toggle("is-fav", isFav);
+  icon.setAttribute("fill", isFav ? "currentColor" : "none");
+  btn.title = isFav ? "Remove from favorites" : "Add to favorites";
+}
+
+function initFavorites() {
+  document.getElementById("fav-btn").addEventListener("click", () => {
+    if (currentCity) toggleFavorite(currentCity);
+  });
+  renderFavorites();
+}
+
+// ===== Weather Trivia Quiz =====
+let triviaScore = 0;
+let triviaTotal = 0;
+let triviaQuestionPool = [];
+let triviaCurrentQuestion = null;
+
+function generateTriviaQuestions(weatherData) {
+  const temp = Math.round(weatherData.main.temp);
+  const humidity = weatherData.main.humidity;
+  const windSpeed = weatherData.wind.speed;
+  const weatherId = weatherData.weather[0].id;
+  const desc = weatherData.weather[0].description;
+  const city = weatherData.name;
+  const unit = currentUnits === "metric" ? "°C" : "°F";
+  const windUnit = currentUnits === "metric" ? "m/s" : "mph";
+
+  const questions = [];
+
+  // Temperature range question
+  const tempRanges = currentUnits === "metric"
+    ? [
+      { label: "Below 0°C", check: temp < 0 },
+      { label: "0–10°C", check: temp >= 0 && temp <= 10 },
+      { label: "10–20°C", check: temp > 10 && temp <= 20 },
+      { label: "20–30°C", check: temp > 20 && temp <= 30 },
+      { label: "Above 30°C", check: temp > 30 },
+    ]
+    : [
+      { label: "Below 32°F", check: temp < 32 },
+      { label: "32–50°F", check: temp >= 32 && temp <= 50 },
+      { label: "50–70°F", check: temp > 50 && temp <= 70 },
+      { label: "70–90°F", check: temp > 70 && temp <= 90 },
+      { label: "Above 90°F", check: temp > 90 },
+    ];
+  const correctRange = tempRanges.find((r) => r.check);
+  if (correctRange) {
+    const wrongRanges = tempRanges.filter((r) => !r.check);
+    const shuffledWrong = wrongRanges.sort(() => Math.random() - 0.5).slice(0, 3);
+    questions.push({
+      question: `What temperature range is ${city} in right now?`,
+      options: shuffle([correctRange.label, ...shuffledWrong.map((r) => r.label)]),
+      answer: correctRange.label,
+      explanation: `${city} is currently ${temp}${unit}, which falls in the ${correctRange.label} range.`,
+    });
+  }
+
+  // Humidity question
+  const humidityRanges = [
+    { label: "Under 30% (Dry)", check: humidity < 30 },
+    { label: "30–50% (Comfortable)", check: humidity >= 30 && humidity <= 50 },
+    { label: "50–70% (Moderate)", check: humidity > 50 && humidity <= 70 },
+    { label: "Above 70% (Humid)", check: humidity > 70 },
+  ];
+  const correctHumidity = humidityRanges.find((r) => r.check);
+  if (correctHumidity) {
+    const wrongH = humidityRanges.filter((r) => !r.check);
+    questions.push({
+      question: `How humid is it in ${city}?`,
+      options: shuffle([correctHumidity.label, ...wrongH.map((r) => r.label)]),
+      answer: correctHumidity.label,
+      explanation: `Humidity in ${city} is ${humidity}%, which is classified as "${correctHumidity.label.split("(")[1]?.replace(")", "") || "normal"}".`,
+    });
+  }
+
+  // Weather condition question
+  const conditions = [
+    { label: "Clear skies", check: weatherId === 800 },
+    { label: "Cloudy", check: weatherId > 800 },
+    { label: "Rain", check: weatherId >= 500 && weatherId < 600 },
+    { label: "Snow", check: weatherId >= 600 && weatherId < 700 },
+    { label: "Thunderstorm", check: weatherId >= 200 && weatherId < 300 },
+    { label: "Drizzle", check: weatherId >= 300 && weatherId < 400 },
+    { label: "Fog or Haze", check: weatherId >= 700 && weatherId < 800 },
+  ];
+  const correctCond = conditions.find((r) => r.check);
+  if (correctCond) {
+    const wrongC = conditions.filter((r) => !r.check).sort(() => Math.random() - 0.5).slice(0, 3);
+    questions.push({
+      question: `What is the current weather condition in ${city}?`,
+      options: shuffle([correctCond.label, ...wrongC.map((r) => r.label)]),
+      answer: correctCond.label,
+      explanation: `${city} is currently experiencing "${desc}" — classified as ${correctCond.label}.`,
+    });
+  }
+
+  // Wind question
+  const windRanges = currentUnits === "metric"
+    ? [
+      { label: "Calm (under 2 m/s)", check: windSpeed < 2 },
+      { label: "Light breeze (2–5 m/s)", check: windSpeed >= 2 && windSpeed < 5 },
+      { label: "Moderate wind (5–10 m/s)", check: windSpeed >= 5 && windSpeed < 10 },
+      { label: "Strong wind (10+ m/s)", check: windSpeed >= 10 },
+    ]
+    : [
+      { label: "Calm (under 5 mph)", check: windSpeed < 5 },
+      { label: "Light breeze (5–12 mph)", check: windSpeed >= 5 && windSpeed < 12 },
+      { label: "Moderate wind (12–25 mph)", check: windSpeed >= 12 && windSpeed < 25 },
+      { label: "Strong wind (25+ mph)", check: windSpeed >= 25 },
+    ];
+  const correctWind = windRanges.find((r) => r.check);
+  if (correctWind) {
+    const wrongW = windRanges.filter((r) => !r.check);
+    questions.push({
+      question: `How windy is it in ${city}?`,
+      options: shuffle([correctWind.label, ...wrongW.map((r) => r.label)]),
+      answer: correctWind.label,
+      explanation: `Wind speed in ${city} is ${windSpeed} ${windUnit}, which is "${correctWind.label.split("(")[0].trim()}".`,
+    });
+  }
+
+  // Fun general weather knowledge
+  const funFacts = [
+    {
+      question: "What instrument measures atmospheric pressure?",
+      options: shuffle(["Barometer", "Thermometer", "Hygrometer", "Anemometer"]),
+      answer: "Barometer",
+      explanation: "A barometer measures atmospheric pressure. The current pressure in " + city + " is " + weatherData.main.pressure + " hPa.",
+    },
+    {
+      question: "What does 100% humidity mean?",
+      options: shuffle(["Air is fully saturated with water vapor", "It's raining heavily", "You're underwater", "Visibility is zero"]),
+      answer: "Air is fully saturated with water vapor",
+      explanation: "100% humidity means the air is holding the maximum amount of water vapor it can at that temperature — not that it's raining.",
+    },
+    {
+      question: "Which wind speed unit is used at sea?",
+      options: shuffle(["Knots", "Miles per hour", "Meters per second", "Kilometers per hour"]),
+      answer: "Knots",
+      explanation: "Knots (nautical miles per hour) are the standard wind measurement for maritime and aviation use.",
+    },
+    {
+      question: "What causes thunder?",
+      options: shuffle(["Rapid air expansion from lightning heat", "Clouds colliding", "Wind shear", "Hail hitting the ground"]),
+      answer: "Rapid air expansion from lightning heat",
+      explanation: "Lightning heats the air to ~30,000°C, causing rapid expansion that creates the shockwave we hear as thunder.",
+    },
+    {
+      question: "At what temperature do Celsius and Fahrenheit read the same?",
+      options: shuffle(["-40°", "0°", "-32°", "100°"]),
+      answer: "-40°",
+      explanation: "-40°C equals exactly -40°F — the only point where both scales meet.",
+    },
+    {
+      question: "What type of cloud produces thunderstorms?",
+      options: shuffle(["Cumulonimbus", "Cirrus", "Stratus", "Altocumulus"]),
+      answer: "Cumulonimbus",
+      explanation: "Cumulonimbus clouds are tall, dense, and towering — the classic thunderstorm cloud reaching up to 40,000+ feet.",
+    },
+  ];
+
+  questions.push(...funFacts.sort(() => Math.random() - 0.5).slice(0, 2));
+
+  return questions.sort(() => Math.random() - 0.5);
+}
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function startTrivia(weatherData) {
+  triviaQuestionPool = generateTriviaQuestions(weatherData);
+  triviaScore = 0;
+  triviaTotal = 0;
+  document.getElementById("trivia-score").textContent = 0;
+  document.getElementById("trivia-total").textContent = triviaQuestionPool.length;
+  showNextTrivia();
+}
+
+function showNextTrivia() {
+  if (triviaQuestionPool.length === 0) {
+    document.getElementById("trivia-question").textContent = `Quiz complete! You scored ${triviaScore}/${triviaTotal}. Search a new city for fresh questions!`;
+    document.getElementById("trivia-options").innerHTML = "";
+    document.getElementById("trivia-feedback").classList.add("hidden");
+    return;
+  }
+
+  triviaCurrentQuestion = triviaQuestionPool.shift();
+  document.getElementById("trivia-question").textContent = triviaCurrentQuestion.question;
+  document.getElementById("trivia-feedback").classList.add("hidden");
+
+  const container = document.getElementById("trivia-options");
+  container.innerHTML = triviaCurrentQuestion.options.map((opt) =>
+    `<button class="trivia-option" data-answer="${opt.replace(/"/g, '&quot;')}">${opt}</button>`
+  ).join("");
+
+  container.querySelectorAll(".trivia-option").forEach((btn) => {
+    btn.addEventListener("click", () => handleTriviaAnswer(btn));
+  });
+}
+
+function handleTriviaAnswer(btn) {
+  const selected = btn.dataset.answer;
+  const correct = triviaCurrentQuestion.answer;
+  const isCorrect = selected === correct;
+
+  triviaTotal++;
+  if (isCorrect) triviaScore++;
+  document.getElementById("trivia-score").textContent = triviaScore;
+
+  // Mark all buttons
+  document.querySelectorAll(".trivia-option").forEach((b) => {
+    b.classList.add("selected");
+    if (b.dataset.answer === correct) b.classList.add("correct");
+    else if (b === btn && !isCorrect) b.classList.add("wrong");
+  });
+
+  const feedbackText = document.getElementById("trivia-feedback-text");
+  feedbackText.textContent = isCorrect ? "Correct!" : `Wrong — the answer is "${correct}"`;
+  feedbackText.style.color = isCorrect ? "#22c55e" : "var(--error)";
+  document.getElementById("trivia-explanation").textContent = triviaCurrentQuestion.explanation;
+  document.getElementById("trivia-feedback").classList.remove("hidden");
+}
+
+function initTrivia() {
+  document.getElementById("trivia-next").addEventListener("click", showNextTrivia);
+}
+
+// ===== Hook features into init =====
+const _origDOMReady = document.readyState;
+document.addEventListener("DOMContentLoaded", () => {
+  initGuessMode();
+  initFavorites();
+  initTrivia();
+});

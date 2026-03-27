@@ -36,6 +36,11 @@
             <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
           </svg>
         </button>
+        <button id="guess-mode-toggle" class="icon-btn" aria-label="Toggle temperature guess game" title="Guess Game">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+        </button>
         <button id="compare-toggle" class="icon-btn" aria-label="Compare two cities" title="Compare cities">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
@@ -71,6 +76,7 @@
           </svg>
         </button>
       </div>
+      <div id="favorite-cities" class="favorite-cities"></div>
       <div id="recent-searches" class="recent-searches"></div>
       <p class="keyboard-hint">Press <kbd>/</kbd> to search &middot; <kbd>Esc</kbd> to clear &middot; <kbd>C</kbd> to compare</p>
     </section>
@@ -90,6 +96,36 @@
       </div>
     </div>
 
+    <!-- Temperature Guess Game (outside weather-content so it's visible independently) -->
+    <div id="temp-guess-section" class="temp-guess-section glass-card hidden">
+      <div class="temp-guess-header">
+        <h3 class="section-title">Guess the Temperature!</h3>
+        <p class="temp-guess-city">What's the temperature in <strong id="guess-city-name"></strong>?</p>
+      </div>
+      <div class="temp-guess-controls">
+        <input type="range" id="temp-guess-slider" class="temp-guess-slider" min="-40" max="120" value="70">
+        <div class="temp-guess-value-display">
+          <span id="temp-guess-value" class="temp-guess-value">70</span>
+          <span id="temp-guess-unit" class="temp-guess-unit">°F</span>
+        </div>
+        <button id="temp-guess-submit" class="temp-guess-submit-btn">Lock In My Guess!</button>
+      </div>
+      <div id="temp-guess-result" class="temp-guess-result hidden">
+        <p id="temp-guess-accuracy" class="temp-guess-accuracy"></p>
+        <div class="temp-guess-comparison">
+          <div class="guess-vs"><span class="guess-label">Your Guess</span><span id="guess-yours" class="guess-number"></span></div>
+          <span class="guess-arrow">→</span>
+          <div class="guess-vs"><span class="guess-label">Actual</span><span id="guess-actual" class="guess-number"></span></div>
+        </div>
+        <div class="temp-guess-streak">
+          <span>Streak: <strong id="guess-streak">0</strong></span>
+          <span>Best: <strong id="guess-best-streak">0</strong></span>
+          <span>Score: <strong id="guess-total-score">0</strong></span>
+        </div>
+        <button id="temp-guess-reveal" class="temp-guess-reveal-btn">Show Full Weather →</button>
+      </div>
+    </div>
+
     <!-- Weather Content -->
     <main id="weather-content" class="weather-content hidden">
 
@@ -101,7 +137,14 @@
         <div class="current-main glass-card">
           <div class="current-header">
             <div>
-              <h2 id="city-name" class="city-name"></h2>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <h2 id="city-name" class="city-name"></h2>
+                <button id="fav-btn" class="fav-btn" aria-label="Add to favorites" title="Add to favorites">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon id="fav-star-icon" points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                  </svg>
+                </button>
+              </div>
               <p id="current-date" class="current-date"></p>
             </div>
             <img id="current-icon" class="current-icon" src="" alt="" loading="lazy">
@@ -233,6 +276,23 @@
       <section class="forecast-section reveal">
         <h3 class="section-title">4-Day Forecast</h3>
         <div id="forecast-cards" class="forecast-cards"></div>
+      </section>
+
+      <!-- Weather Trivia Quiz -->
+      <section id="trivia-section" class="trivia-section glass-card reveal">
+        <div class="trivia-header">
+          <h3 class="section-title">Weather Trivia</h3>
+          <div class="trivia-score-badge">
+            <span id="trivia-score">0</span> / <span id="trivia-total">0</span>
+          </div>
+        </div>
+        <p id="trivia-question" class="trivia-question"></p>
+        <div id="trivia-options" class="trivia-options"></div>
+        <div id="trivia-feedback" class="trivia-feedback hidden">
+          <p id="trivia-feedback-text"></p>
+          <p id="trivia-explanation" class="trivia-explanation"></p>
+          <button id="trivia-next" class="trivia-next-btn">Next Question →</button>
+        </div>
       </section>
 
       <!-- Info Row: Outfit + AQI -->
