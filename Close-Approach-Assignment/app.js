@@ -1115,7 +1115,7 @@ function ImpactRisk() {
             bins[idx].count++;
         });
         return bins.filter(b => b.count > 0).map(b => ({
-            bin: `${b.low} to ${b.high}`,
+            bin: `${b.low}`,
             count: b.count,
         }));
     }, [data]);
