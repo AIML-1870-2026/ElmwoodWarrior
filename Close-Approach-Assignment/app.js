@@ -868,16 +868,29 @@ function CloseApproaches() {
 
     useEffect(() => { loadData(); }, []);
 
-    // Timeline chart: approaches per month
+    // Timeline chart: approaches per month — always show every month in the date range
     const timelineData = useMemo(() => {
         if (!data) return [];
-        const months = {};
+        const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        // Build all months between dateMin and dateMax
+        const start = new Date(dateMin);
+        const end = new Date(dateMax);
+        const allMonths = [];
+        const cursor = new Date(start.getFullYear(), start.getMonth(), 1);
+        while (cursor <= end) {
+            const key = `${cursor.getFullYear()}-${String(cursor.getMonth()+1).padStart(2,'0')}`;
+            const label = `${monthNames[cursor.getMonth()]} ${cursor.getFullYear()}`;
+            allMonths.push({ key, label, count: 0 });
+            cursor.setMonth(cursor.getMonth() + 1);
+        }
+        // Count data into months
         data.forEach(d => {
-            const m = d.cd.substring(0, 7); // YYYY-MM or first 7 chars
-            months[m] = (months[m] || 0) + 1;
+            const m = d.cd.substring(0, 7);
+            const entry = allMonths.find(e => e.key === m);
+            if (entry) entry.count++;
         });
-        return Object.entries(months).sort().map(([m, c]) => ({ month: m, count: c }));
-    }, [data]);
+        return allMonths.map(m => ({ month: m.label, count: m.count }));
+    }, [data, dateMin, dateMax]);
 
     // Scatter data — cap at 100 closest points to avoid rendering 300+ Cell components
     const scatterData = useMemo(() => {
@@ -952,7 +965,7 @@ function CloseApproaches() {
                                         </linearGradient>
                                     </defs>
                                     <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                                    <XAxis dataKey="month" stroke="#475569" />
+                                    <XAxis dataKey="month" stroke="#475569" angle={-35} textAnchor="end" height={60} tick={{ fontSize: 11 }} interval={0} />
                                     <YAxis stroke="#475569" allowDecimals={false} />
                                     <Tooltip contentStyle={{ background: '#0d1220', border: '1px solid #1e293b', borderRadius: 8 }} />
                                     <Area type="monotone" dataKey="count" stroke="#00b4d8" fill="url(#areaGrad)" strokeWidth={2} name="Approaches" />
