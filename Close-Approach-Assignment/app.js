@@ -1049,16 +1049,16 @@ function ImpactRisk() {
 
     useEffect(() => { loadData(); }, []);
 
-    if (loading) return <><SkeletonCards /><SkeletonChart /><SkeletonTable /></>;
-    if (error) return <ErrorCard message="Failed to load Sentry data" detail={error} onRetry={loadData} />;
-    if (!data) return null;
-
-    const filtered = useMemo(() => search
-        ? data.filter(d => d.des.toLowerCase().includes(search.toLowerCase()) || d.fullname.toLowerCase().includes(search.toLowerCase()))
-        : data, [data, search]);
+    const filtered = useMemo(() => {
+        if (!data) return [];
+        return search
+            ? data.filter(d => d.des.toLowerCase().includes(search.toLowerCase()) || d.fullname.toLowerCase().includes(search.toLowerCase()))
+            : data;
+    }, [data, search]);
 
     // Stats — memoized to avoid re-sorting 1000+ items on every render
     const { totalMonitored, highestPS, nearestImpact, mostRecent, anyTorino } = useMemo(() => {
+        if (!data) return { totalMonitored: 0, highestPS: null, nearestImpact: null, mostRecent: null, anyTorino: false };
         const highestPS = [...data].sort((a, b) => b.ps - a.ps)[0];
         const nearestImpact = [...data].sort((a, b) => {
             const ya = parseInt(a.range) || 9999;
@@ -1071,6 +1071,7 @@ function ImpactRisk() {
 
     // Risk matrix scatter — cap at 100 highest-risk points to avoid 1000+ Cell components crashing the browser
     const riskScatter = useMemo(() => {
+        if (!data) return [];
         const top = data.length > 100 ? [...data].sort((a, b) => b.ps - a.ps).slice(0, 100) : data;
         return top.map(d => {
             const yearStart = parseInt(d.range) || 2030;
@@ -1086,6 +1087,7 @@ function ImpactRisk() {
 
     // Palermo histogram — memoized
     const histogramData = useMemo(() => {
+        if (!data) return [];
         const psBins = {};
         data.forEach(d => {
             const bin = Math.floor(d.ps);
@@ -1096,6 +1098,10 @@ function ImpactRisk() {
             count,
         }));
     }, [data]);
+
+    if (loading) return <><SkeletonCards /><SkeletonChart /><SkeletonTable /></>;
+    if (error) return <ErrorCard message="Failed to load Sentry data" detail={error} onRetry={loadData} />;
+    if (!data) return null;
 
     return (
         <div>
