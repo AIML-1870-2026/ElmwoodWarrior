@@ -437,9 +437,17 @@ function OrbitalView({ neoData, dates, onSelectNeo }) {
             { ld: 2, label: '2 LD' },
             { ld: 5, label: '5 LD' },
             { ld: 10, label: '10 LD' },
+            { ld: 20, label: '20 LD' },
+            { ld: 40, label: '40 LD' },
         ];
+        // Logarithmic distance scaling: keeps close objects spread out, compresses far ones
+        // so 1 LD, 10 LD, and 40 LD are all visually distinct
+        function ldToScene(ld) {
+            return Math.log2(1 + ld) * moonDist;
+        }
+
         ringDistances.forEach(r => {
-            const radius = r.ld * moonDist;
+            const radius = ldToScene(r.ld);
             const shellGeo = new THREE.SphereGeometry(radius, 32, 16);
             const shellMat = new THREE.MeshBasicMaterial({
                 color: 0x1e3a5f,
@@ -471,30 +479,35 @@ function OrbitalView({ neoData, dates, onSelectNeo }) {
             const geo = neo.hazardous
                 ? new THREE.IcosahedronGeometry(sizeScale, 1)
                 : new THREE.DodecahedronGeometry(sizeScale, 1);
-            // Neon glowing red asteroids
+            // Color-coded: hazardous = pulsing red/orange, safe = cyan/blue
+            const baseColor = neo.hazardous ? 0xff4400 : 0x00b4d8;
+            const emissiveColor = neo.hazardous ? 0xff2200 : 0x0066aa;
             const mat = new THREE.MeshPhongMaterial({
-                color: 0xff1a1a,
-                emissive: 0xff0033,
-                emissiveIntensity: 0.8,
+                color: baseColor,
+                emissive: emissiveColor,
+                emissiveIntensity: neo.hazardous ? 1.0 : 0.6,
                 flatShading: true,
                 shininess: 30,
             });
+            // Store default colors for hover reset
+            mat.userData = { emissiveColor, emissiveIntensity: mat.emissiveIntensity };
             const mesh = new THREE.Mesh(geo, mat);
 
-            // Add outer glow shell
+            // Add outer glow shell — hazardous gets a bigger, brighter glow
             const glowGeo = neo.hazardous
-                ? new THREE.IcosahedronGeometry(sizeScale * 1.6, 0)
-                : new THREE.DodecahedronGeometry(sizeScale * 1.6, 0);
+                ? new THREE.IcosahedronGeometry(sizeScale * 1.8, 0)
+                : new THREE.DodecahedronGeometry(sizeScale * 1.4, 0);
             const glowShell = new THREE.Mesh(glowGeo, new THREE.MeshBasicMaterial({
-                color: 0xff0033,
+                color: neo.hazardous ? 0xff2200 : 0x0088cc,
                 transparent: true,
-                opacity: 0.15,
+                opacity: neo.hazardous ? 0.25 : 0.12,
                 side: THREE.BackSide,
             }));
             mesh.add(glowShell);
 
             // 3D positioning using golden spiral for uniform spherical distribution
-            const dist = Math.min(neo.missLD * moonDist, 300);
+            // Log scale so distant objects don't all pile up at the same radius
+            const dist = ldToScene(neo.missLD);
             // Golden angle spiral — evenly distributes points on a sphere
             const goldenAngle = Math.PI * (3 - Math.sqrt(5));
             const theta = goldenAngle * idx;
@@ -528,10 +541,14 @@ function OrbitalView({ neoData, dates, onSelectNeo }) {
                 container.style.cursor = 'crosshair';
                 const mesh = intersects[0].object;
                 if (hoveredMesh !== mesh) {
-                    if (hoveredMesh) { hoveredMesh.material.emissive.set(0xff0033); hoveredMesh.material.emissiveIntensity = 0.8; }
+                    if (hoveredMesh) {
+                        const defaults = hoveredMesh.material.userData;
+                        hoveredMesh.material.emissive.set(defaults.emissiveColor);
+                        hoveredMesh.material.emissiveIntensity = defaults.emissiveIntensity;
+                    }
                     hoveredMesh = mesh;
                     mesh.material.emissive.set(0xffffff);
-                    mesh.material.emissiveIntensity = 1.2;
+                    mesh.material.emissiveIntensity = 1.5;
                 }
                 setTooltip({
                     visible: true,
@@ -542,8 +559,9 @@ function OrbitalView({ neoData, dates, onSelectNeo }) {
             } else {
                 container.style.cursor = 'default';
                 if (hoveredMesh) {
-                    hoveredMesh.material.emissive.set(0xff0033);
-                    hoveredMesh.material.emissiveIntensity = 0.8;
+                    const defaults = hoveredMesh.material.userData;
+                    hoveredMesh.material.emissive.set(defaults.emissiveColor);
+                    hoveredMesh.material.emissiveIntensity = defaults.emissiveIntensity;
                     hoveredMesh = null;
                 }
                 setTooltip(t => ({ ...t, visible: false }));
