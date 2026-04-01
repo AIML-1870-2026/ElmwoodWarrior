@@ -66,7 +66,7 @@ async function fetchCAD(params = {}) {
         'sort': params.sort || 'date',
         'diameter': 'true',
         'fullname': 'true',
-        'limit': params.limit || '100',
+        'limit': params.limit || '300',
     });
     const key = 'cad_' + p.toString();
     const cached = getCached(key);
