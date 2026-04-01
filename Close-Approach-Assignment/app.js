@@ -883,9 +883,11 @@ function CloseApproaches() {
             allMonths.push({ key, label, count: 0 });
             cursor.setMonth(cursor.getMonth() + 1);
         }
-        // Count data into months
+        // Count data into months — cd format is "2026-Apr-01 00:42", parse with Date
         data.forEach(d => {
-            const m = d.cd.substring(0, 7);
+            const parsed = new Date(d.cd);
+            if (isNaN(parsed)) return;
+            const m = `${parsed.getFullYear()}-${String(parsed.getMonth()+1).padStart(2,'0')}`;
             const entry = allMonths.find(e => e.key === m);
             if (entry) entry.count++;
         });
