@@ -1103,17 +1103,20 @@ function ImpactRisk() {
         });
     }, [data]);
 
-    // Palermo histogram — memoized
+    // Palermo histogram — use fixed bins from -10 to 1 so distribution is clear
     const histogramData = useMemo(() => {
         if (!data) return [];
-        const psBins = {};
+        const bins = [];
+        for (let i = -10; i <= 0; i++) {
+            bins.push({ low: i, high: i + 1, count: 0 });
+        }
         data.forEach(d => {
-            const bin = Math.floor(d.ps);
-            psBins[bin] = (psBins[bin] || 0) + 1;
+            const idx = Math.max(0, Math.min(bins.length - 1, Math.floor(d.ps) + 10));
+            bins[idx].count++;
         });
-        return Object.entries(psBins).sort((a,b) => Number(a[0]) - Number(b[0])).map(([bin, count]) => ({
-            bin: `${bin} to ${Number(bin)+1}`,
-            count,
+        return bins.filter(b => b.count > 0).map(b => ({
+            bin: `${b.low} to ${b.high}`,
+            count: b.count,
         }));
     }, [data]);
 
@@ -1148,7 +1151,7 @@ function ImpactRisk() {
                         <ScatterChart>
                             <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
                             <XAxis type="number" dataKey="x" name="Year" stroke="#475569" domain={['auto', 'auto']} />
-                            <YAxis type="number" dataKey="y" name="Palermo Scale" stroke="#475569" />
+                            <YAxis type="number" dataKey="y" name="Palermo Scale" stroke="#475569" domain={['auto', 'auto']} />
                             <ZAxis type="number" dataKey="z" range={[15, 150]} />
                             <Tooltip contentStyle={{ background: '#0d1220', border: '1px solid #1e293b', borderRadius: 8 }} />
                             <Scatter data={riskScatter} isAnimationActive={false}>
