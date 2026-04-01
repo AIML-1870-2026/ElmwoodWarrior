@@ -13,9 +13,9 @@
     <!-- Tailwind -->
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- Three.js -->
-    <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
-    <script src="https://unpkg.com/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
+    <!-- Three.js r128 (last version with examples/js) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
     <!-- React -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -30,6 +30,22 @@
 </head>
 <body>
     <div id="root"></div>
-    <script type="text/babel" src="app.js"></script>
+
+    <!-- Load app.js, transpile JSX via Babel, then execute -->
+    <script>
+        fetch('app.js')
+            .then(function(r) { return r.text(); })
+            .then(function(code) {
+                var output = Babel.transform(code, { presets: ['react'] }).code;
+                var script = document.createElement('script');
+                script.textContent = output;
+                document.body.appendChild(script);
+            })
+            .catch(function(err) {
+                document.getElementById('root').innerHTML =
+                    '<div style="color:#ef4444;padding:40px;font-family:monospace;text-align:center;">' +
+                    '<h2>Failed to load app.js</h2><p>' + err.message + '</p></div>';
+            });
+    </script>
 </body>
 </html>
