@@ -14,8 +14,10 @@ const {
 // ── API Config ──
 const NASA_KEY = 'xiuMYewZyC6JdsrBAMSS3tTtmbhbBdD8HW3yPYki';
 const NEOWS_BASE = 'https://api.nasa.gov/neo/rest/v1';
-const CAD_BASE = 'https://ssd-api.jpl.nasa.gov/cad.api';
-const SENTRY_BASE = 'https://ssd-api.jpl.nasa.gov/sentry.api';
+// JPL APIs lack CORS headers, so route through a proxy
+const CORS_PROXY = 'https://corsproxy.io/?';
+const CAD_RAW = 'https://ssd-api.jpl.nasa.gov/cad.api';
+const SENTRY_RAW = 'https://ssd-api.jpl.nasa.gov/sentry.api';
 
 // ── Helpers ──
 function formatDate(d) {
@@ -60,16 +62,16 @@ async function fetchCAD(params = {}) {
     const p = new URLSearchParams({
         'date-min': params.dateMin || todayStr(),
         'date-max': params.dateMax || formatDate(addDays(new Date(), 365)),
-        'dist-max': params.distMax || '0.05',
+        'dist-max': params.distMax || '0.2',
         'sort': params.sort || 'date',
         'diameter': 'true',
         'fullname': 'true',
-        'limit': params.limit || '300',
+        'limit': params.limit || '100',
     });
     const key = 'cad_' + p.toString();
     const cached = getCached(key);
     if (cached) return cached;
-    const res = await fetch(`${CAD_BASE}?${p}`);
+    const res = await fetch(CORS_PROXY + encodeURIComponent(`${CAD_RAW}?${p}`));
     if (!res.ok) throw new Error(`CAD API error: ${res.status}`);
     const json = await res.json();
     setCache(key, json);
@@ -79,7 +81,7 @@ async function fetchCAD(params = {}) {
 async function fetchSentry() {
     const cached = getCached('sentry');
     if (cached) return cached;
-    const res = await fetch(SENTRY_BASE);
+    const res = await fetch(CORS_PROXY + encodeURIComponent(SENTRY_RAW));
     if (!res.ok) throw new Error(`Sentry API error: ${res.status}`);
     const json = await res.json();
     setCache('sentry', json);
@@ -251,7 +253,7 @@ function Pagination({ page, totalPages, setPage }) {
 // TAB 0 — ORBITAL VIEW
 // ══════════════════════════════════════
 
-function OrbitalView({ neoData, dates }) {
+function OrbitalView({ neoData, dates, onSelectNeo }) {
     const containerRef = useRef(null);
     const sceneRef = useRef(null);
     const tooltipRef = useRef(null);
@@ -286,7 +288,7 @@ function OrbitalView({ neoData, dates }) {
         controls.enableDamping = true;
         controls.dampingFactor = 0.08;
         controls.minDistance = 5;
-        controls.maxDistance = 200;
+        controls.maxDistance = 500;
 
         // Lights
         const ambientLight = new THREE.AmbientLight(0x334466, 0.6);
@@ -298,71 +300,139 @@ function OrbitalView({ neoData, dates }) {
         pointLight.position.set(-10, 10, -10);
         scene.add(pointLight);
 
-        // Starfield
+        // Starfield (distant backdrop only)
         const starGeo = new THREE.BufferGeometry();
-        const starCount = 2000;
+        const starCount = 1500;
         const starPositions = new Float32Array(starCount * 3);
-        for (let i = 0; i < starCount * 3; i++) {
-            starPositions[i] = (Math.random() - 0.5) * 1200;
+        for (let i = 0; i < starCount; i++) {
+            // Place stars on a distant shell so they never mix with scene objects
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);
+            const r = 800 + Math.random() * 200;
+            starPositions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+            starPositions[i * 3 + 1] = r * Math.sin(phi) * Math.sin(theta);
+            starPositions[i * 3 + 2] = r * Math.cos(phi);
         }
         starGeo.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
-        const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 0.5, sizeAttenuation: true });
+        const starMat = new THREE.PointsMaterial({ color: 0x888899, size: 0.3, sizeAttenuation: true });
         scene.add(new THREE.Points(starGeo, starMat));
 
-        // Earth
-        const earthGeo = new THREE.SphereGeometry(1, 64, 64);
+        // Earth with real texture
+        const earthRadius = 4;
+        const textureLoader = new THREE.TextureLoader();
+        const earthGeo = new THREE.SphereGeometry(earthRadius, 128, 128);
         const earthMat = new THREE.MeshPhongMaterial({
             color: 0x2244aa,
             emissive: 0x112244,
-            specular: 0x333333,
+            specular: 0x4488cc,
             shininess: 25,
         });
         const earth = new THREE.Mesh(earthGeo, earthMat);
         scene.add(earth);
 
-        // Earth atmosphere glow
-        const glowGeo = new THREE.SphereGeometry(1.08, 64, 64);
+        // Load real Earth textures
+        textureLoader.load('https://unpkg.com/three-globe@2.24.10/example/img/earth-blue-marble.jpg', tex => {
+            earthMat.map = tex;
+            earthMat.color.set(0xffffff);
+            earthMat.emissive.set(0x050510);
+            earthMat.needsUpdate = true;
+        });
+        // Bump map for terrain relief
+        textureLoader.load('https://unpkg.com/three-globe@2.24.10/example/img/earth-topology.png', tex => {
+            earthMat.bumpMap = tex;
+            earthMat.bumpScale = 0.15;
+            earthMat.needsUpdate = true;
+        });
+        // Specular map (water shines, land doesn't)
+        textureLoader.load('https://unpkg.com/three-globe@2.24.10/example/img/earth-water.png', tex => {
+            earthMat.specularMap = tex;
+            earthMat.needsUpdate = true;
+        });
+
+        // Earth atmosphere glow (inner)
+        const glowGeo = new THREE.SphereGeometry(earthRadius * 1.03, 64, 64);
         const glowMat = new THREE.MeshBasicMaterial({
-            color: 0x00b4d8,
+            color: 0x4499ff,
             transparent: true,
             opacity: 0.08,
             side: THREE.BackSide,
         });
         scene.add(new THREE.Mesh(glowGeo, glowMat));
 
-        // Earth land patches (procedural)
-        const landGeo = new THREE.SphereGeometry(1.003, 64, 64);
-        const landMat = new THREE.MeshPhongMaterial({
-            color: 0x228833,
+        // Earth atmosphere glow (outer)
+        const outerGlowGeo = new THREE.SphereGeometry(earthRadius * 1.12, 64, 64);
+        const outerGlowMat = new THREE.MeshBasicMaterial({
+            color: 0x3399ff,
             transparent: true,
-            opacity: 0.3,
-            wireframe: false,
+            opacity: 0.04,
+            side: THREE.BackSide,
         });
-        const land = new THREE.Mesh(landGeo, landMat);
-        scene.add(land);
+        scene.add(new THREE.Mesh(outerGlowGeo, outerGlowMat));
 
-        // Moon
-        const moonGeo = new THREE.SphereGeometry(0.27, 32, 32);
+        // Clouds layer with real texture
+        const cloudGeo = new THREE.SphereGeometry(earthRadius * 1.015, 64, 64);
+        const cloudMat = new THREE.MeshPhongMaterial({
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.35,
+            depthWrite: false,
+        });
+        const clouds = new THREE.Mesh(cloudGeo, cloudMat);
+        scene.add(clouds);
+        textureLoader.load('https://unpkg.com/three-globe@2.24.10/example/img/earth-clouds.png', tex => {
+            cloudMat.map = tex;
+            cloudMat.alphaMap = tex;
+            cloudMat.needsUpdate = true;
+        });
+
+        // No separate land mesh needed - texture handles it
+        const land = clouds; // keep reference for rotation sync
+
+        // Night lights on dark side
+        const nightGeo = new THREE.SphereGeometry(earthRadius * 1.001, 128, 128);
+        const nightMat = new THREE.MeshBasicMaterial({
+            color: 0xffffff,
+            transparent: true,
+            opacity: 0.0,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+        });
+        const nightMesh = new THREE.Mesh(nightGeo, nightMat);
+        scene.add(nightMesh);
+        textureLoader.load('https://unpkg.com/three-globe@2.24.10/example/img/earth-night.jpg', tex => {
+            nightMat.map = tex;
+            nightMat.opacity = 0.4;
+            nightMat.needsUpdate = true;
+        });
+
+        // Moon with real texture
+        const moonRadius = 1.2;
+        const moonGeo = new THREE.SphereGeometry(moonRadius, 64, 64);
         const moonMat = new THREE.MeshPhongMaterial({
-            color: 0xaaaaaa,
+            color: 0xbbbbbb,
             emissive: 0x222222,
-            shininess: 5,
+            shininess: 3,
         });
         const moon = new THREE.Mesh(moonGeo, moonMat);
+        textureLoader.load('https://unpkg.com/three-globe@2.24.10/example/img/moon.jpg', tex => {
+            moonMat.map = tex;
+            moonMat.color.set(0xffffff);
+            moonMat.needsUpdate = true;
+        });
         const moonDist = 30; // 1 LD in scene
         moon.position.set(moonDist, 0, 0);
         scene.add(moon);
-        // Moon label
+
+        // Moon glow
         const moonGlow = new THREE.Mesh(
-            new THREE.SphereGeometry(0.35, 16, 16),
-            new THREE.MeshBasicMaterial({ color: 0x888888, transparent: true, opacity: 0.1, side: THREE.BackSide })
+            new THREE.SphereGeometry(moonRadius * 1.15, 32, 32),
+            new THREE.MeshBasicMaterial({ color: 0x888888, transparent: true, opacity: 0.06, side: THREE.BackSide })
         );
         moonGlow.position.copy(moon.position);
         scene.add(moonGlow);
 
-        // Distance rings
+        // Distance reference spheres (wireframe) — true 3D distance shells
         const ringDistances = [
-            { ld: 0.5, label: '0.5 LD' },
             { ld: 1, label: '1 LD' },
             { ld: 2, label: '2 LD' },
             { ld: 5, label: '5 LD' },
@@ -370,11 +440,21 @@ function OrbitalView({ neoData, dates }) {
         ];
         ringDistances.forEach(r => {
             const radius = r.ld * moonDist;
+            const shellGeo = new THREE.SphereGeometry(radius, 32, 16);
+            const shellMat = new THREE.MeshBasicMaterial({
+                color: 0x1e3a5f,
+                transparent: true,
+                opacity: 0.06,
+                wireframe: true,
+            });
+            const shell = new THREE.Mesh(shellGeo, shellMat);
+            scene.add(shell);
+            // Also keep a flat reference ring on the ecliptic
             const ringGeo = new THREE.RingGeometry(radius - 0.03, radius + 0.03, 128);
             const ringMat = new THREE.MeshBasicMaterial({
                 color: 0x1e293b,
                 transparent: true,
-                opacity: 0.4,
+                opacity: 0.25,
                 side: THREE.DoubleSide,
             });
             const ring = new THREE.Mesh(ringGeo, ringMat);
@@ -382,30 +462,50 @@ function OrbitalView({ neoData, dates }) {
             scene.add(ring);
         });
 
-        // Asteroids
+        // Asteroids — positioned in full 3D space using approach data
+        // Use velocity as a proxy for approach direction and date for angular spread
         const asteroidMeshes = [];
         const top50 = [...neoData].sort((a, b) => a.missLD - b.missLD).slice(0, 50);
-        top50.forEach(neo => {
-            const sizeScale = Math.max(0.15, Math.min(1.2, neo.diamMax / 500));
+        top50.forEach((neo, idx) => {
+            const sizeScale = Math.max(1.2, Math.min(5.0, neo.diamMax / 60));
             const geo = neo.hazardous
-                ? new THREE.IcosahedronGeometry(sizeScale, 0)
-                : new THREE.DodecahedronGeometry(sizeScale, 0);
-            const color = neo.hazardous ? 0xf59e0b : 0x64748b;
+                ? new THREE.IcosahedronGeometry(sizeScale, 1)
+                : new THREE.DodecahedronGeometry(sizeScale, 1);
+            // Neon glowing red asteroids
             const mat = new THREE.MeshPhongMaterial({
-                color,
-                emissive: neo.hazardous ? 0x3d2800 : 0x111827,
+                color: 0xff1a1a,
+                emissive: 0xff0033,
+                emissiveIntensity: 0.8,
                 flatShading: true,
-                shininess: 10,
+                shininess: 30,
             });
             const mesh = new THREE.Mesh(geo, mat);
-            // Position: spread by miss distance, random angle
-            const dist = neo.missLD * moonDist;
-            const angle = Math.random() * Math.PI * 2;
-            const yOff = (Math.random() - 0.5) * dist * 0.3;
+
+            // Add outer glow shell
+            const glowGeo = neo.hazardous
+                ? new THREE.IcosahedronGeometry(sizeScale * 1.6, 0)
+                : new THREE.DodecahedronGeometry(sizeScale * 1.6, 0);
+            const glowShell = new THREE.Mesh(glowGeo, new THREE.MeshBasicMaterial({
+                color: 0xff0033,
+                transparent: true,
+                opacity: 0.15,
+                side: THREE.BackSide,
+            }));
+            mesh.add(glowShell);
+
+            // 3D positioning using golden spiral for uniform spherical distribution
+            const dist = Math.min(neo.missLD * moonDist, 300);
+            // Golden angle spiral — evenly distributes points on a sphere
+            const goldenAngle = Math.PI * (3 - Math.sqrt(5));
+            const theta = goldenAngle * idx;
+            // Map index to full [-1, 1] range for uniform vertical spread
+            const y = 1 - (2 * idx) / Math.max(top50.length - 1, 1);
+            const sinPhi = Math.sqrt(1 - y * y);
+            // Convert to cartesian — full sphere coverage, top and bottom
             mesh.position.set(
-                Math.cos(angle) * dist,
-                yOff,
-                Math.sin(angle) * dist
+                dist * sinPhi * Math.cos(theta),
+                dist * y,
+                dist * sinPhi * Math.sin(theta)
             );
             mesh.userData = neo;
             scene.add(mesh);
@@ -425,11 +525,13 @@ function OrbitalView({ neoData, dates }) {
             raycaster.setFromCamera(mouse, camera);
             const intersects = raycaster.intersectObjects(asteroidMeshes);
             if (intersects.length > 0) {
+                container.style.cursor = 'crosshair';
                 const mesh = intersects[0].object;
                 if (hoveredMesh !== mesh) {
-                    if (hoveredMesh) hoveredMesh.material.emissive.set(hoveredMesh.userData.hazardous ? 0x3d2800 : 0x111827);
+                    if (hoveredMesh) { hoveredMesh.material.emissive.set(0xff0033); hoveredMesh.material.emissiveIntensity = 0.8; }
                     hoveredMesh = mesh;
-                    mesh.material.emissive.set(0x00b4d8);
+                    mesh.material.emissive.set(0xffffff);
+                    mesh.material.emissiveIntensity = 1.2;
                 }
                 setTooltip({
                     visible: true,
@@ -438,8 +540,10 @@ function OrbitalView({ neoData, dates }) {
                     data: mesh.userData,
                 });
             } else {
+                container.style.cursor = 'default';
                 if (hoveredMesh) {
-                    hoveredMesh.material.emissive.set(hoveredMesh.userData.hazardous ? 0x3d2800 : 0x111827);
+                    hoveredMesh.material.emissive.set(0xff0033);
+                    hoveredMesh.material.emissiveIntensity = 0.8;
                     hoveredMesh = null;
                 }
                 setTooltip(t => ({ ...t, visible: false }));
@@ -447,12 +551,22 @@ function OrbitalView({ neoData, dates }) {
         }
         container.addEventListener('mousemove', onMouseMove);
 
+        // Click to navigate to asteroid detail
+        function onClick(e) {
+            if (!hoveredMesh) return;
+            const neo = hoveredMesh.userData;
+            if (onSelectNeo) onSelectNeo(neo);
+        }
+        container.addEventListener('click', onClick);
+
         // Animate
         let animId;
         function animate() {
             animId = requestAnimationFrame(animate);
             earth.rotation.y += 0.001;
-            land.rotation.y += 0.001;
+            nightMesh.rotation.y += 0.001;
+            clouds.rotation.y += 0.0013;
+            clouds.rotation.x += 0.0001;
             controls.update();
             renderer.render(scene, camera);
         }
@@ -468,12 +582,13 @@ function OrbitalView({ neoData, dates }) {
         }
         window.addEventListener('resize', onResize);
 
-        sceneRef.current = { renderer, animId, onResize, onMouseMove };
+        sceneRef.current = { renderer, animId, onResize, onMouseMove, onClick };
 
         return () => {
             cancelAnimationFrame(animId);
             window.removeEventListener('resize', onResize);
             container.removeEventListener('mousemove', onMouseMove);
+            container.removeEventListener('click', onClick);
             renderer.dispose();
             if (container.contains(renderer.domElement)) container.removeChild(renderer.domElement);
             sceneRef.current = null;
@@ -502,6 +617,7 @@ function OrbitalView({ neoData, dates }) {
                         <div className="tt-row">Hazardous: <span style={{ color: tooltip.data.hazardous ? 'var(--accent-amber)' : 'var(--accent-green)' }}>
                             {tooltip.data.hazardous ? 'YES' : 'No'}
                         </span></div>
+                        <div className="tt-row" style={{ marginTop: 4, opacity: 0.6, fontSize: '0.7rem' }}>Click for full details</div>
                     </>
                 )}
             </div>
@@ -513,10 +629,26 @@ function OrbitalView({ neoData, dates }) {
 // TAB 1 — NEAR EARTH WATCH
 // ══════════════════════════════════════
 
-function NearEarthWatch({ neoData, dates, loading, error, onRetry }) {
+function NearEarthWatch({ neoData, dates, loading, error, onRetry, highlightNeoId }) {
     const [hazOnly, setHazOnly] = useState(false);
     const [dayFilter, setDayFilter] = useState('all');
     const [expandedId, setExpandedId] = useState(null);
+    const highlightRef = useRef(null);
+
+    // Auto-expand and scroll to highlighted NEO from 3D view click
+    useEffect(() => {
+        if (highlightNeoId) {
+            setExpandedId(highlightNeoId);
+            setHazOnly(false);
+            setDayFilter('all');
+            // Scroll after render
+            setTimeout(() => {
+                if (highlightRef.current) {
+                    highlightRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }, 100);
+        }
+    }, [highlightNeoId]);
 
     if (loading) return <><SkeletonCards /><SkeletonChart /><SkeletonTable /></>;
     if (error) return <ErrorCard message="Failed to load NEO data" detail={error} onRetry={onRetry} />;
@@ -629,7 +761,15 @@ function NearEarthWatch({ neoData, dates, loading, error, onRetry }) {
                         <tbody>
                             {paged.map(neo => (
                                 <React.Fragment key={neo.id}>
-                                    <tr onClick={() => setExpandedId(expandedId === neo.id ? null : neo.id)} style={{ cursor: 'pointer' }}>
+                                    <tr
+                                        ref={neo.id === highlightNeoId ? highlightRef : null}
+                                        onClick={() => setExpandedId(expandedId === neo.id ? null : neo.id)}
+                                        style={{
+                                            cursor: 'pointer',
+                                            background: neo.id === highlightNeoId ? 'rgba(0, 180, 216, 0.15)' : undefined,
+                                            boxShadow: neo.id === highlightNeoId ? 'inset 3px 0 0 var(--accent-blue)' : undefined,
+                                        }}
+                                    >
                                         <td style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{neo.name}</td>
                                         <td>{neo.date}</td>
                                         <td>{neo.missLD.toFixed(4)}</td>
@@ -692,7 +832,7 @@ function CloseApproaches() {
     const [error, setError] = useState(null);
     const [dateMin, setDateMin] = useState(todayStr());
     const [dateMax, setDateMax] = useState(formatDate(addDays(new Date(), 365)));
-    const [distMax, setDistMax] = useState('0.05');
+    const [distMax, setDistMax] = useState('0.2');
     const [sortBy, setSortBy] = useState('date');
     const [expandedDes, setExpandedDes] = useState(null);
 
@@ -721,13 +861,14 @@ function CloseApproaches() {
         return Object.entries(months).sort().map(([m, c]) => ({ month: m, count: c }));
     }, [data]);
 
-    // Scatter data
+    // Scatter data — cap at 100 closest points to avoid rendering 300+ Cell components
     const scatterData = useMemo(() => {
         if (!data) return [];
-        return data.map(d => ({
-            x: new Date(d.cd.replace(/\s/, 'T').replace(/\s/, '')).getTime() || 0,
+        const limited = data.length > 100 ? [...data].sort((a, b) => a.dist - b.dist).slice(0, 100) : data;
+        return limited.map(d => ({
+            x: new Date(d.cd).getTime() || 0,
             y: d.dist,
-            z: d.diameter || 5,
+            z: d.diameter || (d.h ? (1329 / Math.sqrt(0.15)) * Math.pow(10, -d.h / 5) : 0.05),
             vRel: d.vRel,
             name: d.fullname,
         }));
@@ -757,6 +898,8 @@ function CloseApproaches() {
                                 <option value="0.02">0.02 AU</option>
                                 <option value="0.05">0.05 AU</option>
                                 <option value="0.1">0.1 AU</option>
+                                <option value="0.2">0.2 AU</option>
+                                <option value="0.5">0.5 AU</option>
                             </select>
                         </label>
                         <label>
@@ -799,18 +942,18 @@ function CloseApproaches() {
                             </ResponsiveContainer>
                         </div>
                         <div className="chart-card full-width">
-                            <h3>Distance vs Time — Bubble = Diameter, Color = Velocity</h3>
+                            <h3>Distance (AU) vs Time {data && data.length > 100 && <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', fontWeight: 400 }}>(closest 100)</span>}</h3>
                             <ResponsiveContainer width="100%" height={280}>
                                 <ScatterChart>
                                     <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                                    <XAxis type="number" dataKey="x" name="Date" stroke="#475569" tickFormatter={v => { const d = new Date(v); return d ? `${d.getMonth()+1}/${d.getDate()}` : ''; }} />
+                                    <XAxis type="number" dataKey="x" name="Date" stroke="#475569" domain={['dataMin', 'dataMax']} tickFormatter={v => { const d = new Date(v); return d.getTime() ? `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}` : ''; }} />
                                     <YAxis type="number" dataKey="y" name="Dist (AU)" unit=" AU" stroke="#475569" />
                                     <ZAxis type="number" dataKey="z" range={[20, 200]} name="Diameter" />
                                     <Tooltip contentStyle={{ background: '#0d1220', border: '1px solid #1e293b', borderRadius: 8 }} formatter={(val, name) => {
                                         if (name === 'Date') return new Date(val).toLocaleDateString();
                                         return typeof val === 'number' ? val.toFixed(4) : val;
                                     }} />
-                                    <Scatter data={scatterData} isAnimationActive={true}>
+                                    <Scatter data={scatterData} isAnimationActive={false}>
                                         {scatterData.map((entry, i) => {
                                             const t = Math.min(entry.vRel / 30, 1);
                                             const r = Math.round(t * 239);
@@ -910,43 +1053,49 @@ function ImpactRisk() {
     if (error) return <ErrorCard message="Failed to load Sentry data" detail={error} onRetry={loadData} />;
     if (!data) return null;
 
-    const filtered = search
+    const filtered = useMemo(() => search
         ? data.filter(d => d.des.toLowerCase().includes(search.toLowerCase()) || d.fullname.toLowerCase().includes(search.toLowerCase()))
-        : data;
+        : data, [data, search]);
 
-    // Stats
-    const totalMonitored = data.length;
-    const highestPS = [...data].sort((a, b) => b.ps - a.ps)[0];
-    const nearestImpact = [...data].sort((a, b) => {
-        const ya = parseInt(a.range) || 9999;
-        const yb = parseInt(b.range) || 9999;
-        return ya - yb;
-    })[0];
-    const mostRecent = [...data].sort((a, b) => (b.lastObs || '').localeCompare(a.lastObs || ''))[0];
-    const anyTorino = data.some(d => d.ts > 0);
+    // Stats — memoized to avoid re-sorting 1000+ items on every render
+    const { totalMonitored, highestPS, nearestImpact, mostRecent, anyTorino } = useMemo(() => {
+        const highestPS = [...data].sort((a, b) => b.ps - a.ps)[0];
+        const nearestImpact = [...data].sort((a, b) => {
+            const ya = parseInt(a.range) || 9999;
+            const yb = parseInt(b.range) || 9999;
+            return ya - yb;
+        })[0];
+        const mostRecent = [...data].sort((a, b) => (b.lastObs || '').localeCompare(a.lastObs || ''))[0];
+        return { totalMonitored: data.length, highestPS, nearestImpact, mostRecent, anyTorino: data.some(d => d.ts > 0) };
+    }, [data]);
 
-    // Risk matrix scatter
-    const riskScatter = data.map(d => {
-        const yearStart = parseInt(d.range) || 2030;
-        return {
-            x: yearStart,
-            y: d.ps,
-            z: Math.max(Math.abs(d.ip) * 1e9, 5),
-            name: d.fullname,
-            ip: d.ip,
-        };
-    });
+    // Risk matrix scatter — cap at 100 highest-risk points to avoid 1000+ Cell components crashing the browser
+    const riskScatter = useMemo(() => {
+        const top = data.length > 100 ? [...data].sort((a, b) => b.ps - a.ps).slice(0, 100) : data;
+        return top.map(d => {
+            const yearStart = parseInt(d.range) || 2030;
+            return {
+                x: yearStart,
+                y: d.ps,
+                z: Math.max(Math.abs(d.ip) * 1e9, 5),
+                name: d.fullname,
+                ip: d.ip,
+            };
+        });
+    }, [data]);
 
-    // Palermo histogram
-    const psBins = {};
-    data.forEach(d => {
-        const bin = Math.floor(d.ps);
-        psBins[bin] = (psBins[bin] || 0) + 1;
-    });
-    const histogramData = Object.entries(psBins).sort((a,b) => Number(a[0]) - Number(b[0])).map(([bin, count]) => ({
-        bin: `${bin} to ${Number(bin)+1}`,
-        count,
-    }));
+    // Palermo histogram — memoized
+    const histogramData = useMemo(() => {
+        const psBins = {};
+        data.forEach(d => {
+            const bin = Math.floor(d.ps);
+            psBins[bin] = (psBins[bin] || 0) + 1;
+        });
+        return Object.entries(psBins).sort((a,b) => Number(a[0]) - Number(b[0])).map(([bin, count]) => ({
+            bin: `${bin} to ${Number(bin)+1}`,
+            count,
+        }));
+    }, [data]);
 
     return (
         <div>
@@ -970,7 +1119,7 @@ function ImpactRisk() {
 
             <div className="charts-grid">
                 <div className="chart-card">
-                    <h3>Risk Matrix — Impact Year vs Palermo Scale</h3>
+                    <h3>Risk Matrix — Impact Year vs Palermo Scale {data.length > 100 && <span style={{ fontSize: '0.7rem', color: 'var(--text-dim)', fontWeight: 400 }}>(top 100 by risk)</span>}</h3>
                     <ResponsiveContainer width="100%" height={300}>
                         <ScatterChart>
                             <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
@@ -978,7 +1127,7 @@ function ImpactRisk() {
                             <YAxis type="number" dataKey="y" name="Palermo Scale" stroke="#475569" />
                             <ZAxis type="number" dataKey="z" range={[15, 150]} />
                             <Tooltip contentStyle={{ background: '#0d1220', border: '1px solid #1e293b', borderRadius: 8 }} />
-                            <Scatter data={riskScatter} isAnimationActive={true}>
+                            <Scatter data={riskScatter} isAnimationActive={false}>
                                 {riskScatter.map((entry, i) => {
                                     const t = Math.min(Math.max((entry.y + 10) / 10, 0), 1);
                                     const color = t > 0.8 ? '#ef4444' : t > 0.5 ? '#f59e0b' : '#00b4d8';
@@ -1097,6 +1246,13 @@ function App() {
     const [neoError, setNeoError] = useState(null);
     const [utcTime, setUtcTime] = useState('');
     const [lastRefresh, setLastRefresh] = useState(null);
+    const [selectedNeoId, setSelectedNeoId] = useState(null);
+
+    // Called when user clicks an asteroid in 3D view
+    const handleSelectNeo = useCallback((neo) => {
+        setSelectedNeoId(neo.id);
+        setActiveTab(1); // Switch to Near Earth Watch tab
+    }, []);
 
     // UTC clock
     useEffect(() => {
@@ -1166,10 +1322,10 @@ function App() {
                 {activeTab === 0 && (
                     neoLoading ? <SkeletonChart />
                     : neoError ? <ErrorCard message="Failed to load NEO data" detail={neoError} onRetry={loadNeo} />
-                    : <OrbitalView neoData={neos} dates={dates} />
+                    : <OrbitalView neoData={neos} dates={dates} onSelectNeo={handleSelectNeo} />
                 )}
                 {activeTab === 1 && (
-                    <NearEarthWatch neoData={neos} dates={dates} loading={neoLoading} error={neoError} onRetry={loadNeo} />
+                    <NearEarthWatch neoData={neos} dates={dates} loading={neoLoading} error={neoError} onRetry={loadNeo} highlightNeoId={selectedNeoId} />
                 )}
                 {activeTab === 2 && <CloseApproaches />}
                 {activeTab === 3 && <ImpactRisk />}
