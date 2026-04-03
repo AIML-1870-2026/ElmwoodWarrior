@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DrugLens — FDA Drug Safety Explorer</title>
+  <meta name="description" content="Explore FDA drug safety data. Search, inspect, and compare prescription and OTC drug safety profiles powered by OpenFDA.">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Playfair+Display:wght@600;700;800&family=Source+Sans+3:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+
+  <!-- App CSS -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Sticky Header with Search -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="header-brand">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        DrugLens
+      </div>
+      <div id="search-bar" class="search-container"></div>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="app-container">
+    <div id="main-content"></div>
+  </main>
+
+  <!-- Persistent Footer Disclaimer -->
+  <footer class="app-footer">
+    <strong>DrugLens</strong> uses publicly available FDA data for educational exploration only.<br>
+    This is <strong>not medical advice</strong>. Always consult a healthcare provider before making decisions about medications.
+  </footer>
+
+  <!-- App JS (ES Modules) -->
+  <script type="module" src="js/app.js"></script>
+
+</body>
+</html>
