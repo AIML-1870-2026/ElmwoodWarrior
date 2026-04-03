@@ -1,8 +1,9 @@
 // single-view.js — Single Drug Deep Dive view
 
 import { fetchAllDrugData } from './api.js';
-import { renderDonutChart, renderSeriousnessBar, renderReactionsBar, renderTrendLine } from './charts.js';
-import { el, formatNumber, getLabelText, hasContent, stripHTML, truncate } from './utils.js';
+import { renderDonutChart, renderSeriousnessBar, renderReactionsBar, renderTrendLine, renderDemographicsChart, renderReactionNetwork } from './charts.js';
+import { el, formatNumber, getLabelText, hasContent, stripHTML, truncate, mapSex } from './utils.js';
+import { helpButton } from './help-modal.js';
 
 const LABEL_TABS = [
   { key: 'warnings', alt: 'warnings_and_cautions', label: 'Warnings' },
@@ -32,7 +33,7 @@ function renderSkeletons(container) {
   `;
 }
 
-export async function renderSingleView(container, drug) {
+export async function renderSingleView(container, drug, onExploreClass) {
   container.innerHTML = '';
   renderSkeletons(container);
 
@@ -65,6 +66,15 @@ export async function renderSingleView(container, drug) {
     ),
     brandNames ? el('p', { className: 'drug-brands muted' }, `Brand names: ${brandNames}`) : null,
   );
+  // Explore this drug class button
+  if (pharmClass && onExploreClass) {
+    const classBtn = el('button', { className: 'explore-class-btn' },
+      el('span', {}, `Explore ${pharmClass}`),
+      el('span', { className: 'explore-class-arrow' }, '\u2192'),
+    );
+    classBtn.addEventListener('click', () => onExploreClass(pharmClass));
+    header.appendChild(classBtn);
+  }
   container.appendChild(header);
 
   // Boxed Warning
@@ -79,7 +89,9 @@ export async function renderSingleView(container, drug) {
 
   // Safety Snapshot
   const snapshot = el('section', { className: 'card section' });
-  snapshot.innerHTML = `<h3 class="section-title">Safety Snapshot</h3>`;
+  const snapshotTitle = el('h3', { className: 'section-title section-title-with-help' }, 'Safety Snapshot');
+  snapshotTitle.appendChild(helpButton('adverse-events', 'How to interpret adverse event data'));
+  snapshot.appendChild(snapshotTitle);
   const snapshotBody = el('div', { className: 'snapshot-grid' });
 
   const totalEl = el('div', { className: 'stat-block' },
@@ -102,6 +114,10 @@ export async function renderSingleView(container, drug) {
   snapshot.appendChild(el('p', { className: 'caveat' }, 'Report counts \u2260 incidence rates. These numbers reflect reports submitted to the FDA, not confirmed cases. A higher count does not mean a drug is more dangerous.'));
   container.appendChild(snapshot);
 
+  // Severity help button
+  const sevHelpBtn = helpButton('severity-breakdown', 'Understanding severity categories');
+  snapshotBody.appendChild(sevHelpBtn);
+
   // Render charts after DOM insertion
   requestAnimationFrame(() => {
     renderDonutChart(donutCanvas, data.seriousness);
@@ -111,7 +127,9 @@ export async function renderSingleView(container, drug) {
   // Top Reported Reactions
   if (data.reactions.length > 0) {
     const reactSection = el('section', { className: 'card section' });
-    reactSection.innerHTML = `<h3 class="section-title">Top Reported Reactions</h3>`;
+    const reactTitle = el('h3', { className: 'section-title section-title-with-help' }, 'Top Reported Reactions');
+    reactTitle.appendChild(helpButton('reporting-bias', 'Why some drugs have more reports'));
+    reactSection.appendChild(reactTitle);
     const reactCanvas = el('canvas', { 'aria-label': `Top 15 reported reactions for ${drug.genericName}` });
     const reactWrap = el('div', { className: 'chart-wrap chart-tall' });
     reactWrap.appendChild(reactCanvas);
@@ -124,9 +142,52 @@ export async function renderSingleView(container, drug) {
     });
   }
 
+  // Reaction Network Graph (Visual Storytelling)
+  if (data.reactions.length > 0) {
+    const networkSection = el('section', { className: 'card section' });
+    const networkTitle = el('h3', { className: 'section-title section-title-with-help' }, 'Reaction Network');
+    networkTitle.appendChild(helpButton('network-graph', 'Reading the reaction network'));
+    networkSection.appendChild(networkTitle);
+    const networkCanvas = el('canvas', {
+      className: 'network-canvas',
+      'aria-label': `Reaction network graph for ${drug.genericName}`,
+      width: '800',
+      height: '500',
+    });
+    const networkWrap = el('div', { className: 'chart-wrap network-wrap' });
+    networkWrap.appendChild(networkCanvas);
+    networkSection.appendChild(networkWrap);
+    networkSection.appendChild(el('p', { className: 'caveat' }, 'Node size reflects report frequency. Connections show which reactions are most commonly reported for this drug.'));
+    container.appendChild(networkSection);
+
+    requestAnimationFrame(() => {
+      renderReactionNetwork(networkCanvas, drug.genericName, data.reactions);
+    });
+  }
+
+  // Demographics (Visual Storytelling)
+  if (data.demographics.length > 0) {
+    const demoSection = el('section', { className: 'card section' });
+    const demoTitle = el('h3', { className: 'section-title section-title-with-help' }, 'Reporter Demographics');
+    demoTitle.appendChild(helpButton('demographics', 'Understanding demographic data'));
+    demoSection.appendChild(demoTitle);
+    const demoCanvas = el('canvas', { 'aria-label': `Demographics breakdown for ${drug.genericName}` });
+    const demoWrap = el('div', { className: 'chart-wrap chart-small' });
+    demoWrap.appendChild(demoCanvas);
+    demoSection.appendChild(demoWrap);
+    demoSection.appendChild(el('p', { className: 'caveat' }, 'Demographics reflect who was reported as taking the drug, not the broader patient population. Reporting rates differ by sex and age group.'));
+    container.appendChild(demoSection);
+
+    requestAnimationFrame(() => {
+      renderDemographicsChart(demoCanvas, data.demographics);
+    });
+  }
+
   // From the Label (Tabbed)
   const labelSection = el('section', { className: 'card section' });
-  labelSection.innerHTML = `<h3 class="section-title">From the Label</h3>`;
+  const labelTitle = el('h3', { className: 'section-title section-title-with-help' }, 'From the Label');
+  labelTitle.appendChild(helpButton('drug-labels', 'What drug labels actually tell you'));
+  labelSection.appendChild(labelTitle);
   const tabBar = el('div', { className: 'tab-bar', role: 'tablist' });
   const tabContent = el('div', { className: 'tab-content' });
 
@@ -167,7 +228,9 @@ export async function renderSingleView(container, drug) {
 
   // Recall History
   const recallSection = el('section', { className: 'card section' });
-  recallSection.innerHTML = `<h3 class="section-title">Recall History</h3>`;
+  const recallTitle = el('h3', { className: 'section-title section-title-with-help' }, 'Recall History');
+  recallTitle.appendChild(helpButton('recall-classifications', 'Understanding recall classifications'));
+  recallSection.appendChild(recallTitle);
   if (data.recalls.length === 0) {
     recallSection.appendChild(el('p', { className: 'no-data' }, 'No recall records found in the FDA database (records available from 2004\u2013present).'));
   } else {

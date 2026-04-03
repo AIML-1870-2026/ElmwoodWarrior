@@ -1,6 +1,6 @@
 // charts.js — Chart rendering using Chart.js
 
-import { formatNumber, getDrugColor, getDrugColorLight, groupByYear } from './utils.js';
+import { formatNumber, getDrugColor, getDrugColorLight, groupByYear, mapSex } from './utils.js';
 
 /**
  * Destroy an existing chart on a canvas if present.
@@ -306,4 +306,141 @@ export function renderComparisonTrends(canvas, drugsData) {
       }
     }
   });
+}
+
+/**
+ * Donut chart: demographics (sex distribution).
+ */
+export function renderDemographicsChart(canvas, demographics) {
+  clearChart(canvas);
+  if (!demographics.length) return null;
+  const labels = demographics.map(d => mapSex(d.term));
+  const data = demographics.map(d => d.count);
+  const colors = ['#475569', '#0D7377', '#BE185D', '#94938E'];
+
+  return new Chart(canvas, {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{
+        data,
+        backgroundColor: colors.slice(0, data.length),
+        borderWidth: 2,
+        borderColor: '#FAFAF7',
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { font: { family: "'Source Sans 3', sans-serif", size: 13 } } },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const total = data.reduce((a, b) => a + b, 0);
+              const pct = total ? ((ctx.raw / total) * 100).toFixed(1) : '?';
+              return `${ctx.label}: ${formatNumber(ctx.raw)} (${pct}%)`;
+            }
+          }
+        }
+      }
+    }
+  });
+}
+
+/**
+ * Reaction Network Graph — canvas-based force-directed-like layout.
+ */
+export function renderReactionNetwork(canvas, drugName, reactions, maxNodes = 12) {
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  const W = rect.width || 800;
+  const H = 500;
+  canvas.width = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
+  ctx.scale(dpr, dpr);
+
+  const top = reactions.slice(0, maxNodes);
+  if (!top.length) return;
+
+  const maxCount = top[0].count;
+  const centerX = W / 2;
+  const centerY = H / 2;
+  const radius = Math.min(W, H) * 0.35;
+
+  // Build nodes
+  const nodes = top.map((r, i) => {
+    const angle = (i / top.length) * Math.PI * 2 - Math.PI / 2;
+    const dist = radius * (0.7 + Math.random() * 0.3);
+    const size = 8 + (r.count / maxCount) * 30;
+    return {
+      x: centerX + Math.cos(angle) * dist,
+      y: centerY + Math.sin(angle) * dist,
+      r: size,
+      label: r.term,
+      count: r.count,
+      color: `rgba(13,115,119,${0.3 + (r.count / maxCount) * 0.7})`,
+    };
+  });
+
+  // Clear
+  ctx.fillStyle = '#FAFAF7';
+  ctx.fillRect(0, 0, W, H);
+
+  // Draw connections
+  for (const node of nodes) {
+    const thickness = 1 + (node.count / maxCount) * 3;
+    ctx.beginPath();
+    ctx.moveTo(centerX, centerY);
+    ctx.lineTo(node.x, node.y);
+    ctx.strokeStyle = `rgba(13,115,119,${0.1 + (node.count / maxCount) * 0.2})`;
+    ctx.lineWidth = thickness;
+    ctx.stroke();
+  }
+
+  // Draw center node (drug)
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, 28, 0, Math.PI * 2);
+  ctx.fillStyle = '#0D7377';
+  ctx.fill();
+  ctx.strokeStyle = '#FAFAF7';
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // Center label
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = `bold 11px 'Source Sans 3', sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const shortName = drugName.length > 14 ? drugName.slice(0, 12) + '...' : drugName;
+  ctx.fillText(shortName, centerX, centerY);
+
+  // Draw reaction nodes
+  for (const node of nodes) {
+    // Node circle
+    ctx.beginPath();
+    ctx.arc(node.x, node.y, node.r, 0, Math.PI * 2);
+    ctx.fillStyle = node.color;
+    ctx.fill();
+    ctx.strokeStyle = '#0D7377';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Label
+    ctx.fillStyle = '#1A1A2E';
+    ctx.font = `${Math.max(9, Math.min(12, node.r * 0.8))}px 'Source Sans 3', sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    const labelY = node.y + node.r + 4;
+    const labelText = node.label.length > 20 ? node.label.slice(0, 18) + '...' : node.label;
+    ctx.fillText(labelText, node.x, labelY);
+
+    // Count
+    ctx.fillStyle = '#64748B';
+    ctx.font = `10px 'IBM Plex Mono', monospace`;
+    ctx.fillText(formatNumber(node.count), node.x, labelY + 14);
+  }
 }

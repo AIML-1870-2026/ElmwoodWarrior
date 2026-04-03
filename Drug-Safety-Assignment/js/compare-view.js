@@ -3,6 +3,7 @@
 import { fetchAllDrugData } from './api.js';
 import { renderComparisonReactions, renderSeverityComparison, renderComparisonTrends } from './charts.js';
 import { el, formatNumber, getLabelText, getDrugColor, getDrugColorLight } from './utils.js';
+import { helpButton } from './help-modal.js';
 
 const LABEL_TABS = [
   { key: 'warnings', alt: 'warnings_and_cautions', label: 'Warnings' },
@@ -50,7 +51,9 @@ export async function renderCompareView(container, drugs, cachedData = {}) {
 
   // At a Glance table
   const glanceSection = el('section', { className: 'card section' });
-  glanceSection.innerHTML = `<h3 class="section-title">At a Glance</h3>`;
+  const glanceTitle = el('h3', { className: 'section-title section-title-with-help' }, 'At a Glance');
+  glanceTitle.appendChild(helpButton('adverse-events', 'How to interpret this data'));
+  glanceSection.appendChild(glanceTitle);
   const table = el('table', { className: 'glance-table' });
   const thead = el('thead');
   const headerRow = el('tr', {}, el('th', {}, ''));
@@ -87,7 +90,9 @@ export async function renderCompareView(container, drugs, cachedData = {}) {
   const hasAnyBoxed = drugsData.some(d => d.label && d.label.boxed_warning);
   if (hasAnyBoxed) {
     const boxedSection = el('section', { className: 'card section' });
-    boxedSection.innerHTML = `<h3 class="section-title">Boxed Warnings Comparison</h3>`;
+    const boxedTitle = el('h3', { className: 'section-title section-title-with-help' }, 'Boxed Warnings Comparison');
+    boxedTitle.appendChild(helpButton('drug-labels', 'What boxed warnings mean'));
+    boxedSection.appendChild(boxedTitle);
     const grid = el('div', { className: 'compare-grid' });
     drugsData.forEach((d, i) => {
       const text = d.label ? getLabelText(d.label.boxed_warning) : '';
@@ -103,7 +108,9 @@ export async function renderCompareView(container, drugs, cachedData = {}) {
 
   // Top Reactions Comparison
   const reactSection = el('section', { className: 'card section' });
-  reactSection.innerHTML = `<h3 class="section-title">Top Reactions — Side by Side</h3>`;
+  const reactTitle = el('h3', { className: 'section-title section-title-with-help' }, 'Top Reactions \u2014 Side by Side');
+  reactTitle.appendChild(helpButton('reporting-bias', 'Why report counts vary'));
+  reactSection.appendChild(reactTitle);
   const reactCanvas = el('canvas', { 'aria-label': 'Comparison of top reported reactions across selected drugs' });
   const reactWrap = el('div', { className: 'chart-wrap chart-tall' });
   reactWrap.appendChild(reactCanvas);
@@ -117,7 +124,9 @@ export async function renderCompareView(container, drugs, cachedData = {}) {
 
   // Severity Comparison
   const sevSection = el('section', { className: 'card section' });
-  sevSection.innerHTML = `<h3 class="section-title">Severity Comparison (% of Reports)</h3>`;
+  const sevTitle = el('h3', { className: 'section-title section-title-with-help' }, 'Severity Comparison (% of Reports)');
+  sevTitle.appendChild(helpButton('severity-breakdown', 'Understanding severity categories'));
+  sevSection.appendChild(sevTitle);
   const sevCanvas = el('canvas', { 'aria-label': 'Severity comparison across selected drugs as percentages' });
   const sevWrap = el('div', { className: 'chart-wrap chart-medium' });
   sevWrap.appendChild(sevCanvas);
@@ -131,7 +140,9 @@ export async function renderCompareView(container, drugs, cachedData = {}) {
 
   // Label Sections Comparison (Tabbed)
   const labelSection = el('section', { className: 'card section' });
-  labelSection.innerHTML = `<h3 class="section-title">Label Sections Comparison</h3>`;
+  const labelCompTitle = el('h3', { className: 'section-title section-title-with-help' }, 'Label Sections Comparison');
+  labelCompTitle.appendChild(helpButton('drug-labels', 'What labels tell you'));
+  labelSection.appendChild(labelCompTitle);
   const tabBar = el('div', { className: 'tab-bar', role: 'tablist' });
   const tabContent = el('div', { className: 'tab-content' });
 
@@ -176,7 +187,9 @@ export async function renderCompareView(container, drugs, cachedData = {}) {
 
   // Recall History Comparison (merged timeline)
   const recallSection = el('section', { className: 'card section' });
-  recallSection.innerHTML = `<h3 class="section-title">Recall History Comparison</h3>`;
+  const recallCompTitle = el('h3', { className: 'section-title section-title-with-help' }, 'Recall History Comparison');
+  recallCompTitle.appendChild(helpButton('recall-classifications', 'Understanding recall classifications'));
+  recallSection.appendChild(recallCompTitle);
   const allRecalls = [];
   drugsData.forEach((d, i) => {
     for (const r of (d.recalls || [])) {
@@ -210,7 +223,9 @@ export async function renderCompareView(container, drugs, cachedData = {}) {
   const hasTrends = drugsData.some(d => d.trends && d.trends.length > 0);
   if (hasTrends) {
     const trendSection = el('section', { className: 'card section' });
-    trendSection.innerHTML = `<h3 class="section-title">Reporting Trends — Overlaid</h3>`;
+    const trendTitle = el('h3', { className: 'section-title section-title-with-help' }, 'Reporting Trends \u2014 Overlaid');
+    trendTitle.appendChild(helpButton('reporting-bias', 'Why report counts vary'));
+    trendSection.appendChild(trendTitle);
     const trendCanvas = el('canvas', { 'aria-label': 'Reporting trends comparison over time' });
     const trendWrap = el('div', { className: 'chart-wrap chart-medium' });
     trendWrap.appendChild(trendCanvas);

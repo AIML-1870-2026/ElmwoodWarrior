@@ -19,6 +19,79 @@ function recallClassBadge(classification) {
   return { text: 'Class III', className: 'badge-info' };
 }
 
+function showCategoryResults(container, categoryName, results, onDrugSelect) {
+  // Remove any previous results panel
+  const existing = container.querySelector('.category-results');
+  if (existing) existing.remove();
+
+  const selected = new Set();
+  const MAX = 4;
+
+  const panel = el('section', { className: 'card section category-results' });
+  const header = el('div', { className: 'category-results-header' },
+    el('h2', { className: 'section-title' }, `${categoryName} — Select Drugs to Compare`),
+  );
+  const closeBtn = el('button', { className: 'category-results-close', 'aria-label': 'Close results', innerHTML: '&times;' });
+  closeBtn.addEventListener('click', () => panel.remove());
+  header.appendChild(closeBtn);
+  panel.appendChild(header);
+
+  const hint = el('p', { className: 'category-results-hint muted' }, 'Pick up to 4 drugs, then hit Go.');
+  panel.appendChild(hint);
+
+  const list = el('div', { className: 'category-results-list' });
+  const items = [];
+
+  for (const drug of results) {
+    const brandStr = drug.brandNames.length > 0 ? drug.brandNames.slice(0, 3).join(', ') : '';
+    const item = el('button', { className: 'category-result-item' },
+      el('span', { className: 'category-result-name' }, drug.genericName),
+      brandStr ? el('span', { className: 'category-result-brand' }, brandStr) : null,
+      drug.pharmClass ? el('span', { className: 'category-result-class' }, drug.pharmClass) : null,
+    );
+    item.addEventListener('click', () => {
+      const key = drug.genericName;
+      if (selected.has(key)) {
+        selected.delete(key);
+        item.classList.remove('selected');
+      } else {
+        if (selected.size >= MAX) return;
+        selected.add(key);
+        item.classList.add('selected');
+      }
+      updateGoButton();
+    });
+    items.push({ item, drug });
+    list.appendChild(item);
+  }
+  panel.appendChild(list);
+
+  // Go button
+  const goBtn = el('button', { className: 'category-results-go', disabled: true }, 'Go');
+  goBtn.addEventListener('click', () => {
+    const drugsToAdd = items
+      .filter(({ drug }) => selected.has(drug.genericName))
+      .map(({ drug }) => drug);
+    panel.remove();
+    for (const drug of drugsToAdd) {
+      onDrugSelect(drug);
+    }
+  });
+  panel.appendChild(goBtn);
+
+  function updateGoButton() {
+    goBtn.disabled = selected.size === 0;
+    goBtn.textContent = selected.size === 0
+      ? 'Go'
+      : selected.size === 1
+        ? 'View Drug'
+        : `Compare ${selected.size} Drugs`;
+  }
+
+  container.appendChild(panel);
+  panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
 export async function renderExploreView(container, onDrugSelect) {
   container.innerHTML = '';
 
@@ -45,8 +118,24 @@ export async function renderExploreView(container, onDrugSelect) {
       el('span', { className: 'category-name' }, cat.name),
     );
     catCard.addEventListener('click', async () => {
-      const results = await searchDrugs(cat.query);
-      if (results.length > 0) onDrugSelect(results[0]);
+      // Show loading state on the card
+      catCard.classList.add('loading');
+      catCard.disabled = true;
+      try {
+        const results = await searchDrugs(cat.query);
+        if (results.length === 0) {
+          catCard.classList.remove('loading');
+          catCard.disabled = false;
+          return;
+        }
+        // Show a results panel below the categories
+        showCategoryResults(container, cat.name, results, onDrugSelect);
+      } catch {
+        // silently fail
+      } finally {
+        catCard.classList.remove('loading');
+        catCard.disabled = false;
+      }
     });
     catGrid.appendChild(catCard);
   }
