@@ -1,0 +1,6 @@
+# Contains real API keys — never commit
+LLMSwitchboard.md
+spec.md
+*.env
+.env
+.env.*
