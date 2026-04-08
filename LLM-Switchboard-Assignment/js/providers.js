@@ -18,19 +18,23 @@ const Providers = (() => {
   }
 
   // ----------------------------- OpenAI -----------------------------
-  async function callOpenAI({ apiKey, model, prompt, structured, schema }) {
+  async function callOpenAI({ apiKey, model, prompt, structured, schema, temperature, maxTokens, systemPrompt }) {
     const url = "https://api.openai.com/v1/chat/completions";
 
     const messages = [];
-    if (structured) {
-      messages.push({ role: "system", content: buildStructuredSystem(schema) });
+    const systemParts = [];
+    if (systemPrompt) systemParts.push(systemPrompt);
+    if (structured)   systemParts.push(buildStructuredSystem(schema));
+    if (systemParts.length) {
+      messages.push({ role: "system", content: systemParts.join("\n\n") });
     }
     messages.push({ role: "user", content: prompt });
 
     const body = {
       model,
       messages,
-      temperature: 0.7
+      temperature: temperature ?? 0.7,
+      max_tokens: maxTokens ?? 1024
     };
     if (structured) {
       body.response_format = { type: "json_object" };
@@ -61,17 +65,19 @@ const Providers = (() => {
   }
 
   // --------------------------- Anthropic ----------------------------
-  async function callAnthropic({ apiKey, model, prompt, structured, schema }) {
+  async function callAnthropic({ apiKey, model, prompt, structured, schema, temperature, maxTokens, systemPrompt }) {
     const url = "https://api.anthropic.com/v1/messages";
 
     const body = {
       model,
-      max_tokens: 1024,
+      max_tokens: maxTokens ?? 1024,
+      temperature: temperature ?? 0.7,
       messages: [{ role: "user", content: prompt }]
     };
-    if (structured) {
-      body.system = buildStructuredSystem(schema);
-    }
+    const systemParts = [];
+    if (systemPrompt) systemParts.push(systemPrompt);
+    if (structured)   systemParts.push(buildStructuredSystem(schema));
+    if (systemParts.length) body.system = systemParts.join("\n\n");
 
     try {
       const res = await fetch(url, {

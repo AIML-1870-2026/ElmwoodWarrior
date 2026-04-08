@@ -3,8 +3,11 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>LLM Switchboard</title>
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ctext y='52' font-size='52'%3E%F0%9F%8E%9B%EF%B8%8F%3C/text%3E%3C/svg%3E" />
+<title>LLM Switchboard — Multi-Provider AI Playground</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%236366f1'/%3E%3Cstop offset='0.5' stop-color='%238b5cf6'/%3E%3Cstop offset='1' stop-color='%23ec4899'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='6' y='6' width='52' height='52' rx='14' fill='url(%23g)'/%3E%3Ccircle cx='22' cy='22' r='4' fill='%23fff'/%3E%3Ccircle cx='42' cy='22' r='4' fill='%23fff' opacity='0.5'/%3E%3Ccircle cx='22' cy='42' r='4' fill='%23fff' opacity='0.5'/%3E%3Ccircle cx='42' cy='42' r='4' fill='%23fff'/%3E%3Cpath d='M22 22 L42 42 M42 22 L22 42' stroke='%23fff' stroke-width='2.5' stroke-linecap='round' opacity='0.85'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
 <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
@@ -16,20 +19,53 @@
 
   <header class="app-header">
     <div class="brand">
-      <div class="logo">🎛️</div>
+      <div class="logo" aria-hidden="true">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="logoGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#6366f1" />
+              <stop offset="0.5" stop-color="#8b5cf6" />
+              <stop offset="1" stop-color="#ec4899" />
+            </linearGradient>
+            <filter id="logoGlow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="2.5" result="blur" />
+              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
+          </defs>
+          <rect x="6" y="6" width="52" height="52" rx="14" fill="url(#logoGrad)" />
+          <g filter="url(#logoGlow)" stroke="#fff" stroke-width="2.5" stroke-linecap="round" fill="none" opacity="0.9">
+            <path d="M22 22 L42 42" />
+            <path d="M42 22 L22 42" />
+          </g>
+          <circle cx="22" cy="22" r="4.5" fill="#fff" />
+          <circle cx="42" cy="22" r="4.5" fill="#fff" opacity="0.55" />
+          <circle cx="22" cy="42" r="4.5" fill="#fff" opacity="0.55" />
+          <circle cx="42" cy="42" r="4.5" fill="#fff" />
+        </svg>
+      </div>
       <div>
         <h1>LLM Switchboard</h1>
-        <p class="tagline">Explore AI providers, models, and output modes</p>
+        <p class="tagline">A unified playground for multi-provider AI models</p>
       </div>
     </div>
-    <button id="keys-toggle" class="btn btn-ghost">🔑 API Keys</button>
+    <div class="header-actions">
+      <button id="theme-toggle" class="icon-pill" title="Cycle theme">🎨 <span id="theme-label">dark</span></button>
+      <button id="sound-toggle" class="icon-pill" title="Toggle sound">🔇</button>
+      <button id="ach-toggle" class="icon-pill" title="Achievements">🏆</button>
+      <button id="shortcuts-toggle" class="icon-pill" title="Keyboard shortcuts">⌨️</button>
+      <button class="help-btn" data-tip="Welcome! Enter an API key, pick a provider and model, type a prompt, and hit Send. Hover any ? icon for details." aria-label="Help">?</button>
+      <button id="keys-toggle" class="btn btn-ghost">🔑 API Keys</button>
+    </div>
   </header>
 
   <!-- API Keys Modal -->
   <div id="keys-modal" class="modal hidden">
     <div class="modal-card glass">
       <div class="modal-head">
-        <h2>🔐 API Key Vault</h2>
+        <div class="label-row">
+          <h2>🔐 API Key Vault</h2>
+          <button class="help-btn" data-tip="Paste a key or load it from a .env/.csv file. Keys live in memory only and vanish on reload — nothing is saved to disk, cookies, or localStorage." aria-label="API Keys help">?</button>
+        </div>
         <button id="keys-close" class="icon-btn">✕</button>
       </div>
       <p class="privacy-note">
@@ -74,7 +110,10 @@
       <h3>Controls</h3>
 
       <div class="control-group">
-        <span class="control-label">Provider</span>
+        <div class="label-row">
+          <span class="control-label">Provider</span>
+          <button class="help-btn" data-tip="Choose which AI company's API to call. OpenAI works directly in-browser; Anthropic is CORS-restricted and typically needs a proxy." aria-label="Provider help">?</button>
+        </div>
         <div class="pill-group" id="provider-pills">
           <button class="pill active" data-provider="openai">OpenAI</button>
           <button class="pill" data-provider="anthropic">
@@ -84,12 +123,18 @@
       </div>
 
       <div class="control-group">
-        <label class="control-label" for="model-select">Model</label>
+        <div class="label-row">
+          <label class="control-label" for="model-select">Model</label>
+          <button class="help-btn" data-tip="The specific model to use. Larger models are smarter but slower and more expensive; smaller ones are fast and cheap." aria-label="Model help">?</button>
+        </div>
         <select id="model-select" class="select"></select>
       </div>
 
       <div class="control-group">
-        <span class="control-label">Output Mode</span>
+        <div class="label-row">
+          <span class="control-label">Output Mode</span>
+          <button class="help-btn" data-tip="Unstructured = free-form text reply. Structured = the model is forced to return JSON matching the schema below — great for data extraction." aria-label="Output Mode help">?</button>
+        </div>
         <div class="pill-group" id="mode-pills">
           <button class="pill active" data-mode="unstructured">Unstructured</button>
           <button class="pill" data-mode="structured">Structured</button>
@@ -97,24 +142,70 @@
       </div>
 
       <div class="control-group">
-        <label class="control-label" for="example-select">Example Prompts</label>
+        <div class="label-row">
+          <label class="control-label" for="example-select">Example Prompts</label>
+          <button class="help-btn" data-tip="Pre-written prompts to try instantly. Picking one fills the prompt box so you can see how the model responds." aria-label="Example Prompts help">?</button>
+        </div>
         <select id="example-select" class="select">
           <option value="">— pick an example —</option>
         </select>
+      </div>
+
+      <div class="control-group">
+        <div class="label-row">
+          <label class="control-label" for="personality-select">Personality</label>
+          <button class="help-btn" data-tip="Inject a system prompt that gives the model a character. Pick 'Default' to write your own system prompt." aria-label="Personality help">?</button>
+        </div>
+        <select id="personality-select" class="select"></select>
+      </div>
+
+      <div class="advanced">
+        <button id="advanced-toggle" class="advanced-toggle" type="button">
+          <span class="caret">▶</span> Advanced
+        </button>
+        <div id="advanced-body" class="advanced-body hidden">
+          <div class="control-group">
+            <div class="label-row">
+              <label class="control-label" for="temp-slider">Temperature <span id="temp-value" class="dim">0.70</span></label>
+              <button class="help-btn" data-tip="Randomness. 0 = deterministic and focused, 2 = wildly creative. 0.7 is a balanced default." aria-label="Temperature help">?</button>
+            </div>
+            <input id="temp-slider" type="range" min="0" max="2" step="0.05" value="0.7" class="slider" />
+          </div>
+          <div class="control-group">
+            <div class="label-row">
+              <label class="control-label" for="max-slider">Max Tokens <span id="max-value" class="dim">1024</span></label>
+              <button class="help-btn" data-tip="Cap on the response length. Higher = longer possible reply but more cost. 1024 ≈ ~750 words." aria-label="Max tokens help">?</button>
+            </div>
+            <input id="max-slider" type="range" min="64" max="4096" step="64" value="1024" class="slider" />
+          </div>
+          <div class="control-group">
+            <div class="label-row">
+              <label class="control-label" for="system-prompt">System Prompt</label>
+              <button class="help-btn" data-tip="A persistent instruction prepended to every request. Use it to set tone, role, or constraints. Picking a Personality fills this." aria-label="System prompt help">?</button>
+            </div>
+            <textarea id="system-prompt" class="system-prompt" rows="3" placeholder="You are a helpful assistant…"></textarea>
+          </div>
+        </div>
       </div>
     </section>
 
     <!-- Prompt -->
     <section class="panel glass prompt-panel">
       <div class="panel-head">
-        <h3>Prompt</h3>
+        <div class="label-row">
+          <h3>Prompt</h3>
+          <button class="help-btn" data-tip="The instruction you want the AI to follow. Be specific for best results — include context, desired format, and any constraints." aria-label="Prompt help">?</button>
+        </div>
         <span id="char-count" class="dim">0 chars</span>
       </div>
       <textarea id="prompt-input" placeholder="Ask anything…"></textarea>
 
       <div id="schema-wrap" class="schema-wrap hidden">
         <div class="panel-head">
-          <h3>JSON Schema <span id="schema-valid" class="dim">✅ valid</span></h3>
+          <div class="label-row">
+            <h3>JSON Schema <span id="schema-valid" class="dim">✅ valid</span></h3>
+            <button class="help-btn" data-tip="A JSON Schema describing the exact shape the response must match. Use a template or write your own — the model's output is guaranteed to validate." aria-label="JSON Schema help">?</button>
+          </div>
           <select id="schema-select" class="select select-sm">
             <option value="">— templates —</option>
           </select>
@@ -122,18 +213,30 @@
         <textarea id="schema-input" spellcheck="false"></textarea>
       </div>
 
-      <button id="send-btn" class="btn btn-primary btn-lg" disabled>
-        <span class="send-label">Send</span>
-        <span class="spinner hidden"></span>
-      </button>
+      <div class="action-row">
+        <button id="send-btn" class="btn btn-primary btn-lg" disabled>
+          <span class="send-label">Send</span>
+          <span class="spinner hidden"></span>
+        </button>
+        <button id="compare-btn" class="btn btn-ghost btn-lg" disabled title="Run prompt against two models (Ctrl/Cmd+B)">⚖️ Compare</button>
+        <button id="roast-btn" class="btn btn-ghost btn-lg" disabled title="Have the AI critique your prompt">🌶️ Roast</button>
+      </div>
     </section>
 
     <!-- Response -->
     <section class="panel glass response-panel">
       <div class="panel-head">
-        <h3>Response</h3>
-        <button id="copy-btn" class="btn btn-ghost btn-sm" disabled>📋 Copy</button>
+        <div class="label-row">
+          <h3>Response</h3>
+          <button class="help-btn" data-tip="The model's reply appears here. Structured responses are syntax-highlighted as JSON. Use Copy to grab the full text." aria-label="Response help">?</button>
+        </div>
+        <div class="response-actions">
+          <button id="export-md" class="btn btn-ghost btn-sm" title="Export as Markdown">⬇️ .md</button>
+          <button id="export-json" class="btn btn-ghost btn-sm" title="Export as JSON">⬇️ .json</button>
+          <button id="copy-btn" class="btn btn-ghost btn-sm" disabled>📋 Copy</button>
+        </div>
       </div>
+      <div id="metrics-bar" class="metrics-bar hidden"></div>
       <div id="response-area" class="response-area">
         <div class="empty-state">
           <div class="empty-icon">✨</div>
@@ -145,14 +248,70 @@
   </main>
 
   <footer class="app-footer">
-    <span>🔒 Keys in memory only • No analytics • No tracking</span>
+    <span>🔒 Keys in memory only • No analytics • No tracking • <kbd>Ctrl</kbd>+<kbd>/</kbd> for shortcuts</span>
   </footer>
+
+  <!-- Shortcuts Modal -->
+  <div id="shortcuts-modal" class="modal hidden">
+    <div class="modal-card glass">
+      <div class="modal-head">
+        <h2>⌨️ Keyboard Shortcuts</h2>
+        <button id="shortcuts-close" class="icon-btn">✕</button>
+      </div>
+      <div class="shortcut-list">
+        <div class="shortcut"><span><kbd>Ctrl</kbd>+<kbd>Enter</kbd></span><span>Send prompt</span></div>
+        <div class="shortcut"><span><kbd>Ctrl</kbd>+<kbd>B</kbd></span><span>Compare two models</span></div>
+        <div class="shortcut"><span><kbd>Ctrl</kbd>+<kbd>K</kbd></span><span>Open API Keys vault</span></div>
+        <div class="shortcut"><span><kbd>Ctrl</kbd>+<kbd>E</kbd></span><span>Export response as Markdown</span></div>
+        <div class="shortcut"><span><kbd>Ctrl</kbd>+<kbd>/</kbd></span><span>Toggle this help</span></div>
+        <div class="shortcut"><span><kbd>↑</kbd> / <kbd>↓</kbd></span><span>Cycle prompt history (when at edge)</span></div>
+        <div class="shortcut"><span><kbd>Esc</kbd></span><span>Close any modal</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Achievements Modal -->
+  <div id="ach-modal" class="modal hidden">
+    <div class="modal-card glass" style="max-width: 640px;">
+      <div class="modal-head">
+        <h2>🏆 Achievements</h2>
+        <button id="ach-close" class="icon-btn">✕</button>
+      </div>
+      <div id="achievements-grid" class="achievements-grid"></div>
+    </div>
+  </div>
+
+  <!-- Compare Modal -->
+  <div id="compare-modal" class="modal hidden">
+    <div class="modal-card glass" style="max-width: 1100px;">
+      <div class="modal-head">
+        <h2>⚖️ Side-by-Side Comparison</h2>
+        <button id="compare-close" class="icon-btn">✕</button>
+      </div>
+      <p class="dim" id="compare-elapsed" style="margin: 0 0 12px;"></p>
+      <div class="compare-grid">
+        <div class="compare-col">
+          <div class="cmp-title" id="compare-a-title"></div>
+          <div class="cmp-body" id="compare-a"></div>
+        </div>
+        <div class="compare-col">
+          <div class="cmp-title" id="compare-b-title"></div>
+          <div class="cmp-body" id="compare-b"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating layers -->
+  <div id="confetti-layer" class="confetti-layer" aria-hidden="true"></div>
+  <div id="toast-layer" class="toast-layer" aria-hidden="true"></div>
 
   <!-- Scripts: multiple JS modules -->
   <script src="js/data.js"></script>
   <script src="js/keys.js"></script>
   <script src="js/providers.js"></script>
   <script src="js/ui.js"></script>
+  <script src="js/extras.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
