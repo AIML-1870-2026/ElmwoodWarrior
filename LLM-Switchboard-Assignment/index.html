@@ -51,6 +51,7 @@
       <button id="theme-toggle" class="icon-pill" title="Cycle theme">🎨 <span id="theme-label">dark</span></button>
       <button id="sound-toggle" class="icon-pill" title="Toggle sound">🔇</button>
       <button id="ach-toggle" class="icon-pill" title="Achievements">🏆</button>
+      <button id="library-toggle" class="icon-pill" title="Prompt Library">📚 <span id="library-count">0</span></button>
       <button id="shortcuts-toggle" class="icon-pill" title="Keyboard shortcuts">⌨️</button>
       <button class="help-btn" data-tip="Welcome! Enter an API key, pick a provider and model, type a prompt, and hit Send. Hover any ? icon for details." aria-label="Help">?</button>
       <button id="keys-toggle" class="btn btn-ghost">🔑 API Keys</button>
@@ -219,6 +220,7 @@
         </button>
         <button id="compare-btn" class="btn btn-ghost btn-lg" disabled title="Run prompt against two models (Ctrl/Cmd+B)">⚖️ Compare</button>
         <button id="roast-btn" class="btn btn-ghost btn-lg" disabled title="Have the AI critique your prompt">🌶️ Roast</button>
+        <button id="save-prompt-btn" class="btn btn-ghost btn-lg" title="Save this prompt to your library">⭐ Save</button>
       </div>
     </section>
 
@@ -236,6 +238,7 @@
         </div>
       </div>
       <div id="metrics-bar" class="metrics-bar hidden"></div>
+      <div id="schema-report" class="schema-report hidden"></div>
       <div id="response-area" class="response-area">
         <div class="empty-state">
           <div class="empty-icon">✨</div>
@@ -301,6 +304,36 @@
     </div>
   </div>
 
+  <!-- Prompt Library Modal -->
+  <div id="library-modal" class="modal hidden">
+    <div class="modal-card glass" style="max-width: 760px;">
+      <div class="modal-head">
+        <div class="label-row">
+          <h2>📚 Prompt Library</h2>
+          <button class="help-btn" data-tip="Save your favorite prompts (and their schemas) to a personal in-memory collection. Click any saved prompt to load it back into the workbench. Cleared on reload — nothing is persisted to disk." aria-label="Library help">?</button>
+        </div>
+        <button id="library-close" class="icon-btn">✕</button>
+      </div>
+      <p class="dim" style="margin: 0 0 12px;">Your personal prompt workbench. Saved prompts include the model, mode, and schema (when structured).</p>
+      <div id="library-list" class="library-list"></div>
+    </div>
+  </div>
+
+  <!-- Save Prompt Dialog -->
+  <div id="save-prompt-modal" class="modal hidden">
+    <div class="modal-card glass" style="max-width: 480px;">
+      <div class="modal-head">
+        <h2>⭐ Save to Library</h2>
+        <button id="save-prompt-close" class="icon-btn">✕</button>
+      </div>
+      <p class="dim" style="margin: 0 0 12px;">Give this prompt a name. Mode, provider, model, and schema (if structured) are captured automatically.</p>
+      <input id="save-prompt-name" type="text" class="select" placeholder="e.g. Recipe extractor v2" style="width:100%; margin-bottom:14px;" />
+      <div class="modal-foot">
+        <button id="save-prompt-confirm" class="btn btn-primary">Save</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Floating layers -->
   <div id="confetti-layer" class="confetti-layer" aria-hidden="true"></div>
   <div id="toast-layer" class="toast-layer" aria-hidden="true"></div>
@@ -311,6 +344,7 @@
   <script src="js/providers.js"></script>
   <script src="js/ui.js"></script>
   <script src="js/extras.js"></script>
+  <script src="js/library.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

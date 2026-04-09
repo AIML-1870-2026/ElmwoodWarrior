@@ -192,6 +192,123 @@ const UI = (() => {
     if (bar) { bar.innerHTML = ""; bar.classList.add("hidden"); }
   }
 
+  // ---------- Schema Validator Report Card ----------
+  function renderSchemaReport(report) {
+    const el = $("schema-report");
+    if (!el) return;
+    el.innerHTML = "";
+
+    if (report.parseError) {
+      el.classList.remove("hidden");
+      el.innerHTML = `
+        <div class="report-head">
+          <div class="report-title">📋 Schema Compliance</div>
+          <div class="report-score score-bad">JSON parse failed</div>
+        </div>
+        <div class="report-error">${escapeHtml(report.parseError)}</div>
+      `;
+      return;
+    }
+
+    const scoreCls = report.score >= 100 ? "score-good"
+                    : report.score >= 60 ? "score-warn"
+                    : "score-bad";
+
+    const summary = `${report.matched} / ${report.total} fields matched`;
+
+    let rowsHtml = "";
+    report.rows.forEach((r) => {
+      const icon =
+        r.status === "matched"          ? "✅" :
+        r.status === "missing"          ? "❌" :
+        r.status === "missing-optional" ? "➖" :
+        r.status === "wrong-type"       ? "⚠️" :
+        /* extra */                       "➕";
+      const rowCls =
+        r.status === "matched"          ? "row-ok" :
+        r.status === "missing"          ? "row-bad" :
+        r.status === "missing-optional" ? "row-dim" :
+        r.status === "wrong-type"       ? "row-warn" :
+                                          "row-info";
+      const note =
+        r.status === "matched"          ? `type ${escapeHtml(String(r.actual))} ✓` :
+        r.status === "missing"          ? `expected ${escapeHtml(String(r.expected))}, missing (required)` :
+        r.status === "missing-optional" ? `expected ${escapeHtml(String(r.expected))}, missing (optional)` :
+        r.status === "wrong-type"       ? `expected ${escapeHtml(String(r.expected))}, got ${escapeHtml(String(r.actual))}` :
+                                          `extra field of type ${escapeHtml(String(r.actual))}`;
+      rowsHtml += `
+        <div class="report-row ${rowCls}">
+          <span class="report-row-icon">${icon}</span>
+          <span class="report-row-key">${escapeHtml(r.path)}${r.required ? '<span class="req-star" title="required">*</span>' : ""}</span>
+          <span class="report-row-note">${note}</span>
+        </div>
+      `;
+    });
+
+    if (!rowsHtml) {
+      rowsHtml = `<div class="report-row row-dim"><span class="report-row-note">Schema has no properties to validate.</span></div>`;
+    }
+
+    el.innerHTML = `
+      <div class="report-head">
+        <div class="report-title">📋 Schema Compliance</div>
+        <div class="report-score ${scoreCls}">${report.score}% • ${summary}</div>
+      </div>
+      <div class="report-rows">${rowsHtml}</div>
+    `;
+    el.classList.remove("hidden");
+  }
+  function clearSchemaReport() {
+    const el = $("schema-report");
+    if (el) { el.innerHTML = ""; el.classList.add("hidden"); }
+  }
+
+  // ---------- Prompt Library ----------
+  function renderLibrary(items, { onLoad, onDelete }) {
+    const list = $("library-list");
+    if (!list) return;
+    list.innerHTML = "";
+
+    if (!items.length) {
+      list.innerHTML = `
+        <div class="empty-state" style="padding:30px 0;">
+          <div class="empty-icon">📭</div>
+          <p>No saved prompts yet. Hit ⭐ Save next to a prompt to add one.</p>
+        </div>
+      `;
+      return;
+    }
+
+    items.forEach((it) => {
+      const card = document.createElement("div");
+      card.className = "library-card";
+      const snippet = (it.prompt || "").slice(0, 160);
+      const modeBadge = it.mode === "structured" ? '<span class="lib-badge lib-badge-struct">JSON</span>' : '<span class="lib-badge">TEXT</span>';
+      card.innerHTML = `
+        <div class="lib-card-head">
+          <div class="lib-name">${escapeHtml(it.name)}</div>
+          <div class="lib-meta">
+            ${modeBadge}
+            <span class="lib-meta-item">${escapeHtml(it.provider || "")}</span>
+            <span class="lib-meta-item">${escapeHtml(it.model || "")}</span>
+          </div>
+        </div>
+        <div class="lib-snippet">${escapeHtml(snippet)}${it.prompt && it.prompt.length > 160 ? "…" : ""}</div>
+        <div class="lib-actions">
+          <button class="btn btn-ghost btn-sm" data-act="load">↩️ Load</button>
+          <button class="btn btn-ghost btn-sm" data-act="delete">🗑️ Delete</button>
+        </div>
+      `;
+      card.querySelector('[data-act="load"]').addEventListener("click", () => onLoad(it.id));
+      card.querySelector('[data-act="delete"]').addEventListener("click", () => onDelete(it.id));
+      list.appendChild(card);
+    });
+  }
+  function setLibraryCount(n) {
+    const el = $("library-count");
+    if (el) el.textContent = String(n);
+  }
+
   // ---------- Mascot ----------
   function setMascot(mood) {
     const logo = document.querySelector(".logo");
@@ -322,6 +439,10 @@ const UI = (() => {
     formatCost,
     renderMetrics,
     clearMetrics,
+    renderSchemaReport,
+    clearSchemaReport,
+    renderLibrary,
+    setLibraryCount,
     setMascot,
     confetti,
     sfx,

@@ -118,6 +118,7 @@ async function handleSend() {
   UI.setStatus("Sending request…");
   UI.renderEmpty();
   UI.clearMetrics();
+  UI.clearSchemaReport();
   UI.sfx.send();
 
   const startedAt = performance.now();
@@ -136,6 +137,12 @@ async function handleSend() {
 
     UI.renderMetrics({ model: opts.model, ms: elapsed, inTok, outTok, cost, valid });
     State.lastResponseMeta = { model: opts.model, ms: elapsed, inTok, outTok, cost, valid, prompt };
+
+    // Schema compliance report card (structured mode only)
+    if (opts.structured) {
+      const report = SchemaValidator.validateText(text, opts.schema);
+      UI.renderSchemaReport(report);
+    }
 
     UI.setStatus(`✅ Done in ${elapsed} ms`, "success");
     UI.setMascot("happy");
@@ -474,6 +481,74 @@ function init() {
   UI.$("compare-close").addEventListener("click", () => UI.$("compare-modal").classList.add("hidden"));
   UI.$("compare-modal").addEventListener("click", (e) => { if (e.target.id === "compare-modal") UI.$("compare-modal").classList.add("hidden"); });
 
+  // ---------- Prompt Library ----------
+  function refreshLibraryUI() {
+    UI.setLibraryCount(PromptLibrary.count());
+    UI.renderLibrary(PromptLibrary.all(), {
+      onLoad: (id) => {
+        const it = PromptLibrary.get(id);
+        if (!it) return;
+        UI.$("prompt-input").value = it.prompt || "";
+        if (it.mode) setMode(it.mode);
+        if (it.mode === "structured" && it.schema) {
+          UI.$("schema-input").value = it.schema;
+          validateSchema();
+        }
+        updatePromptMetrics();
+        refreshSendEnabled();
+        UI.$("library-modal").classList.add("hidden");
+        UI.setStatus(`📚 Loaded "${it.name}"`, "success");
+        UI.sfx.pop();
+      },
+      onDelete: (id) => {
+        PromptLibrary.remove(id);
+        refreshLibraryUI();
+        UI.sfx.click();
+      }
+    });
+  }
+
+  UI.$("library-toggle").addEventListener("click", () => {
+    refreshLibraryUI();
+    UI.$("library-modal").classList.remove("hidden");
+  });
+  UI.$("library-close").addEventListener("click", () => UI.$("library-modal").classList.add("hidden"));
+  UI.$("library-modal").addEventListener("click", (e) => { if (e.target.id === "library-modal") UI.$("library-modal").classList.add("hidden"); });
+
+  // Save dialog
+  UI.$("save-prompt-btn").addEventListener("click", () => {
+    const prompt = UI.$("prompt-input").value.trim();
+    if (!prompt) {
+      UI.setStatus("Type a prompt before saving it to the library.", "warn");
+      return;
+    }
+    const suggested = prompt.slice(0, 40).replace(/\s+/g, " ");
+    UI.$("save-prompt-name").value = suggested;
+    UI.$("save-prompt-modal").classList.remove("hidden");
+    setTimeout(() => UI.$("save-prompt-name").focus(), 50);
+  });
+  UI.$("save-prompt-close").addEventListener("click", () => UI.$("save-prompt-modal").classList.add("hidden"));
+  UI.$("save-prompt-modal").addEventListener("click", (e) => { if (e.target.id === "save-prompt-modal") UI.$("save-prompt-modal").classList.add("hidden"); });
+  UI.$("save-prompt-confirm").addEventListener("click", () => {
+    const name = UI.$("save-prompt-name").value.trim() || "Untitled prompt";
+    const entry = {
+      name,
+      prompt: UI.$("prompt-input").value,
+      mode: State.mode,
+      schema: State.mode === "structured" ? UI.$("schema-input").value : null,
+      provider: State.provider,
+      model: UI.$("model-select").value
+    };
+    PromptLibrary.add(entry);
+    UI.setLibraryCount(PromptLibrary.count());
+    UI.$("save-prompt-modal").classList.add("hidden");
+    UI.setStatus(`⭐ Saved "${name}" to library`, "success");
+    UI.sfx.success();
+  });
+  UI.$("save-prompt-name").addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); UI.$("save-prompt-confirm").click(); }
+  });
+
   // Global keyboard shortcuts
   document.addEventListener("keydown", (e) => {
     const mod = e.ctrlKey || e.metaKey;
@@ -483,7 +558,7 @@ function init() {
     else if (mod && e.key.toLowerCase() === "e") { e.preventDefault(); exportMarkdown(); }
     else if (mod && e.key.toLowerCase() === "b") { e.preventDefault(); handleCompare(); }
     else if (e.key === "Escape") {
-      ["keys-modal", "ach-modal", "shortcuts-modal", "compare-modal"].forEach((id) => UI.$(id).classList.add("hidden"));
+      ["keys-modal", "ach-modal", "shortcuts-modal", "compare-modal", "library-modal", "save-prompt-modal"].forEach((id) => UI.$(id).classList.add("hidden"));
     }
   });
 
