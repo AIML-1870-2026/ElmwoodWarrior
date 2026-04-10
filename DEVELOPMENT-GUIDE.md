@@ -50,3 +50,6 @@ When I say "Deploy" or "deploy this", follow these steps:
 - Explain concepts, don't just provide code
 - Suggest improvements and best practices
 - Celebrate creativity and experimentation
+
+## Tab Heading
+- Ensure that there is a tab icon before deploying

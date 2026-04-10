@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ReviewCraft AI — Product Review Generator</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0' stop-color='%23f59e0b'/%3E%3Cstop offset='0.5' stop-color='%23ef4444'/%3E%3Cstop offset='1' stop-color='%23ec4899'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect x='4' y='4' width='56' height='56' rx='14' fill='url(%23g)'/%3E%3Cpath d='M32 14l5.5 11.1 12.3 1.8-8.9 8.7 2.1 12.2L32 41.6l-11 5.8 2.1-12.2-8.9-8.7 12.3-1.8z' fill='white'/%3E%3C/svg%3E" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+  <!-- Background orbs -->
+  <div class="bg-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">
+        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="logoGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#f59e0b" />
+              <stop offset="0.5" stop-color="#ef4444" />
+              <stop offset="1" stop-color="#ec4899" />
+            </linearGradient>
+          </defs>
+          <rect x="4" y="4" width="56" height="56" rx="14" fill="url(#logoGrad)" />
+          <path d="M32 14l5.5 11.1 12.3 1.8-8.9 8.7 2.1 12.2L32 41.6l-11 5.8 2.1-12.2-8.9-8.7 12.3-1.8z" fill="white"/>
+        </svg>
+      </div>
+      <div>
+        <h1>ReviewCraft AI</h1>
+        <p class="subtitle">AI-Powered Product Reviews</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button id="theme-toggle" class="icon-pill" title="Toggle dark/light mode">
+        <span id="theme-icon">&#127769;</span>
+      </button>
+      <button id="history-toggle" class="icon-pill" title="Toggle review history">
+        &#128214; History
+      </button>
+      <button id="keys-toggle" class="btn btn-ghost">&#128273; API Key</button>
+    </div>
+  </header>
+
+  <!-- API Key Modal -->
+  <div id="keys-modal" class="modal hidden">
+    <div class="modal-card glass">
+      <div class="modal-head">
+        <h2>&#128272; API Key Vault</h2>
+        <button id="keys-close" class="icon-btn">&times;</button>
+      </div>
+      <p class="privacy-note">
+        &#128737; Your key is stored in memory only and is never saved, logged, or
+        transmitted anywhere other than OpenAI. It is wiped on page reload.
+      </p>
+      <div class="key-row">
+        <label>OpenAI API Key</label>
+        <div class="key-input-wrap">
+          <input type="password" id="openai-key" placeholder="sk-..." autocomplete="off" />
+          <span id="openai-status" class="key-status">no key</span>
+        </div>
+        <label class="file-btn">
+          &#128193; Load .env file
+          <input type="file" id="openai-file" accept=".env,.csv,.txt" hidden />
+        </label>
+      </div>
+      <div class="modal-foot">
+        <button id="keys-save" class="btn btn-primary">Save to Memory</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Two-Panel Layout -->
+  <main class="layout">
+
+    <!-- LEFT PANEL — Input Controls -->
+    <section class="panel glass input-panel">
+      <h3>Review Settings</h3>
+
+      <!-- Review Template -->
+      <div class="control-group">
+        <label class="control-label">Quick Template</label>
+        <div id="template-bar" class="template-bar">
+          <button class="template-chip" data-template="amazon">Amazon Review</button>
+          <button class="template-chip" data-template="tech">Tech Deep-Dive</button>
+          <button class="template-chip" data-template="roast">Snarky Roast</button>
+          <button class="template-chip" data-template="hype">Hype Beast</button>
+          <button class="template-chip" data-template="minimal">Minimalist</button>
+        </div>
+      </div>
+
+      <!-- Product Name -->
+      <div class="control-group">
+        <label class="control-label" for="product-name">Product Name</label>
+        <input type="text" id="product-name" placeholder="e.g. Sony WH-1000XM5 Headphones" />
+      </div>
+
+      <!-- Complaints / Liked Features -->
+      <div class="control-group">
+        <label class="control-label" for="complaints-likes">Complaints / Liked Features</label>
+        <textarea id="complaints-likes" rows="4" placeholder="e.g. Great noise cancellation, battery lasts all day, a bit tight on large heads..."></textarea>
+      </div>
+
+      <!-- Category -->
+      <div class="control-group">
+        <label class="control-label" for="category-select">Category</label>
+        <select id="category-select" class="select">
+          <option value="Electronics">Electronics</option>
+          <option value="Home & Kitchen">Home & Kitchen</option>
+          <option value="Beauty & Personal Care">Beauty & Personal Care</option>
+          <option value="Clothing & Fashion">Clothing & Fashion</option>
+          <option value="Food & Beverage">Food & Beverage</option>
+          <option value="Software & Apps">Software & Apps</option>
+          <option value="Books & Media">Books & Media</option>
+          <option value="Health & Fitness">Health & Fitness</option>
+          <option value="Automotive">Automotive</option>
+          <option value="Toys & Games">Toys & Games</option>
+        </select>
+      </div>
+
+      <!-- Personality -->
+      <div class="control-group">
+        <label class="control-label" for="personality-select">Review Personality</label>
+        <select id="personality-select" class="select">
+          <option value="Professional">Professional</option>
+          <option value="Casual / Conversational">Casual / Conversational</option>
+          <option value="Enthusiastic">Enthusiastic</option>
+          <option value="Sarcastic / Witty">Sarcastic / Witty</option>
+          <option value="Technical / Detailed">Technical / Detailed</option>
+          <option value="Minimalist / Brief">Minimalist / Brief</option>
+        </select>
+      </div>
+
+      <!-- Sentiment Sliders -->
+      <div class="control-group">
+        <label class="control-label">Sentiment Aspects</label>
+        <div class="slider-group">
+          <div class="slider-row">
+            <span class="slider-label">Price</span>
+            <span class="slider-end">Negative</span>
+            <input type="range" id="price-slider" min="1" max="10" value="5" class="slider" />
+            <span class="slider-end">Positive</span>
+            <span class="slider-value" id="price-value">5</span>
+          </div>
+          <div class="slider-row">
+            <span class="slider-label">Features</span>
+            <span class="slider-end">Negative</span>
+            <input type="range" id="features-slider" min="1" max="10" value="5" class="slider" />
+            <span class="slider-end">Positive</span>
+            <span class="slider-value" id="features-value">5</span>
+          </div>
+          <div class="slider-row">
+            <span class="slider-label">Usability</span>
+            <span class="slider-end">Negative</span>
+            <input type="range" id="usability-slider" min="1" max="10" value="5" class="slider" />
+            <span class="slider-end">Positive</span>
+            <span class="slider-value" id="usability-value">5</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tone & Length Sliders -->
+      <div class="control-group">
+        <label class="control-label">Style Controls</label>
+        <div class="slider-group">
+          <div class="slider-row">
+            <span class="slider-label">Tone</span>
+            <span class="slider-end">Casual</span>
+            <input type="range" id="tone-slider" min="1" max="5" value="3" class="slider" />
+            <span class="slider-end">Formal</span>
+            <span class="slider-value" id="tone-value">Neutral</span>
+          </div>
+          <div class="slider-row">
+            <span class="slider-label">Length</span>
+            <span class="slider-end">Brief</span>
+            <input type="range" id="length-slider" min="1" max="5" value="3" class="slider" />
+            <span class="slider-end">Detailed</span>
+            <span class="slider-value" id="length-value">Medium</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Generate Button -->
+      <button id="generate-btn" class="btn btn-primary btn-lg btn-full" disabled>
+        <span class="send-label">Generate Review</span>
+        <span class="spinner hidden"></span>
+      </button>
+
+      <!-- Word & Character Count -->
+      <div class="word-char-count" id="word-char-count">Words: 0 | Characters: 0</div>
+    </section>
+
+    <!-- RIGHT PANEL — Output Area -->
+    <section class="panel glass output-panel">
+
+      <!-- Tabbed Toggle + Actions -->
+      <div class="panel-head">
+        <div class="tab-bar">
+          <button class="tab active" data-tab="rendered">Rendered</button>
+          <button class="tab" data-tab="raw">Raw Markdown</button>
+        </div>
+        <div class="response-actions">
+          <button id="copy-btn" class="btn btn-ghost btn-sm" disabled>Copy</button>
+          <button id="export-btn" class="btn btn-ghost btn-sm" disabled>Export .md</button>
+        </div>
+      </div>
+
+      <!-- Sentiment Badges -->
+      <div id="sentiment-badges" class="sentiment-badges hidden"></div>
+
+      <!-- Review Output -->
+      <div id="output-rendered" class="output-area">
+        <div class="empty-state">
+          <div class="empty-icon">&#11088;</div>
+          <p>Your generated review will appear here</p>
+          <span style="font-size:0.75rem; color:var(--text-dim); opacity:0.6;">Pick a template, fill in a product, and hit generate</span>
+        </div>
+      </div>
+      <div id="output-raw" class="output-area raw-view hidden">
+        <pre><code id="raw-markdown"></code></pre>
+      </div>
+
+      <!-- Status -->
+      <div id="status-bar" class="status-bar"></div>
+    </section>
+  </main>
+
+  <!-- Review History Sidebar -->
+  <aside id="history-panel" class="history-panel hidden">
+    <div class="history-head">
+      <h3>Review History</h3>
+      <div class="history-head-actions">
+        <button id="clear-history" class="btn btn-ghost btn-sm">Clear</button>
+        <button id="history-close" class="icon-btn" title="Close">&times;</button>
+      </div>
+    </div>
+    <div id="history-list" class="history-list">
+      <p class="dim">No reviews yet.</p>
+    </div>
+  </aside>
+
+  <footer class="app-footer">
+    <span>&#128274; Key in memory only &bull; No analytics &bull; No tracking</span>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/keys.js"></script>
+  <script src="js/providers.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

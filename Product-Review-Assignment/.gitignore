@@ -1,0 +1,15 @@
+# Environment variables — contains API keys
+.env
+.env.local
+.env.development
+.env.production
+
+# Temporary working folders
+TEMP-FOLDER-LLM/
+
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+build/
