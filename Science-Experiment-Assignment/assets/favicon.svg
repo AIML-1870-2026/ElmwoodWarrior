@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" rx="8" fill="#F4EDDF"/>
+  <!-- beaker -->
+  <path d="M22 14 h20 v4 h-3 v12 l10 20 a4 4 0 0 1 -3.5 6 h-27 a4 4 0 0 1 -3.5 -6 l10 -20 v-12 h-3 z"
+        fill="none" stroke="#1E1A14" stroke-width="2.5" stroke-linejoin="round"/>
+  <!-- liquid -->
+  <path d="M21 44 h22 l3 6 a4 4 0 0 1 -3.5 6 h-21 a4 4 0 0 1 -3.5 -6 z"
+        fill="#7A2E2E" opacity="0.75"/>
+  <!-- bubbles -->
+  <circle cx="28" cy="48" r="1.6" fill="#F4EDDF"/>
+  <circle cx="34" cy="52" r="1.2" fill="#F4EDDF"/>
+  <circle cx="38" cy="46" r="1" fill="#F4EDDF"/>
+</svg>

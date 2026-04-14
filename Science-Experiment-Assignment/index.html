@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>The Lab Notebook — Science Experiment Generator</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Lora:ital,wght@0,400;0,500;0,600;1,400&family=Special+Elite&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+
+<!-- ============ Ambient Background ============ -->
+<div class="ambient-bg" aria-hidden="true">
+  <svg class="ambient-atom a1" viewBox="0 0 80 80"><ellipse cx="40" cy="40" rx="32" ry="12" fill="none" stroke="currentColor" stroke-width="1.2"/><ellipse cx="40" cy="40" rx="32" ry="12" fill="none" stroke="currentColor" stroke-width="1.2" transform="rotate(60 40 40)"/><ellipse cx="40" cy="40" rx="32" ry="12" fill="none" stroke="currentColor" stroke-width="1.2" transform="rotate(120 40 40)"/><circle cx="40" cy="40" r="3.5" fill="currentColor"/></svg>
+  <svg class="ambient-atom a2" viewBox="0 0 80 80"><ellipse cx="40" cy="40" rx="32" ry="12" fill="none" stroke="currentColor" stroke-width="1.2"/><ellipse cx="40" cy="40" rx="32" ry="12" fill="none" stroke="currentColor" stroke-width="1.2" transform="rotate(60 40 40)"/><ellipse cx="40" cy="40" rx="32" ry="12" fill="none" stroke="currentColor" stroke-width="1.2" transform="rotate(120 40 40)"/><circle cx="40" cy="40" r="3.5" fill="currentColor"/></svg>
+  <svg class="ambient-flask a3" viewBox="0 0 48 48"><path d="M18 6 h12 v3 h-2 v9 l8 16 a3 3 0 0 1 -2.6 4.5 h-20.8 a3 3 0 0 1 -2.6 -4.5 l8 -16 v-9 h-2 z" fill="none" stroke="currentColor" stroke-width="1.5"/></svg>
+  <svg class="ambient-dna a4" viewBox="0 0 40 80"><path d="M5 0 C 35 20, 5 40, 35 60, 5 80" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M35 0 C 5 20, 35 40, 5 60, 35 80" fill="none" stroke="currentColor" stroke-width="1.2"/></svg>
+  <svg class="ambient-atom a5" viewBox="0 0 80 80"><ellipse cx="40" cy="40" rx="32" ry="12" fill="none" stroke="currentColor" stroke-width="1.2"/><ellipse cx="40" cy="40" rx="32" ry="12" fill="none" stroke="currentColor" stroke-width="1.2" transform="rotate(90 40 40)"/><circle cx="40" cy="40" r="3.5" fill="currentColor"/></svg>
+  <svg class="ambient-formula a6" viewBox="0 0 120 30"><text x="0" y="22" font-family="Cormorant Garamond,serif" font-size="22" fill="currentColor">H₂O + CO₂</text></svg>
+  <svg class="ambient-formula a7" viewBox="0 0 120 30"><text x="0" y="22" font-family="Cormorant Garamond,serif" font-size="22" fill="currentColor">E = mc²</text></svg>
+</div>
+
+
+<!-- ============ Disclaimer Modal ============ -->
+<div id="disclaimerModal" class="modal hidden" aria-hidden="true">
+  <div class="modal-card parchment">
+    <h2>Before we begin…</h2>
+    <p class="disclaimer-body">
+      I understand that AI-generated experiments may contain errors. I will
+      review each experiment before performing it, supervise children at all
+      times, and never attempt experiments involving listed hazardous
+      combinations.
+    </p>
+    <label class="check-row">
+      <input type="checkbox" id="disclaimerCheck"/>
+      <span>I understand and agree.</span>
+    </label>
+    <button id="disclaimerContinue" class="btn btn-wax" disabled>Enter the Lab</button>
+  </div>
+</div>
+
+<!-- ============ Header ============ -->
+<header class="site-header parchment">
+  <div class="header-inner">
+    <div class="brand">
+      <svg class="brand-ico" viewBox="0 0 64 64" aria-hidden="true">
+        <defs>
+          <clipPath id="flaskClip">
+            <path d="M21 44 h22 l3 6 a4 4 0 0 1 -3.5 6 h-21 a4 4 0 0 1 -3.5 -6 z"/>
+          </clipPath>
+        </defs>
+        <path d="M22 14 h20 v4 h-3 v12 l10 20 a4 4 0 0 1 -3.5 6 h-27 a4 4 0 0 1 -3.5 -6 l10 -20 v-12 h-3 z"
+              fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"/>
+        <path d="M21 44 h22 l3 6 a4 4 0 0 1 -3.5 6 h-21 a4 4 0 0 1 -3.5 -6 z" fill="#7A2E2E" opacity="0.85"/>
+        <g clip-path="url(#flaskClip)">
+          <circle class="brand-bubble b1" cx="26" cy="54" r="1.6" fill="#F4EDDF" opacity="0.85"/>
+          <circle class="brand-bubble b2" cx="32" cy="55" r="2"   fill="#F4EDDF" opacity="0.75"/>
+          <circle class="brand-bubble b3" cx="38" cy="54" r="1.3" fill="#F4EDDF" opacity="0.8"/>
+          <circle class="brand-bubble b4" cx="30" cy="56" r="1"   fill="#F4EDDF" opacity="0.9"/>
+        </g>
+        <circle cx="29" cy="22" r="0.8" fill="currentColor" opacity="0.5"/>
+        <circle cx="35" cy="26" r="0.6" fill="currentColor" opacity="0.4"/>
+      </svg>
+      <div>
+        <h1>The Lab Notebook</h1>
+        <p class="tagline">A naturalist's guide to household experiments</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button id="openSavedBtn" class="btn btn-ghost" title="Saved experiments">
+        📚 Saved
+      </button>
+      <button id="openKeyBtn" class="btn btn-ghost" title="API key & settings">
+        🔑 Key
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ============ Key Panel ============ -->
+<section id="keyPanel" class="panel parchment hidden">
+  <div class="panel-inner">
+    <h3>OpenAI Key</h3>
+    <p class="muted small">
+      Your key stays in memory only. Nothing is saved, logged, or sent
+      anywhere but OpenAI.
+    </p>
+    <div class="key-row">
+      <input type="password" id="keyInput" placeholder="sk-..." autocomplete="off"/>
+      <button id="setKeyBtn" class="btn">Set Key</button>
+      <label class="btn btn-ghost file-btn">
+        📄 Load .env
+        <input type="file" id="envFile" accept=".env,.txt,.csv" hidden/>
+      </label>
+      <span id="keyStatus" class="key-status">❌ No key loaded</span>
+    </div>
+    <div class="key-row">
+      <label class="inline">
+        Model:
+        <select id="modelSelect">
+          <option value="gpt-4o-mini" selected>gpt-4o-mini (fast)</option>
+          <option value="gpt-4o">gpt-4o (stronger)</option>
+          <option value="gpt-4-turbo">gpt-4-turbo</option>
+          <option value="gpt-4">gpt-4</option>
+          <option value="gpt-4.1">gpt-4.1</option>
+          <option value="gpt-4.1-mini">gpt-4.1-mini</option>
+          <option value="gpt-4.1-nano">gpt-4.1-nano</option>
+          <option value="gpt-5">gpt-5</option>
+          <option value="gpt-5-mini">gpt-5-mini</option>
+          <option value="gpt-5-nano">gpt-5-nano</option>
+          <option value="o1">o1 (reasoning)</option>
+          <option value="o1-mini">o1-mini (reasoning)</option>
+          <option value="o3-mini">o3-mini (reasoning)</option>
+          <option value="gpt-3.5-turbo">gpt-3.5-turbo (legacy)</option>
+        </select>
+      </label>
+    </div>
+  </div>
+</section>
+
+<!-- ============ Main Workspace ============ -->
+<main class="workspace">
+
+  <!-- --------- Input Page --------- -->
+  <section class="page parchment" id="inputPage">
+    <div class="corner-fold" aria-hidden="true"></div>
+
+    <h2 class="page-title">Design an Experiment</h2>
+
+    <!-- Grade tiers -->
+    <div class="field">
+      <label class="field-label">Grade Tier</label>
+      <div class="tier-row" id="tierRow">
+        <button class="tier-stamp" data-tier="K-2">K–2<span class="stamp-sub">Ages 5–7</span></button>
+        <button class="tier-stamp" data-tier="3-5">3–5<span class="stamp-sub">Ages 8–10</span></button>
+        <button class="tier-stamp" data-tier="6-8">6–8<span class="stamp-sub">Ages 11–13</span></button>
+        <button class="tier-stamp" data-tier="9-12">9–12<span class="stamp-sub">Ages 14–18</span></button>
+        <button class="tier-stamp" data-tier="college">College<span class="stamp-sub">Adult</span></button>
+      </div>
+    </div>
+
+    <!-- Supply chips -->
+    <div class="field">
+      <label class="field-label">Available Supplies</label>
+      <div id="supplyCategories" class="supply-categories"></div>
+      <div class="custom-supply-row">
+        <input type="text" id="customSupplyInput" placeholder="Add your own supply… (e.g., bottle cap)"/>
+        <button id="addCustomSupplyBtn" class="btn btn-small">Add</button>
+      </div>
+      <div class="selected-row">
+        <span class="field-sub">Selected:</span>
+        <div id="selectedSupplies" class="selected-chips"></div>
+      </div>
+    </div>
+
+    <!-- Topic -->
+    <div class="field">
+      <label class="field-label" for="topicInput">Topic / Concept <span class="muted">(optional)</span></label>
+      <input type="text" id="topicInput" placeholder="magnets, surface tension, photosynthesis… or leave blank for a surprise"/>
+    </div>
+
+    <!-- Generate -->
+    <div class="generate-row">
+      <button id="generateBtn" class="btn btn-wax" disabled>
+        <span class="wax-letter">G</span>
+        <span class="wax-label">Generate</span>
+      </button>
+      <span id="generateStatus" class="muted small"></span>
+    </div>
+  </section>
+
+  <!-- --------- Output Page --------- -->
+  <section class="page parchment hidden" id="outputPage">
+    <div class="corner-fold" aria-hidden="true"></div>
+    <div id="experimentCard"></div>
+  </section>
+
+</main>
+
+<!-- ============ Saved Drawer ============ -->
+<aside id="savedDrawer" class="drawer hidden">
+  <div class="drawer-inner parchment">
+    <div class="drawer-head">
+      <h2>Saved Experiments</h2>
+      <button id="closeSavedBtn" class="icon-btn" title="Close">✕</button>
+    </div>
+    <div class="drawer-controls">
+      <input type="text" id="savedSearch" placeholder="Search titles…"/>
+      <select id="savedFilter">
+        <option value="">All concepts</option>
+        <option value="chemistry">Chemistry</option>
+        <option value="physics">Physics</option>
+        <option value="biology">Biology</option>
+        <option value="earth_science">Earth Science</option>
+        <option value="engineering">Engineering</option>
+      </select>
+      <button id="exportAllBtn" class="btn btn-small">Export All</button>
+    </div>
+    <div id="savedList" class="saved-list"></div>
+  </div>
+</aside>
+
+<!-- ============ Footer Disclaimer ============ -->
+<footer class="footer-disclaimer">
+  AI-generated experiments. Review before performing. Always supervise
+  children. Not a substitute for professional science instruction.
+</footer>
+
+<!-- ============ Toast ============ -->
+<div id="toast" class="toast hidden"></div>
+
+<script src="js/keyvault.js"></script>
+<script src="js/data.js"></script>
+<script src="js/prompts.js"></script>
+<script src="js/state.js"></script>
+<script src="js/ui-disclaimer.js"></script>
+<script src="js/ui-key.js"></script>
+<script src="js/ui-supplies.js"></script>
+<script src="js/generate.js"></script>
+<script src="js/render.js"></script>
+<script src="js/speech.js"></script>
+<script src="js/saved.js"></script>
+<script src="js/worksheet.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
