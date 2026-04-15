@@ -353,6 +353,50 @@ input[type="text"]:focus, input[type="password"]:focus {
   transition: background .15s;
 }
 .chip:hover { background: #efe4c2; }
+
+/* Hover image preview for supply chips */
+.chip-preview {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 10px);
+  transform: translateX(-50%) translateY(6px) scale(0.9);
+  width: 150px;
+  padding: 10px 10px 8px;
+  background: #faf5e8;
+  border: 1px solid var(--rule);
+  border-radius: 5px;
+  box-shadow: 0 8px 24px rgba(60,40,20,0.3);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .15s, transform .15s;
+  z-index: 50;
+}
+.chip-preview::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translateX(-50%);
+  width: 0; height: 0;
+  border: 7px solid transparent;
+  border-top-color: var(--rule);
+}
+.chip-preview svg { width: 100%; height: 110px; display: block; }
+.chip-preview .chip-preview-label {
+  margin-top: 6px;
+  padding-top: 5px;
+  border-top: 1px dashed var(--rule);
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  text-align: center;
+  color: var(--ink);
+}
+.supply-chip:hover .chip-preview,
+.supply-chip:focus-visible .chip-preview {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0) scale(1);
+}
 .chip.selected {
   background: #d8c9a0;
   border-color: var(--ink);
@@ -1144,7 +1188,7 @@ body { padding-bottom: 48px; }
 }
 
 /* keep main content above ambient */
-.site-header, .workspace, #keyPanel, .drawer, .modal, .footer-disclaimer, .toast {
+.site-header, .workspace, #keyPanel, .drawer, .modal, .toast {
   position: relative;
   z-index: 2;
 }

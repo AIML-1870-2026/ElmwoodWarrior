@@ -26,6 +26,16 @@ function renderSupplyCategories() {
       help.title = SUPPLY_HINTS[name] || `Common household supply.`;
       help.addEventListener("click", (e) => { e.stopPropagation(); toast(help.title); });
       chip.appendChild(help);
+
+      const preview = document.createElement("div");
+      preview.className = "chip-preview";
+      preview.setAttribute("role", "tooltip");
+      preview.innerHTML = `
+        ${materialIcon(name)}
+        <div class="chip-preview-label">${name}</div>
+      `;
+      chip.appendChild(preview);
+
       chip.addEventListener("click", () => toggleSupply(name, chip));
       tray.appendChild(chip);
     });
