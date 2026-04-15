@@ -114,124 +114,207 @@ function materialIcon(name) {
 /* ---------- Apparatus banner diagram ---------- */
 function apparatusBanner(exp) {
   const tag = (exp.concept_tags || [])[0] || "chemistry";
+
+  // Each scene: three labeled stations with arrows between them — setup → action → observe.
   const scenes = {
-    chemistry: `
-      <g transform="translate(60 30)">
-        <path d="M10 30 h20 v5 h-3 v20 l10 30 a4 4 0 0 1 -3.5 6 h-27 a4 4 0 0 1 -3.5 -6 l10 -30 v-20 h-3 z" fill="none" stroke="currentColor" stroke-width="1.6"/>
-        <path d="M10 65 h20 l6 15 a4 4 0 0 1 -3.5 6 h-25 a4 4 0 0 1 -3.5 -6 z" fill="var(--oxblood)" opacity="0.7"/>
-        <circle cx="15" cy="78" r="2" fill="#F4EDDF" opacity="0.9"/>
-        <circle cx="22" cy="80" r="1.5" fill="#F4EDDF" opacity="0.7"/>
-        <circle cx="28" cy="76" r="2.5" fill="#F4EDDF" opacity="0.8"/>
-      </g>
-      <g transform="translate(170 40)">
-        <rect x="0" y="20" width="50" height="50" rx="2" fill="none" stroke="currentColor" stroke-width="1.4"/>
-        <path d="M0 20 h50 l-4 -8 h-42 z" fill="none" stroke="currentColor" stroke-width="1.4"/>
-        <path d="M10 35 h30 M10 45 h30 M10 55 h20" stroke="currentColor" stroke-width="1" stroke-dasharray="2 3"/>
-      </g>
-      <g transform="translate(260 45)">
-        <circle cx="20" cy="30" r="20" fill="none" stroke="currentColor" stroke-width="1.4"/>
-        <path d="M20 10 v40 M0 30 h40" stroke="currentColor" stroke-width="0.8" opacity="0.5"/>
-        <path d="M20 30 l10 -10" stroke="var(--oxblood)" stroke-width="1.8"/>
-      </g>
-      <g transform="translate(340 50)" stroke="currentColor" fill="none" stroke-width="1.3">
-        <ellipse cx="25" cy="25" rx="22" ry="8"/>
-        <ellipse cx="25" cy="25" rx="22" ry="8" transform="rotate(60 25 25)"/>
-        <ellipse cx="25" cy="25" rx="22" ry="8" transform="rotate(120 25 25)"/>
-        <circle cx="25" cy="25" r="2.5" fill="currentColor"/>
-      </g>`,
-    physics: `
-      <g transform="translate(60 40)" fill="none" stroke="currentColor" stroke-width="1.4">
-        <ellipse cx="40" cy="30" rx="38" ry="10"/>
-        <ellipse cx="40" cy="30" rx="38" ry="10" transform="rotate(60 40 30)"/>
-        <ellipse cx="40" cy="30" rx="38" ry="10" transform="rotate(120 40 30)"/>
-        <circle cx="40" cy="30" r="4" fill="currentColor"/>
-      </g>
-      <g transform="translate(180 30)" fill="none" stroke="currentColor" stroke-width="1.5">
-        <path d="M30 10 v40"/>
-        <path d="M30 10 l-20 40" stroke-dasharray="2 3"/>
-        <circle cx="10" cy="50" r="6" fill="var(--oxblood)" opacity="0.7"/>
-      </g>
-      <g transform="translate(260 45)" fill="none" stroke="currentColor" stroke-width="1.4">
-        <rect x="0" y="20" width="60" height="8"/>
-        <path d="M10 20 v-12 M30 20 v-20 M50 20 v-14"/>
-        <path d="M0 24 C 20 10, 40 40, 60 24" stroke="var(--oxblood)" stroke-width="1.6"/>
-      </g>
-      <g transform="translate(340 55)" fill="none" stroke="currentColor" stroke-width="1.4">
-        <path d="M5 20 Q 15 5 25 20 T 45 20" />
-        <path d="M5 35 Q 15 20 25 35 T 45 35" />
-      </g>`,
-    biology: `
-      <g transform="translate(70 30)" fill="none" stroke="currentColor" stroke-width="1.5">
-        <path d="M30 70 v-40"/>
-        <path d="M30 50 C 15 50, 15 35, 30 30 C 45 35, 45 50, 30 50 z"/>
-        <path d="M30 60 C 20 60, 20 52, 30 52"/>
-        <path d="M30 40 L 20 35 M30 45 L 40 40"/>
-      </g>
-      <g transform="translate(170 40)" fill="none" stroke="currentColor" stroke-width="1.4">
-        <ellipse cx="30" cy="30" rx="25" ry="18"/>
-        <circle cx="30" cy="30" r="6" fill="currentColor" opacity="0.2"/>
-        <circle cx="20" cy="25" r="2"/>
-        <circle cx="40" cy="35" r="2"/>
-      </g>
-      <g transform="translate(260 40)" fill="none" stroke="currentColor" stroke-width="1.3">
-        <path d="M5 0 C 35 20, 5 40, 35 60"/>
-        <path d="M35 0 C 5 20, 35 40, 5 60"/>
-        <path d="M10 10 h20 M10 25 h20 M10 40 h20 M10 55 h20" stroke-dasharray="1 2"/>
-      </g>
-      <g transform="translate(340 45)" fill="none" stroke="currentColor" stroke-width="1.4">
-        <path d="M25 55 v-25"/>
-        <path d="M25 40 C 10 40, 10 25, 25 22 C 40 25, 40 40, 25 40 z" fill="var(--oxblood)" fill-opacity="0.2"/>
-      </g>`,
-    earth_science: `
-      <g transform="translate(60 35)" fill="none" stroke="currentColor" stroke-width="1.4">
-        <circle cx="40" cy="40" r="35"/>
-        <path d="M5 40 h70 M40 5 C 20 20, 20 60, 40 75 M40 5 C 60 20, 60 60, 40 75"/>
-        <path d="M15 25 C 30 30, 50 20, 65 28" stroke-dasharray="2 2"/>
-      </g>
-      <g transform="translate(180 50)" fill="none" stroke="currentColor" stroke-width="1.4">
-        <path d="M0 50 L 20 15 L 35 35 L 55 10 L 70 50 z"/>
-        <path d="M15 20 l5 -3 l3 3 M48 15 l5 -3 l3 3" stroke="#F4EDDF" stroke-width="2"/>
-      </g>
-      <g transform="translate(270 45)" fill="none" stroke="currentColor" stroke-width="1.3">
-        <path d="M5 30 Q 15 10 30 25 Q 45 5 55 25 Q 65 15 75 30" />
-        <path d="M10 45 v10 M25 50 v10 M40 45 v12 M55 50 v8 M70 45 v10" stroke-dasharray="1 3"/>
-      </g>
-      <g transform="translate(370 55)" fill="none" stroke="currentColor" stroke-width="1.4">
-        <path d="M5 40 L 30 5 L 55 40 z"/>
-        <path d="M20 25 L 30 15 L 40 25"/>
-      </g>`,
-    engineering: `
-      <g transform="translate(60 30)" fill="none" stroke="currentColor" stroke-width="1.5">
-        <circle cx="40" cy="40" r="25"/>
-        <circle cx="40" cy="40" r="6"/>
-        <path d="M40 15 v8 M40 57 v8 M15 40 h8 M57 40 h8 M22 22 l6 6 M52 52 l6 6 M22 58 l6 -6 M52 28 l6 -6"/>
-      </g>
-      <g transform="translate(170 45)" fill="none" stroke="currentColor" stroke-width="1.4">
-        <path d="M0 50 L 30 10 L 60 50 z"/>
-        <path d="M0 50 L 60 50 M15 30 h30 M22 20 h16"/>
-      </g>
-      <g transform="translate(270 40)" fill="none" stroke="currentColor" stroke-width="1.4">
-        <rect x="10" y="10" width="50" height="8" />
-        <rect x="10" y="25" width="50" height="8" />
-        <rect x="10" y="40" width="50" height="8" />
-        <path d="M35 18 v7 M35 33 v7"/>
-      </g>
-      <g transform="translate(360 45)" fill="none" stroke="currentColor" stroke-width="1.4">
-        <path d="M10 40 L 50 40 L 50 20 L 35 10 L 20 20 L 20 40 z"/>
-        <rect x="30" y="25" width="10" height="15"/>
-      </g>`,
+    chemistry: {
+      title: "Apparatus Setup",
+      stations: [
+        {
+          label: "Measure",
+          svg: `<g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
+            <rect x="14" y="10" width="26" height="42" rx="1"/>
+            <path d="M14 16 h26 M14 22 h26 M14 28 h26 M14 34 h26 M14 40 h26 M14 46 h26"/>
+            <rect x="18" y="40" width="18" height="12" fill="var(--oxblood)" fill-opacity="0.35" stroke="none"/>
+          </g>`
+        },
+        {
+          label: "Combine",
+          svg: `<g fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
+            <path d="M16 14 h22 v4 h-2 v14 l8 20 a3 3 0 0 1 -2.6 4.5 h-22.8 a3 3 0 0 1 -2.6 -4.5 l8 -20 v-14 h-2 z"/>
+            <path d="M14 42 h26 l5 14 a3 3 0 0 1 -2.6 4.5 h-22 a3 3 0 0 1 -2.6 -4.5 z" fill="var(--oxblood)" fill-opacity="0.6" stroke="none"/>
+            <circle cx="22" cy="54" r="1.6" fill="#F4EDDF" stroke="none"/>
+            <circle cx="29" cy="56" r="1.2" fill="#F4EDDF" stroke="none"/>
+            <circle cx="34" cy="53" r="1.8" fill="#F4EDDF" stroke="none"/>
+            <path d="M20 6 q2 -4 4 0 M28 4 q2 -4 4 0" stroke-width="1.2"/>
+          </g>`
+        },
+        {
+          label: "Observe",
+          svg: `<g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 32 C 14 18, 40 18, 48 32 C 40 46, 14 46, 6 32 z"/>
+            <circle cx="27" cy="32" r="8" fill="currentColor" fill-opacity="0.15"/>
+            <circle cx="27" cy="32" r="4" fill="currentColor"/>
+            <path d="M35 16 l4 -4 M14 48 l-4 4" stroke-width="1"/>
+          </g>`
+        }
+      ]
+    },
+    physics: {
+      title: "Forces at Play",
+      stations: [
+        {
+          label: "Setup",
+          svg: `<g fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M8 14 h38"/>
+            <path d="M22 14 v20"/>
+            <circle cx="22" cy="40" r="7" fill="var(--oxblood)" fill-opacity="0.5" stroke="currentColor"/>
+            <path d="M10 14 l-4 -4 M14 14 l-4 -4 M18 14 l-4 -4 M22 14 l-4 -4 M26 14 l-4 -4 M30 14 l-4 -4 M34 14 l-4 -4 M38 14 l-4 -4 M42 14 l-4 -4"/>
+          </g>`
+        },
+        {
+          label: "Release",
+          svg: `<g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+            <path d="M10 10 C 20 20, 20 40, 10 50"/>
+            <path d="M10 10 h8 M10 10 v8" stroke-width="2" stroke="var(--oxblood)"/>
+            <circle cx="38" cy="30" r="6" fill="var(--oxblood)" fill-opacity="0.5" stroke="currentColor"/>
+            <path d="M26 24 h8 M26 30 h10 M26 36 h8" stroke-dasharray="2 2" opacity="0.6"/>
+          </g>`
+        },
+        {
+          label: "Measure",
+          svg: `<g fill="none" stroke="currentColor" stroke-width="1.4">
+            <circle cx="27" cy="30" r="20"/>
+            <path d="M27 10 v4 M47 30 h-4 M27 50 v-4 M7 30 h4 M41 16 l-3 3 M41 44 l-3 -3 M13 44 l3 -3 M13 16 l3 3"/>
+            <path d="M27 30 l10 -10" stroke="var(--oxblood)" stroke-width="2"/>
+            <circle cx="27" cy="30" r="2" fill="currentColor"/>
+          </g>`
+        }
+      ]
+    },
+    biology: {
+      title: "Life Processes",
+      stations: [
+        {
+          label: "Sample",
+          svg: `<g fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M27 56 v-30"/>
+            <path d="M27 40 C 12 40, 12 22, 27 20 C 42 22, 42 40, 27 40 z" fill="var(--oxblood)" fill-opacity="0.25"/>
+            <path d="M27 34 C 18 34, 18 26, 27 25" stroke-dasharray="1 2"/>
+            <path d="M14 56 h26"/>
+          </g>`
+        },
+        {
+          label: "Observe",
+          svg: `<g fill="none" stroke="currentColor" stroke-width="1.4">
+            <ellipse cx="27" cy="30" rx="22" ry="16"/>
+            <circle cx="27" cy="30" r="8" fill="currentColor" fill-opacity="0.15"/>
+            <circle cx="19" cy="26" r="2" fill="currentColor"/>
+            <circle cx="34" cy="34" r="2" fill="currentColor"/>
+            <circle cx="22" cy="36" r="1.5" fill="currentColor"/>
+            <circle cx="33" cy="22" r="1.5" fill="currentColor"/>
+          </g>`
+        },
+        {
+          label: "Grow",
+          svg: `<g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round">
+            <path d="M27 56 v-34"/>
+            <path d="M27 38 C 16 38, 14 26, 24 22 C 30 26, 30 36, 27 38 z" fill="var(--oxblood)" fill-opacity="0.2"/>
+            <path d="M27 30 C 38 30, 40 18, 30 14 C 24 18, 24 28, 27 30 z" fill="var(--oxblood)" fill-opacity="0.3"/>
+            <path d="M12 56 h30"/>
+          </g>`
+        }
+      ]
+    },
+    earth_science: {
+      title: "Earth & Sky",
+      stations: [
+        {
+          label: "Earth",
+          svg: `<g fill="none" stroke="currentColor" stroke-width="1.4">
+            <circle cx="27" cy="30" r="20"/>
+            <path d="M7 30 h40 M27 10 C 17 18, 17 42, 27 50 M27 10 C 37 18, 37 42, 27 50"/>
+            <path d="M10 22 C 20 24, 34 18, 44 22" stroke-dasharray="2 2"/>
+            <path d="M11 38 C 22 40, 32 36, 43 38" stroke-dasharray="2 2"/>
+          </g>`
+        },
+        {
+          label: "Weather",
+          svg: `<g fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round">
+            <circle cx="16" cy="18" r="6" fill="#f5d06b" fill-opacity="0.6"/>
+            <path d="M10 40 C 14 32, 24 32, 28 40 C 36 38, 42 44, 38 50 h-28 C 6 46, 8 40, 10 40 z" fill="#ffffff" fill-opacity="0.6"/>
+            <path d="M18 52 v5 M24 54 v5 M30 52 v5 M36 54 v5" stroke="var(--ink-blue)"/>
+          </g>`
+        },
+        {
+          label: "Terrain",
+          svg: `<g fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round">
+            <path d="M4 48 L 18 24 L 30 38 L 42 18 L 50 48 z" fill="var(--oxblood)" fill-opacity="0.2"/>
+            <path d="M14 30 l4 -3 l3 3 M38 26 l4 -3 l3 3" stroke-width="1.6"/>
+            <path d="M4 54 h46"/>
+          </g>`
+        }
+      ]
+    },
+    engineering: {
+      title: "Build & Test",
+      stations: [
+        {
+          label: "Design",
+          svg: `<g fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round">
+            <path d="M8 14 h38 v34 h-38 z"/>
+            <path d="M14 22 h26 M14 28 h20 M14 34 h26 M14 40 h16" stroke-dasharray="2 2"/>
+            <path d="M38 40 l6 -4 l2 4 l-6 4 z" fill="var(--oxblood)" fill-opacity="0.4"/>
+          </g>`
+        },
+        {
+          label: "Build",
+          svg: `<g fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M8 48 L 27 14 L 46 48 z"/>
+            <path d="M16 34 h22 M20 28 h14 M24 22 h6"/>
+            <rect x="24" y="40" width="6" height="8" fill="var(--oxblood)" fill-opacity="0.4" stroke="none"/>
+          </g>`
+        },
+        {
+          label: "Test",
+          svg: `<g fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="27" cy="30" r="18"/>
+            <circle cx="27" cy="30" r="5"/>
+            <path d="M27 12 v5 M27 43 v5 M9 30 h5 M40 30 h5 M15 18 l4 4 M39 42 l-4 -4 M15 42 l4 -4 M39 18 l-4 4"/>
+            <path d="M27 30 l8 -6" stroke="var(--oxblood)" stroke-width="2"/>
+          </g>`
+        }
+      ]
+    },
   };
   const scene = scenes[tag] || scenes.chemistry;
+
+  const stationXs = [60, 220, 380];
+  const stationsHtml = scene.stations.map((s, i) => {
+    const x = stationXs[i];
+    return `
+      <g transform="translate(${x - 27} 30)">
+        <rect x="-4" y="-4" width="62" height="62" rx="3" fill="rgba(255,255,255,0.4)" stroke="var(--rule)" stroke-width="1"/>
+        ${s.svg}
+      </g>
+      <text x="${x}" y="110" text-anchor="middle" font-family="Cormorant Garamond, serif" font-size="13" font-weight="600" fill="currentColor">${escapeHtml(s.label)}</text>
+      <text x="${x}" y="124" text-anchor="middle" font-family="Special Elite, monospace" font-size="9" fill="var(--sepia)">Step ${i + 1}</text>
+    `;
+  }).join("");
+
+  const arrows = [
+    { x1: 130, x2: 160 },
+    { x1: 290, x2: 320 },
+  ].map(a => `
+    <g stroke="var(--oxblood)" fill="none" stroke-width="1.5" stroke-linecap="round">
+      <path d="M${a.x1} 56 h${a.x2 - a.x1 - 8}" stroke-dasharray="3 3"/>
+      <path d="M${a.x2 - 8} 51 l8 5 l-8 5" />
+    </g>
+  `).join("");
+
   return `<div class="apparatus-banner" aria-hidden="true">
-    <svg viewBox="0 0 440 120" preserveAspectRatio="xMidYMid meet">
+    <div class="apparatus-title">${escapeHtml(scene.title)}</div>
+    <svg viewBox="0 0 440 140" preserveAspectRatio="xMidYMid meet">
       <defs>
-        <pattern id="bannerDots" width="10" height="10" patternUnits="userSpaceOnUse">
-          <circle cx="1" cy="1" r="0.6" fill="currentColor" opacity="0.3"/>
+        <pattern id="bannerGrid" width="20" height="20" patternUnits="userSpaceOnUse">
+          <path d="M20 0 L 0 0 0 20" fill="none" stroke="currentColor" stroke-width="0.4" opacity="0.18"/>
         </pattern>
       </defs>
-      <rect x="0" y="0" width="440" height="120" fill="url(#bannerDots)" opacity="0.5"/>
-      <path d="M20 110 h400" stroke="currentColor" stroke-width="0.8" stroke-dasharray="3 3" opacity="0.6"/>
-      ${scene}
+      <rect x="0" y="0" width="440" height="140" fill="url(#bannerGrid)"/>
+      <path d="M10 95 h420" stroke="currentColor" stroke-width="1.2" opacity="0.5"/>
+      <path d="M10 95 l-4 8 h428 l-4 -8" fill="currentColor" opacity="0.08" stroke="none"/>
+      ${stationsHtml}
+      ${arrows}
     </svg>
   </div>`;
 }
