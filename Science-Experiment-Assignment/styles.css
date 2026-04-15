@@ -479,9 +479,60 @@ input[type="text"]:focus, input[type="password"]:focus {
   padding-bottom: 4px;
   margin-bottom: 10px;
 }
-.mat-list, .proc-list { padding-left: 22px; margin: 0; }
-.mat-list li { margin-bottom: 10px; }
-.mat-qty { color: var(--sepia); font-style: italic; }
+.mat-list, .proc-list { padding-left: 0; margin: 0; list-style: none; }
+
+/* Material list with icons */
+.mat-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+}
+.mat-list .mat-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  background: rgba(255,255,255,0.4);
+  border: 1px solid var(--rule-soft);
+  border-radius: 3px;
+  margin-bottom: 0;
+}
+.mat-list .mat-icon {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  color: var(--oxblood);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(122,46,46,0.08);
+  border-radius: 50%;
+  padding: 5px;
+}
+.mat-list .mat-icon svg { width: 100%; height: 100%; }
+.mat-list .mat-body { flex: 1; min-width: 0; }
+.mat-list .mat-body strong { display: block; }
+.mat-qty { color: var(--sepia); font-style: italic; font-size: 0.88rem; }
+
+/* Apparatus banner */
+.apparatus-banner {
+  margin: 18px 0 14px;
+  padding: 14px 16px;
+  background:
+    linear-gradient(180deg, rgba(122,46,46,0.04), rgba(122,46,46,0.0) 50%, rgba(122,46,46,0.04)),
+    rgba(255,255,255,0.35);
+  border-top: 2px double var(--rule);
+  border-bottom: 2px double var(--rule);
+  color: var(--ink);
+  text-align: center;
+}
+.apparatus-banner svg {
+  width: 100%;
+  max-width: 680px;
+  height: auto;
+  max-height: 150px;
+  color: var(--ink);
+}
 .subs {
   display: block;
   margin-top: 3px;
@@ -498,36 +549,61 @@ input[type="text"]:focus, input[type="password"]:focus {
   border-radius: 2px;
 }
 
-.proc-list { counter-reset: step; list-style: none; padding-left: 0; }
-.proc-list li {
-  counter-increment: step;
+.proc-list { list-style: none; padding-left: 0; display: flex; flex-direction: column; gap: 8px; }
+.proc-list li.proc-step {
   position: relative;
-  padding: 8px 10px 8px 42px;
-  margin-bottom: 8px;
+  padding: 12px 14px 12px 58px;
+  background:
+    linear-gradient(90deg, rgba(122,46,46,0.06), transparent 60%),
+    rgba(255,255,255,0.35);
+  border: 1px solid var(--rule-soft);
+  border-left: 3px solid var(--oxblood);
+  border-radius: 3px;
   font-family: 'Special Elite', 'Courier Prime', monospace;
   font-size: 0.95rem;
-  background: rgba(255,255,255,0.3);
-  border-left: 2px solid var(--rule);
   line-height: 1.55;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
 }
-.proc-list li::before {
-  content: counter(step) ".";
+.proc-list li.proc-step:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 26px;
+  bottom: -10px;
+  width: 2px;
+  height: 10px;
+  background: repeating-linear-gradient(to bottom, var(--oxblood) 0 2px, transparent 2px 4px);
+  z-index: 0;
+}
+.proc-list .proc-num {
   position: absolute;
   left: 10px;
   top: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--oxblood);
+  color: #F4EDDF;
   font-family: 'Cormorant Garamond', serif;
-  color: var(--oxblood);
   font-weight: 700;
-  font-size: 1.05rem;
+  font-size: 1.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 4px rgba(60,40,20,0.2);
+  z-index: 1;
 }
+.proc-list .proc-text { flex: 1; }
 .proc-list .speak-btn {
-  float: right;
   background: transparent;
   border: none;
   cursor: pointer;
   font-size: 1rem;
   color: var(--sepia);
   padding: 0 4px;
+  flex: 0 0 auto;
+  order: 2;
 }
 .proc-list .speak-btn:hover { color: var(--oxblood); }
 
@@ -590,50 +666,96 @@ input[type="text"]:focus, input[type="password"]:focus {
   margin: 8px 0;
 }
 
-/* ---------- Drawer ---------- */
-.drawer {
-  position: fixed;
-  top: 0; right: 0;
-  width: 420px;
-  max-width: 100vw;
-  height: 100vh;
-  z-index: 50;
-  transform: translateX(0);
-  transition: transform .3s ease;
+/* ---------- Saved Modal ---------- */
+.saved-modal { z-index: 90; }
+.saved-modal-card {
+  max-width: 720px;
+  width: 100%;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  padding: 22px 26px 20px;
 }
-.drawer.hidden {
-  transform: translateX(105%);
-  display: block !important;
-}
-.drawer-inner {
-  height: 100%;
-  padding: 20px 22px;
-  overflow-y: auto;
-  box-shadow: -8px 0 30px rgba(60, 40, 20, 0.25);
-  border-left: 4px solid var(--oxblood);
-}
-.drawer-head {
-  display: flex; align-items: center; justify-content: space-between;
+.saved-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--rule);
   margin-bottom: 14px;
 }
-.drawer-controls {
+.saved-head-left {
   display: flex;
-  gap: 6px;
+  align-items: center;
+  gap: 10px;
+  color: var(--oxblood);
+}
+.saved-head-left h2 { margin: 0; color: var(--ink); }
+.saved-head-ico { width: 28px; height: 28px; }
+.saved-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.saved-tab {
+  appearance: none;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: var(--sepia);
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: color .15s, border-color .15s, background .15s;
+  border-radius: 3px 3px 0 0;
+}
+.saved-tab:hover {
+  color: var(--ink);
+  background: rgba(122, 46, 46, 0.06);
+}
+.saved-tab.active {
+  color: var(--oxblood);
+  border-bottom-color: var(--oxblood);
+  font-weight: 600;
+}
+.saved-controls {
+  display: flex;
+  gap: 8px;
   flex-wrap: wrap;
   margin-bottom: 14px;
 }
-.drawer-controls input[type="text"] { flex: 1; min-width: 120px; }
-.saved-list { display: flex; flex-direction: column; gap: 10px; }
+.saved-controls input[type="text"] {
+  flex: 1;
+  min-width: 180px;
+}
+.saved-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+  padding-right: 4px;
+}
 .saved-item {
-  background: rgba(255,255,255,0.4);
+  background: rgba(255,255,255,0.45);
   border: 1px solid var(--rule);
-  padding: 10px 12px;
+  border-left: 4px solid var(--oxblood);
+  padding: 12px 14px;
   border-radius: 3px;
   cursor: pointer;
-  transition: background .15s;
+  transition: background .15s, transform .15s, box-shadow .15s;
 }
-.saved-item:hover { background: rgba(255,255,255,0.7); }
-.saved-item h4 { margin: 0 0 4px 0; font-size: 1.05rem; }
+.saved-item:hover {
+  background: rgba(255,255,255,0.75);
+  transform: translateX(2px);
+  box-shadow: 0 2px 8px rgba(60,40,20,0.12);
+}
+.saved-item h4 { margin: 0 0 6px 0; font-size: 1.1rem; }
 .saved-item .saved-meta {
   font-size: 0.75rem;
   color: var(--sepia);
@@ -728,7 +850,7 @@ input[type="text"]:focus, input[type="password"]:focus {
   .footer-disclaimer,
   .panel,
   #inputPage,
-  #savedDrawer,
+  #savedModal,
   .exp-actions,
   .header-actions,
   .toast,
@@ -970,45 +1092,14 @@ input[type="text"]:focus, input[type="password"]:focus {
 .supervision-shield.yellow { background: rgba(201, 162, 39, 0.18); color: #7a5a10;       border: 1px solid rgba(201, 162, 39, 0.4); }
 .supervision-shield.green  { background: rgba(74, 110, 60, 0.15); color: #3c5a2c;        border: 1px solid rgba(74, 110, 60, 0.35); }
 
-/* ============================================================
-   Procedure step badges
-   ============================================================ */
-.proc-list {
-  list-style: none;
-  padding: 0;
-  counter-reset: step;
-}
-.proc-list li {
-  counter-increment: step;
-  position: relative;
-  padding: 10px 12px 10px 64px;
-  margin: 8px 0;
-  border-left: 2px dashed var(--rule);
-  background: linear-gradient(to right, rgba(255, 252, 240, 0.5), transparent 70%);
-  min-height: 48px;
-}
-.proc-list li::before {
-  content: counter(step);
-  position: absolute;
-  left: 10px;
-  top: 6px;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+/* Procedure step badges — additional polish for .proc-num */
+.proc-list li.proc-step .proc-num {
   background: radial-gradient(circle at 35% 30%, #a83a3a, var(--oxblood) 70%);
-  color: #F4EDDF;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 1.3rem;
-  font-weight: 700;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.25), inset 0 -2px 3px rgba(0,0,0,0.2);
   border: 2px solid #F4EDDF;
-}
-.proc-list li .speak-btn {
-  float: right;
-  margin-left: 8px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.25), inset 0 -2px 3px rgba(0,0,0,0.2);
+  width: 36px;
+  height: 36px;
+  top: 10px;
 }
 
 /* ============================================================
@@ -1074,20 +1165,7 @@ input[type="text"]:focus, input[type="password"]:focus {
 }
 .obs-card p { margin: 0; }
 
-/* Materials list enhancements */
-.mat-list li {
-  position: relative;
-  padding-left: 28px;
-}
-.mat-list li::before {
-  content: "⚗";
-  position: absolute;
-  left: 4px;
-  top: 0;
-  color: var(--oxblood);
-  font-size: 1rem;
-  opacity: 0.7;
-}
+/* Materials list — icon is part of the row markup, no ::before needed */
 
 /* Safety list with caution triangles */
 .safety-list {

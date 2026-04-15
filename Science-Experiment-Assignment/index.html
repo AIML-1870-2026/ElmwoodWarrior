@@ -180,28 +180,37 @@
 
 </main>
 
-<!-- ============ Saved Drawer ============ -->
-<aside id="savedDrawer" class="drawer hidden">
-  <div class="drawer-inner parchment">
-    <div class="drawer-head">
-      <h2>Saved Experiments</h2>
+<!-- ============ Saved Modal ============ -->
+<div id="savedModal" class="modal saved-modal hidden" aria-hidden="true">
+  <div class="modal-card parchment saved-modal-card">
+    <div class="saved-head">
+      <div class="saved-head-left">
+        <svg class="saved-head-ico" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round">
+          <path d="M6 4 h16 a2 2 0 0 1 2 2 v22 l-5 -3 -5 3 -5 -3 -5 3 v-22 a2 2 0 0 1 2 -2 z"/>
+          <path d="M10 10 h12 M10 14 h12 M10 18 h8"/>
+        </svg>
+        <h2>Saved Experiments</h2>
+      </div>
       <button id="closeSavedBtn" class="icon-btn" title="Close">✕</button>
     </div>
-    <div class="drawer-controls">
+    <div class="saved-tabs" id="savedTabs">
+      <button class="saved-tab active" data-filter="">All</button>
+      <button class="saved-tab" data-filter="chemistry">⚗ Chemistry</button>
+      <button class="saved-tab" data-filter="physics">⚛ Physics</button>
+      <button class="saved-tab" data-filter="biology">🌱 Biology</button>
+      <button class="saved-tab" data-filter="earth_science">🌍 Earth</button>
+      <button class="saved-tab" data-filter="engineering">⚙ Engineering</button>
+    </div>
+    <div class="saved-controls">
       <input type="text" id="savedSearch" placeholder="Search titles…"/>
-      <select id="savedFilter">
-        <option value="">All concepts</option>
-        <option value="chemistry">Chemistry</option>
-        <option value="physics">Physics</option>
-        <option value="biology">Biology</option>
-        <option value="earth_science">Earth Science</option>
-        <option value="engineering">Engineering</option>
+      <select id="savedFilter" class="hidden">
+        <option value=""></option>
       </select>
       <button id="exportAllBtn" class="btn btn-small">Export All</button>
     </div>
     <div id="savedList" class="saved-list"></div>
   </div>
-</aside>
+</div>
 
 <!-- ============ Footer Disclaimer ============ -->
 <footer class="footer-disclaimer">

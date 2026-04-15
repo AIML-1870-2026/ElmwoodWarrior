@@ -32,14 +32,33 @@ function saveCurrent() {
 }
 
 function initDrawer() {
+  const modal = $("#savedModal");
   $("#openSavedBtn").addEventListener("click", () => {
     renderSavedList();
-    $("#savedDrawer").classList.remove("hidden");
+    modal.classList.remove("hidden");
   });
-  $("#closeSavedBtn").addEventListener("click", () => $("#savedDrawer").classList.add("hidden"));
+  $("#closeSavedBtn").addEventListener("click", () => modal.classList.add("hidden"));
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) modal.classList.add("hidden");
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !modal.classList.contains("hidden")) {
+      modal.classList.add("hidden");
+    }
+  });
   $("#savedSearch").addEventListener("input", renderSavedList);
   $("#savedFilter").addEventListener("change", renderSavedList);
   $("#exportAllBtn").addEventListener("click", exportAll);
+
+  // Tab filters
+  document.querySelectorAll(".saved-tab").forEach(tab => {
+    tab.addEventListener("click", () => {
+      document.querySelectorAll(".saved-tab").forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+      $("#savedFilter").value = tab.dataset.filter;
+      renderSavedList();
+    });
+  });
 }
 
 function renderSavedList() {
@@ -80,7 +99,7 @@ function renderSavedList() {
     div.querySelector('[data-act="open"]').addEventListener("click", () => {
       state.current = item.exp;
       renderExperiment(item.exp);
-      $("#savedDrawer").classList.add("hidden");
+      $("#savedModal").classList.add("hidden");
     });
     div.querySelector('[data-act="del"]').addEventListener("click", () => {
       if (!confirm("Delete this saved experiment?")) return;
