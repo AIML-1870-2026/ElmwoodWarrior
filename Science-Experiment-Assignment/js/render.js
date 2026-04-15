@@ -145,15 +145,24 @@ function materialIcon(name) {
 /* ---------- Materials reference strip ---------- */
 function materialsStrip(exp) {
   if (!Array.isArray(exp.materials) || !exp.materials.length) return "";
-  const items = exp.materials.slice(0, 8).map(m => `
-    <figure class="mat-ref">
-      <div class="mat-ref-frame">${materialIcon(m.name)}</div>
+  const items = exp.materials.slice(0, 8).map(m => {
+    const icon = materialIcon(m.name);
+    return `
+    <figure class="mat-ref" tabindex="0">
+      <div class="mat-ref-frame">${icon}</div>
       <figcaption>
         <strong>${escapeHtml(m.name)}</strong>
         <span>${escapeHtml(m.quantity || "")}</span>
       </figcaption>
-    </figure>
-  `).join("");
+      <div class="mat-preview" role="tooltip">
+        ${icon}
+        <div class="mat-preview-label">
+          ${escapeHtml(m.name)}
+          <span class="mat-preview-qty">${escapeHtml(m.quantity || "")}</span>
+        </div>
+      </div>
+    </figure>`;
+  }).join("");
   return `<div class="materials-strip">
     <div class="strip-title">You will need</div>
     <div class="strip-row">${items}</div>
