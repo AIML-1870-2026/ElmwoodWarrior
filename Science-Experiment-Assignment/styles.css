@@ -498,21 +498,92 @@ input[type="text"]:focus, input[type="password"]:focus {
   margin-bottom: 0;
 }
 .mat-list .mat-icon {
-  width: 34px;
-  height: 34px;
-  flex: 0 0 34px;
-  color: var(--oxblood);
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(122,46,46,0.08);
-  border-radius: 50%;
-  padding: 5px;
+  background: #faf5e8;
+  border: 1px solid var(--rule-soft);
+  border-radius: 4px;
+  padding: 3px;
+  box-shadow: inset 0 -2px 0 rgba(0,0,0,0.04);
 }
-.mat-list .mat-icon svg { width: 100%; height: 100%; }
+.mat-list .mat-icon svg { width: 100%; height: 100%; display: block; }
 .mat-list .mat-body { flex: 1; min-width: 0; }
 .mat-list .mat-body strong { display: block; }
 .mat-qty { color: var(--sepia); font-style: italic; font-size: 0.88rem; }
+
+/* Materials reference strip — "You will need" photo-style row */
+.materials-strip {
+  margin: 18px 0 10px;
+  padding: 14px 16px 12px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,252,240,0.35)),
+    rgba(122,46,46,0.02);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  box-shadow: inset 0 0 0 4px rgba(255,255,255,0.25);
+}
+.strip-title {
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--oxblood);
+  text-align: center;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed var(--rule);
+}
+.strip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+.mat-ref {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 96px;
+  text-align: center;
+}
+.mat-ref-frame {
+  width: 72px;
+  height: 72px;
+  padding: 6px;
+  background: #faf5e8;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  box-shadow:
+    inset 0 -3px 0 rgba(0,0,0,0.05),
+    0 2px 4px rgba(60,40,20,0.12);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 6px;
+}
+.mat-ref-frame svg { width: 100%; height: 100%; display: block; }
+.mat-ref figcaption {
+  font-size: 0.78rem;
+  line-height: 1.25;
+}
+.mat-ref figcaption strong {
+  display: block;
+  font-family: 'Cormorant Garamond', serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--ink);
+}
+.mat-ref figcaption span {
+  color: var(--sepia);
+  font-style: italic;
+  font-size: 0.72rem;
+}
 
 /* Apparatus banner */
 .apparatus-banner {
