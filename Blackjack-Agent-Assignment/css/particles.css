@@ -1,0 +1,31 @@
+/* Particle Canvas Layer */
+#particle-canvas-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 200;
+}
+
+#particle-canvas {
+  width: 100%;
+  height: 100%;
+}
+
+/* Screen Flash Effects */
+@keyframes red-flash {
+  0%, 100% { background: transparent; }
+  50%      { background: rgba(230, 57, 70, 0.12); }
+}
+
+.bust-flash {
+  animation: red-flash 0.4s;
+}
+
+@keyframes gold-flash {
+  0%, 100% { background: transparent; }
+  50%      { background: rgba(240, 208, 128, 0.08); }
+}
+
+.win-flash {
+  animation: gold-flash 0.5s;
+}
