@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#00549A" />
+  <meta name="description" content="Habitat for Humanity Omaha Home Guide — a friendly, bilingual home maintenance reference for families." />
+  <title>Habitat Central</title>
+
+  <link rel="stylesheet" href="styles.css" />
+
+  <!-- Inline SVG favicon: terracotta house silhouette -->
+  <link rel="icon" type="image/svg+xml" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="%2300549A"/><path d="M16 7 6 15v10h7v-6h6v6h7V15z" fill="%23FFFFFF"/></svg>' />
+</head>
+<body>
+
+  <!-- ============ NAV ============ -->
+  <header class="nav">
+    <div class="container nav-inner">
+      <a href="#top" class="nav-brand" aria-label="Home">
+        <span class="nav-brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M16 5 4 14v13h8v-8h8v8h8V14z" fill="currentColor"/>
+          </svg>
+        </span>
+        <span class="nav-brand-text">
+          <span data-i18n="nav.brand">Maintenance Guide</span>
+          <small>Habitat for Humanity · Omaha</small>
+        </span>
+      </a>
+
+      <nav class="nav-links" id="nav-links" aria-label="Primary">
+        <a class="nav-link nav-link--active" href="index.html" data-i18n="nav.maintenance">Home Maintenance</a>
+        <a class="nav-link" href="community.html" data-i18n="nav.community">Community Board</a>
+      </nav>
+
+      <button
+        id="lang-toggle"
+        class="lang-toggle"
+        type="button"
+        aria-label="Toggle language"
+        data-i18n-attr="aria-label:lang.toggle.aria">
+        <span class="lang-pill" data-lang="en">EN</span>
+        <span class="lang-pill" data-lang="es">ES</span>
+      </button>
+
+      <button
+        id="nav-toggle"
+        class="nav-toggle"
+        type="button"
+        aria-label="Open menu"
+        aria-expanded="false"
+        aria-controls="nav-links">
+        <span class="nav-toggle-bar"></span>
+        <span class="nav-toggle-bar"></span>
+        <span class="nav-toggle-bar"></span>
+      </button>
+    </div>
+  </header>
+
+  <main id="top">
+
+    <!-- ============ HERO ============ -->
+    <section class="hero">
+      <div class="container hero-inner">
+        <div class="hero-copy" data-reveal>
+          <span class="eyebrow" data-i18n="hero.eyebrow">Welcome home</span>
+          <h1>
+            <span data-i18n="hero.title">Your home, explained in plain steps.</span>
+          </h1>
+          <p class="hero-sub" data-i18n="hero.subtitle">
+            A friendly guide to the home you worked so hard for. Browse freely — no modules to finish, no progress to track.
+          </p>
+          <div class="hero-ctas">
+            <a class="btn btn-primary" href="#categories">
+              <span data-i18n="hero.cta.browse">Browse categories</span>
+              <span aria-hidden="true">→</span>
+            </a>
+            <a class="btn btn-ghost" href="#seasonal" data-i18n="hero.cta.seasonal">What to do this month</a>
+          </div>
+          <div class="hero-badges">
+            <span class="hero-badge"><strong id="stat-modules">39</strong><span data-i18n="hero.badge.modules">modules</span></span>
+            <span class="hero-badge"><strong id="stat-categories">8</strong><span data-i18n="hero.badge.categories">categories</span></span>
+            <span class="hero-badge"><strong>2</strong><span data-i18n="hero.badge.languages">languages</span></span>
+          </div>
+        </div>
+
+        <div class="hero-art" data-reveal aria-hidden="true">
+<div class="hero-art-scene">
+            <img class="hero-art-photo" src="22xp-scott-1-superJumbo.jpg" alt="Habitat for Humanity volunteers raising a wall frame" loading="lazy" decoding="async"/>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SEASONAL ============ -->
+    <section class="section" id="seasonal">
+      <div class="container">
+        <div class="section-head" data-reveal>
+          <span class="eyebrow" data-i18n="seasonal.title">This month in your home</span>
+          <h2 class="section-title" data-i18n="seasonal.subtitle">Small things that keep a home running well.</h2>
+        </div>
+
+        <div class="seasonal-card" data-reveal>
+          <div class="seasonal-card-art">
+            <span class="eyebrow" data-i18n="seasonal.title">This month in your home</span>
+            <h3 class="seasonal-month" id="seasonal-month">April</h3>
+            <div class="seasonal-card-art-foot">
+              <svg class="seasonal-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M12 2 L5 7 V20 H19 V7 Z"/>
+                <path d="M9 13 H15 M9 17 H15"/>
+              </svg>
+              <span data-i18n="seasonal.hint">Tap a row to check it off. Resets on reload — no pressure.</span>
+            </div>
+          </div>
+          <div class="seasonal-card-body">
+            <div>
+              <h3 data-i18n="seasonal.title">This month in your home</h3>
+              <p class="seasonal-hint" data-i18n="seasonal.hint">Tap a row to check it off. Resets on reload — no pressure.</p>
+            </div>
+            <div class="seasonal-list" id="seasonal-list">
+              <!-- populated by seasonal.js -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SEARCH ============ -->
+    <section class="section section--search">
+      <div class="container">
+        <div class="search-wrap" data-reveal>
+          <label for="search-input" class="sr-only" data-i18n="search.label">Find something specific</label>
+          <div class="search-field">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <circle cx="11" cy="11" r="7"/>
+              <path d="M20 20 L16 16"/>
+            </svg>
+            <input
+              id="search-input"
+              type="search"
+              autocomplete="off"
+              placeholder="Try frozen pipes, smoke detector, gutters…"
+              data-i18n-attr="placeholder:search.placeholder" />
+            <span class="search-count" id="search-count"></span>
+            <button class="search-submit" type="button" aria-label="Search">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M5 12 H19 M13 6 L19 12 L13 18"/>
+              </svg>
+            </button>
+          </div>
+          <div class="search-results" id="search-results" role="region" aria-live="polite"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CATEGORIES ============ -->
+    <section class="section" id="categories">
+      <div class="container">
+        <div class="section-head" data-reveal>
+          <h2 class="section-title" data-i18n="categories.subtitle">39 modules across the parts of your home that need attention most.</h2>
+          <p class="section-subtitle" data-i18n="categories.hint">Tap a card to open it.</p>
+        </div>
+        <div class="library-controls" data-reveal>
+          <button type="button" class="library-control-btn" id="library-expand-all" data-i18n="library.expandAll">Expand all</button>
+          <button type="button" class="library-control-btn" id="library-collapse-all" data-i18n="library.collapseAll">Collapse all</button>
+        </div>
+        <div class="categories-grid" id="category-grid" data-reveal>
+          <!-- populated by render.js -->
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <span class="nav-brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M16 5 L4 14 V27 H12 V19 H20 V27 H28 V14 Z" fill="currentColor"/>
+          </svg>
+        </span>
+        <div>
+          <span data-i18n="footer.tag">Maintenance Guide</span>
+          <small>Habitat for Humanity · Omaha</small>
+          <small data-i18n="footer.built">Built by student volunteers.</small>
+        </div>
+      </div>
+      <div class="footer-meta">
+        <span data-i18n="footer.version">Version 1.6 · 2026</span>
+        <span class="footer-dot" aria-hidden="true"></span>
+        <span>Omaha, NE</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ============ BACK TO TOP ============ -->
+  <button type="button" id="back-to-top" class="back-to-top" aria-label="Back to top" data-i18n-attr="aria-label:backtotop.aria">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M12 19V5M5 12l7-7 7 7"/>
+    </svg>
+    <span class="back-to-top-label" data-i18n="backtotop.label">Top</span>
+  </button>
+
+  <!-- ============ VIDEO MODAL ============ -->
+  <div id="video-modal" class="modal-overlay" aria-modal="true" role="dialog" aria-labelledby="modal-title">
+    <button type="button" class="modal-backdrop" id="modal-backdrop" aria-label="Close" tabindex="-1"></button>
+    <div class="modal-panel">
+
+      <div class="modal-header">
+        <div class="modal-header-text">
+          <span class="eyebrow" id="modal-eyebrow"></span>
+          <h2 class="modal-title" id="modal-title"></h2>
+        </div>
+        <button type="button" class="modal-close" id="modal-close" aria-label="Close">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-video-wrap">
+        <iframe
+          id="modal-iframe"
+          class="modal-iframe"
+          src=""
+          frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen
+          title="Module video">
+        </iframe>
+      </div>
+
+      <div class="modal-body">
+        <p class="modal-summary" id="modal-summary"></p>
+        <div id="modal-steps"></div>
+      </div>
+
+      <div class="modal-footer">
+        <a id="modal-yt-link" class="btn btn-ghost modal-yt-btn" href="#" target="_blank" rel="noopener noreferrer">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.5 12 3.5 12 3.5s-7.5 0-9.4.6A3 3 0 0 0 .5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1c1.9.6 9.4.6 9.4.6s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1C24 15.9 24 12 24 12s0-3.9-.5-5.8zM9.8 15.5V8.5l6.3 3.5-6.3 3.5z"/>
+          </svg>
+          <span id="modal-yt-label">Watch on YouTube</span>
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Scripts: load data first, then helpers, then app bootstrap -->
+  <script src="js/translations.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/language.js"></script>
+  <script src="js/seasonal.js"></script>
+  <script src="js/search.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

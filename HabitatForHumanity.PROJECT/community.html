@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#00549A" />
+  <meta name="description" content="Habitat for Humanity Omaha Community Board — post events, jobs, sports, and announcements for your neighborhood." />
+  <title>Habitat Central</title>
+
+  <link rel="stylesheet" href="styles.css" />
+
+  <link rel="icon" type="image/svg+xml" href='data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="7" fill="%2300549A"/><path d="M16 7 6 15v10h7v-6h6v6h7V15z" fill="%23FFFFFF"/></svg>' />
+</head>
+<body>
+
+  <!-- ============ NAV ============ -->
+  <!-- KEEP IN SYNC WITH index.html nav -->
+  <header class="nav">
+    <div class="container nav-inner">
+      <a href="index.html" class="nav-brand" aria-label="Home">
+        <span class="nav-brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M16 5 4 14v13h8v-8h8v8h8V14z" fill="currentColor"/>
+          </svg>
+        </span>
+        <span class="nav-brand-text">
+          <span data-i18n="nav.brand.community">Community Post Board</span>
+          <small>Habitat for Humanity · Omaha</small>
+        </span>
+      </a>
+
+      <nav class="nav-links" id="nav-links" aria-label="Primary">
+        <a class="nav-link" href="index.html" data-i18n="nav.maintenance">Home Maintenance</a>
+        <a class="nav-link nav-link--active" href="community.html" data-i18n="nav.community">Community Board</a>
+      </nav>
+
+      <button
+        id="lang-toggle"
+        class="lang-toggle"
+        type="button"
+        aria-label="Toggle language"
+        data-i18n-attr="aria-label:lang.toggle.aria">
+        <span class="lang-pill" data-lang="en">EN</span>
+        <span class="lang-pill" data-lang="es">ES</span>
+      </button>
+
+      <button
+        id="nav-toggle"
+        class="nav-toggle"
+        type="button"
+        aria-label="Open menu"
+        aria-expanded="false"
+        aria-controls="nav-links">
+        <span class="nav-toggle-bar"></span>
+        <span class="nav-toggle-bar"></span>
+        <span class="nav-toggle-bar"></span>
+      </button>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ============ HERO ============ -->
+    <section class="community-hero">
+      <div class="container community-hero-inner" data-reveal>
+        <span class="eyebrow" data-i18n="community.eyebrow">Neighborhood</span>
+        <h1 data-i18n="community.title">Community Post Board</h1>
+        <p class="community-hero-sub" data-i18n="community.subtitle">
+          Events, jobs, and announcements from your Habitat neighbors.
+        </p>
+        <button id="create-post-btn" class="btn btn-primary" type="button">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 5v14M5 12h14"/>
+          </svg>
+          <span data-i18n="community.post.create">Post Something</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ============ BOARD ============ -->
+    <section class="section community-board-section">
+      <div class="container">
+
+        <!-- Filter bar -->
+        <div class="community-filters" id="community-filters" role="group" aria-label="Filter posts by category">
+          <button class="community-filter-btn is-active" data-filter="all" type="button">
+            <span data-i18n="community.filter.all">All</span>
+            <span class="community-filter-count" aria-hidden="true"></span>
+          </button>
+          <button class="community-filter-btn community-filter-btn--event" data-filter="event" type="button">
+            <span data-i18n="community.filter.event">Events</span>
+            <span class="community-filter-count" aria-hidden="true"></span>
+          </button>
+          <button class="community-filter-btn community-filter-btn--job" data-filter="job" type="button">
+            <span data-i18n="community.filter.job">Jobs</span>
+            <span class="community-filter-count" aria-hidden="true"></span>
+          </button>
+          <button class="community-filter-btn community-filter-btn--sport" data-filter="sport" type="button">
+            <span data-i18n="community.filter.sport">Sports</span>
+            <span class="community-filter-count" aria-hidden="true"></span>
+          </button>
+          <button class="community-filter-btn community-filter-btn--announcement" data-filter="announcement" type="button">
+            <span data-i18n="community.filter.announcement">Announcements</span>
+            <span class="community-filter-count" aria-hidden="true"></span>
+          </button>
+        </div>
+
+        <!-- Post grid -->
+        <div class="community-grid" id="post-grid" aria-live="polite"></div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div class="footer-brand">
+        <span class="nav-brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M16 5 L4 14 V27 H12 V19 H20 V27 H28 V14 Z" fill="currentColor"/>
+          </svg>
+        </span>
+        <div>
+          <span data-i18n="footer.tag.community">Community Post Board</span>
+          <small>Habitat for Humanity · Omaha</small>
+          <small data-i18n="footer.built">Built by student volunteers.</small>
+        </div>
+      </div>
+      <div class="footer-meta">
+        <span data-i18n="footer.version">Version 1.6 · 2026</span>
+        <span class="footer-dot" aria-hidden="true"></span>
+        <span>Omaha, NE</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ============ BACK TO TOP ============ -->
+  <button type="button" id="back-to-top" class="back-to-top" aria-label="Back to top" data-i18n-attr="aria-label:backtotop.aria">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M12 19V5M5 12l7-7 7 7"/>
+    </svg>
+    <span class="back-to-top-label" data-i18n="backtotop.label">Top</span>
+  </button>
+
+  <!-- ============ CREATE POST MODAL ============ -->
+  <div id="create-modal" class="modal-overlay" aria-modal="true" role="dialog" aria-labelledby="create-modal-title">
+    <button type="button" class="modal-backdrop" id="create-modal-backdrop" aria-label="Close" tabindex="-1"></button>
+    <div class="modal-panel">
+
+      <div class="modal-header">
+        <div class="modal-header-text">
+          <span class="eyebrow" data-i18n="community.eyebrow">Neighborhood</span>
+          <h2 class="modal-title" id="create-modal-title" data-i18n="community.form.title">Create a Post</h2>
+        </div>
+        <button type="button" class="modal-close" id="create-modal-close" aria-label="Close">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <form id="create-post-form" novalidate>
+
+          <div class="form-field">
+            <label class="form-label" for="field-title" data-i18n="community.form.field.title">Title</label>
+            <input class="form-input" id="field-title" type="text" maxlength="120"
+                   data-i18n-attr="placeholder:community.form.placeholder.title" />
+            <span class="form-error" id="err-title" hidden data-i18n="community.form.required">This field is required.</span>
+          </div>
+
+          <div class="form-field">
+            <label class="form-label" for="field-category" data-i18n="community.form.field.category">Category</label>
+            <select class="form-input" id="field-category">
+              <option value="" disabled selected></option>
+              <option value="event" data-i18n="community.filter.event">Events</option>
+              <option value="job" data-i18n="community.filter.job">Jobs</option>
+              <option value="sport" data-i18n="community.filter.sport">Sports</option>
+              <option value="announcement" data-i18n="community.filter.announcement">Announcements</option>
+            </select>
+            <span class="form-error" id="err-category" hidden data-i18n="community.form.required">This field is required.</span>
+          </div>
+
+          <div class="form-field">
+            <label class="form-label" for="field-date" data-i18n="community.form.field.date">Date</label>
+            <input class="form-input" id="field-date" type="date" />
+            <span class="form-error" id="err-date" hidden data-i18n="community.form.required">This field is required.</span>
+          </div>
+
+          <div class="form-field">
+            <label class="form-label" for="field-description" data-i18n="community.form.field.description">Description</label>
+            <textarea class="form-input" id="field-description" rows="4" maxlength="800"
+                      data-i18n-attr="placeholder:community.form.placeholder.desc"></textarea>
+            <span class="form-error" id="err-description" hidden data-i18n="community.form.required">This field is required.</span>
+          </div>
+
+          <div class="form-field">
+            <label class="form-label" for="field-contact" data-i18n="community.form.field.contact">Contact (optional)</label>
+            <input class="form-input" id="field-contact" type="text"
+                   data-i18n-attr="placeholder:community.form.placeholder.contact" />
+          </div>
+
+          <div class="form-field">
+            <label class="form-label" for="field-author" data-i18n="community.form.field.author">Your Name</label>
+            <input class="form-input" id="field-author" type="text" maxlength="60"
+                   data-i18n-attr="placeholder:community.form.placeholder.author" />
+            <span class="form-error" id="err-author" hidden data-i18n="community.form.required">This field is required.</span>
+          </div>
+
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" id="create-modal-cancel" data-i18n="community.form.cancel">Cancel</button>
+        <button type="button" class="btn btn-primary" id="create-post-submit">
+          <span data-i18n="community.form.submit">Post to Board</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/translations.js"></script>
+  <script src="js/language.js"></script>
+  <script src="js/community.js"></script>
+</body>
+</html>
