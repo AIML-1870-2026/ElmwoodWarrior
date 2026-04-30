@@ -5,6 +5,7 @@
   const totalEl = document.getElementById('total');
   const prevBtn = document.getElementById('prev');
   const nextBtn = document.getElementById('next');
+  const fsBtn = document.getElementById('fullscreen');
   const progressEl = document.getElementById('progress');
 
   let index = 0;
@@ -28,6 +29,15 @@
 
   prevBtn.addEventListener('click', () => go(index - 1));
   nextBtn.addEventListener('click', () => go(index + 1));
+  fsBtn.addEventListener('click', toggleFullscreen);
+
+  function syncFsState() {
+    const isFs = !!document.fullscreenElement;
+    fsBtn.classList.toggle('is-fs', isFs);
+    fsBtn.setAttribute('aria-label', isFs ? 'Exit fullscreen' : 'Enter fullscreen');
+    fsBtn.setAttribute('title', isFs ? 'Exit fullscreen (F or Esc)' : 'Fullscreen (F)');
+  }
+  document.addEventListener('fullscreenchange', syncFsState);
 
   document.addEventListener('keydown', (e) => {
     switch (e.key) {

@@ -716,6 +716,28 @@ p {
   transform: none;
 }
 
+.ctrl-btn-fs {
+  font-size: 1rem;
+}
+
+.fs-icon {
+  width: 20px;
+  height: 20px;
+  display: block;
+}
+
+.ctrl-btn-fs .fs-exit {
+  display: none;
+}
+
+.ctrl-btn-fs.is-fs .fs-enter {
+  display: none;
+}
+
+.ctrl-btn-fs.is-fs .fs-exit {
+  display: block;
+}
+
 .counter {
   font-weight: 600;
   color: var(--charcoal);
